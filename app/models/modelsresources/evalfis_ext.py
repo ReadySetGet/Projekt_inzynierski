@@ -1,3 +1,13 @@
+"""Extension module for inferring functionalities provided in 'fuzzylab'
+library.
+
+TODO: finish documentation of this module if used in the final solution
+
+Changed fuctions:
+
+    fuzzify_input
+    eval_rules_mamdani
+"""
 import numpy as np
 from fuzzylab.evalmf import evalmf
 from fuzzylab.defuzz import defuzz
