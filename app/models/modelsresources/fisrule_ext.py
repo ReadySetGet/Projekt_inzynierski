@@ -23,7 +23,11 @@ class FisRuleEx(fl.fisrule):
     """Output variable to mf mappings when inferring (1 - use IS, else use 
     IS NOT)."""
 
-    def __init__(self, is_mf: list[int], rule_def: list[list[int]], *varargin):
+    Name: str
+    """Name of the rule."""
+
+    def __init__(self, is_mf: list[int], rule_name: str,
+                 rule_def: list[list[int]], *varargin):
         """Initialize the extension class instance. Extends 'fisrule''s
         '__init__()' method.
 
@@ -31,6 +35,7 @@ class FisRuleEx(fl.fisrule):
 
             is_mf (list[int]): list of variable to mf mapping behaviours when
                 inferring (1 - use IS, else - use IS NOT)
+            rule_name (str): rule name
             rule_def (list[list[int]]): list in a form of [r1, r2, ...], where
                 r1, r2, ... are rules (lists) in the form of [imf1, imf2, imf3,
                 ..., omf1, omf2, omf3, ... w, c], where:
@@ -44,7 +49,8 @@ class FisRuleEx(fl.fisrule):
                         (1 - use AND, else - use OR)
         """
         numInputs = varargin[0]
-
-        super().__init__(self, rule_def, *varargin)
+        rule_def = rule_def[0]
+        super().__init__(rule_def, varargin[0])
         self.IsMFInput = is_mf[:numInputs]
         self.IsMFOutput = is_mf[numInputs:]
+        self.Name = rule_name
