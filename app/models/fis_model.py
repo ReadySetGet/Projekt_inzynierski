@@ -47,6 +47,10 @@ DEFAULT_VARIABLE_TO_MF_MAPPING_BEHAVIOUR = 1
 (mu(x) = 1 - mf(x)).
 """
 
+AVAILABLE_DEFUZZIFICATION_METHODS = ["centroid", "bisector", "mom", "som",
+                                     "lom", "wtaver"]
+"""Available defuzzification methods."""
+
 
 class FISModel:
     """A class containing a fuzzy inference system (fis) and means of its
@@ -85,10 +89,10 @@ class FISModel:
             Update a given rule.
     """
 
-    _fis: FuzzyInferenceSystem
+    _fis: fl.mamfis | fl.sugfis
     """The contained fis system."""
 
-    def __init__(self, fis: FuzzyInferenceSystem = None):
+    def __init__(self, fis: fl.mamfis | fl.sugfis = None):
         """Initialize a new class instance.
 
         Parameters:
@@ -453,6 +457,26 @@ class FISModel:
         new_rule = FisRuleEx(new_rule_is_mf, new_rule_name, [new_rule_data],
                              len(self._fis.Inputs))
         self._fis.Rules.insert(rule_idx, new_rule)
+        return 1
+
+    def change_defuzzification_method(self, new_method: str) -> int:
+        """Change defuzzification method used.
+
+        Parameters:
+
+            new_method (str): new defuzzification method to be used. Available
+                options: centroid, bisector, mom, som, lom, wtaver
+
+        Returns:
+
+            1 - method changed successfully
+
+            -1 - new method provided not in available methods
+        """
+        if new_method not in AVAILABLE_DEFUZZIFICATION_METHODS:
+            return -1
+
+        self._fis.DefuzzificationMethod = new_method
         return 1
 
     def _find_variable(self, io_variable_name: str,
