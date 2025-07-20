@@ -88,10 +88,10 @@ class FISModel:
             Update a given rule.
     """
 
-    _fis: FuzzyInferenceSystem
+    _fis: fl.mamfis | fl.sugfis
     """The contained fis system."""
 
-    def __init__(self, fis: FuzzyInferenceSystem = None):
+    def __init__(self, fis: fl.mamfis | fl.sugfis = None):
         """Initialize a new class instance.
 
         Parameters:
