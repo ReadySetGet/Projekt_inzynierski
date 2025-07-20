@@ -47,6 +47,9 @@ DEFAULT_VARIABLE_TO_MF_MAPPING_BEHAVIOUR = 1
 (mu(x) = 1 - mf(x)).
 """
 
+RESOLUTION_OF_VARIABLE_RANGE = 0.01
+"""Acceptable resolution of variable range values."""
+
 
 class FISModel:
     """A class containing a fuzzy inference system (fis) and means of its
@@ -453,6 +456,45 @@ class FISModel:
         new_rule = FisRuleEx(new_rule_is_mf, new_rule_name, [new_rule_data],
                              len(self._fis.Inputs))
         self._fis.Rules.insert(rule_idx, new_rule)
+        return 1
+
+    def change_variable_range(self, io_variable_name: str,
+                              input_or_output: str,
+                              new_range: list[float]) -> int:
+        """Change the domain range of a given input/output variable.
+
+        Parameters:
+
+            io_variable_name (str): name of the variable
+            input_or_output (str): "input" if the variable is an input,
+                "output" if else
+            new_range (list[int]): new range for the variable, in the form of
+                [min, max]
+
+        Returns:
+
+            1 - range changed successfully
+
+            -1 - provided min is higher than provided max
+
+            -2 - range values are stricter than acceptable resolution
+        """
+        if new_range[0] >= new_range[1]:
+            return -1
+
+        if round(new_range[0]/RESOLUTION_OF_VARIABLE_RANGE) \
+                - new_range[0]/RESOLUTION_OF_VARIABLE_RANGE != 0:
+            return -2
+
+        if round(new_range[1] / RESOLUTION_OF_VARIABLE_RANGE) \
+                - new_range[1] / RESOLUTION_OF_VARIABLE_RANGE != 0:
+            return -2
+
+        [io_variable, io_idx] = self._find_variable(io_variable_name,
+                                                    input_or_output)
+        self._fis.Inputs.pop(io_idx)
+        io_variable.Range = new_range
+        self._fis.Inputs.insert(io_idx, io_variable)
         return 1
 
     def _find_variable(self, io_variable_name: str,
