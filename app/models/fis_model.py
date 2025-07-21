@@ -6,6 +6,8 @@ Classes:
     FISModel: data model class for a fis system
 
 """
+from typing import Self
+
 import fuzzylab as fl
 from fuzzylab.FuzzyInferenceSystem import FuzzyInferenceSystem
 from .modelsresources.fisrule_ext import FisRuleEx
@@ -102,19 +104,29 @@ class FISModel:
             Update a given rule.
     """
 
-    _fis: FuzzyInferenceSystem
+    _fis: fl.mamfis | fl.sugfis
     """The contained fis system."""
 
-    def __init__(self, fis: FuzzyInferenceSystem = None):
-        """Initialize a new class instance.
+    def __init__(self, fis: fl.mamfis | fl.sugfis = None,
+                 fis_name: str = "fis", fis_type: str = None):
+        """Initialize a new class instance, with the given fis system. If
+        "fis_type" is provided, a new 2-input-1-output (with 3 mfs each) fis of
+        the given type will be initiated.
 
         Parameters:
 
             fis (FuzzyInferenceSystem): The fis system to be used. If None,
                 a new Mamdani system will be generated.
+            fis_name (str): Name of the fis system.
+            fis_type (str): Type of the new fis system, "mamdani" or "sugeno".
         """
-        if fis is None:
-            self._fis = fl.mamfis("fis")
+        if fis_type is not None:
+            if fis_type == "sugeno":
+                self._fis = fl.sugfis(fis_name)
+            if fis_type == "mamdani":
+                self._fis = fl.mamfis(fis_name)
+        elif fis is None:
+            self._fis = fl.mamfis(fis_name)
         else:
             self._fis = fis
 
@@ -500,6 +512,65 @@ class FISModel:
                              len(self._fis.Inputs))
         self._fis.Rules.insert(rule_idx, new_rule)
         return 1
+
+    def get_current_inference_type(self) -> fl.mamfis | fl.sugfis:
+        """Get the type of inference system currently in use."""
+        return type(self._fis)
+
+    def convert_inference_system(self, new_fis_name: str) -> Self:
+        """Converts fis to the other type of inference system.
+
+        Parameters:
+
+            new_fis_name (str): name for the new fis
+
+        Returns:
+
+            new instance of FISModel class, with converted inference system
+        """
+        if type(self._fis) is fl.mamfis:
+            new_fis_model = FISModel(fis_type="sugeno", fis_name=new_fis_name)
+            new_fis_model._fis.Inputs = self._fis.Inputs
+            new_fis_model._fis.Outputs = self._fis.Outputs
+            # proper parameter translation will be implemented here, for now it
+            # just moves to constants
+            for output in new_fis_model._fis.Outputs:
+                for mf in output.MembershipFunctions:
+                    mf.Parameters = sum(mf.Parameters)/len(mf.Parameters)
+
+            new_fis_model._fis.Rules = self._fis.Rules
+            for rule in new_fis_model._fis.Rules:
+                for idx in range(len(rule.IsMFOutput)):
+                    if rule.IsMFOutput[idx] != 1:
+                        rule.IsMFOutput[idx] = 1
+
+            new_fis_model._fis.AndMethod = "prod"
+            new_fis_model._fis.OrMethod = "probor"
+            new_fis_model._fis.ImplicationMethod = "prod"
+            new_fis_model._fis.AggregationMethod = "sum"
+            new_fis_model._fis.DefuzzificationMethod = "wtaver"
+            return new_fis_model
+
+        if type(self._fis) is fl.sugfis:
+            new_fis_model = FISModel(fis_type="mamdani", fis_name=new_fis_name)
+            new_fis_model._fis.Inputs = self._fis.Inputs
+            new_fis_model._fis.Outputs = self._fis.Outputs
+            # proper parameter translation will be implemented here, for now it
+            # just moves to triangular
+            for output in new_fis_model._fis.Outputs:
+                for mf in output.MembershipFunctions:
+                    mf.Parameters = [sum(mf.Parameters) - 0.4,
+                                     sum(mf.Parameters),
+                                     sum(mf.Parameters) + 0.4]
+
+            new_fis_model._fis.Rules = self._fis.Rules
+
+            new_fis_model._fis.AndMethod = "min"
+            new_fis_model._fis.OrMethod = "max"
+            new_fis_model._fis.ImplicationMethod = "min"
+            new_fis_model._fis.AggregationMethod = "max"
+            new_fis_model._fis.DefuzzificationMethod = "centroid"
+            return new_fis_model
 
     def _find_variable(self, io_variable_name: str,
                        input_or_output: str) -> [fl.fisvar, int]:
