@@ -105,16 +105,26 @@ class FISModel:
     _fis: FuzzyInferenceSystem
     """The contained fis system."""
 
-    def __init__(self, fis: FuzzyInferenceSystem = None):
-        """Initialize a new class instance.
+    def __init__(self, fis: FuzzyInferenceSystem = None,
+                 fis_name: str = "fis", fis_type: str = None):
+        """Initialize a new class instance, with the given fis system. If
+        "fis_type" is provided, a new 2-input-1-output (with 3 mfs each) fis of
+        the given type will be initiated.
 
         Parameters:
 
             fis (FuzzyInferenceSystem): The fis system to be used. If None,
                 a new Mamdani system will be generated.
+            fis_name (str): Name of the fis system.
+            fis_type (str): Type of the new fis system, "mamdani" or "sugeno".
         """
-        if fis is None:
-            self._fis = fl.mamfis("fis")
+        if fis_type is not None:
+            if fis_type == "sugeno":
+                self._fis = fl.sugfis(fis_name)
+            if fis_type == "mamdani":
+                self._fis = fl.mamfis(fis_name)
+        elif fis is None:
+            self._fis = fl.mamfis(fis_name)
         else:
             self._fis = fis
 
