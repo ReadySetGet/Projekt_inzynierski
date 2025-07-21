@@ -65,8 +65,11 @@ DEFAULT_VARIABLE_TO_MF_MAPPING_BEHAVIOUR = 1
 """
 
 AVAILABLE_DEFUZZIFICATION_METHODS = ["centroid", "bisector", "mom", "som",
-                                     "lom", "wtaver"]
+                                     "lom"]
 """Available defuzzification methods."""
+
+AVAILABLE_DEFUZZIFICATION_METHODS_SUGENO = ["wtaver"]
+"""Available defuzzification methods for Sugeno inference."""
 
 
 class FISModel:
@@ -519,8 +522,13 @@ class FISModel:
 
             -1 - new method provided not in available methods
         """
-        if new_method not in AVAILABLE_DEFUZZIFICATION_METHODS:
-            return -1
+        if type(self._fis) is fl.mamfis:
+            if new_method not in AVAILABLE_DEFUZZIFICATION_METHODS:
+                return -1
+
+        if type(self._fis) is fl.sugfis:
+            if new_method not in AVAILABLE_DEFUZZIFICATION_METHODS_SUGENO:
+                return -1
 
         self._fis.DefuzzificationMethod = new_method
         return 1

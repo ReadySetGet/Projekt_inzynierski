@@ -18,6 +18,11 @@ class ChangeDefuzzificationMethodTestCase(unittest.TestCase):
         self.assertEqual(result, -1,
                          "Defuzzification method incorrectly changed")
 
+    def test_3_defuzz_method_incorrect_for_inference_used(self) -> None:
+        result = self.model.change_defuzzification_method('wtaver')
+        self.assertEqual(result, -1,
+                         "Defuzzification method incorrectly changed")
+
     def tearDown(self) -> None:
         del self.model
 
