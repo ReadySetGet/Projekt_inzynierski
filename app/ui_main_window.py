@@ -10,6 +10,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from app.views.editor_tab_view import EditorTabWidget
 from app.views.central_tab_view import CentralTabWidget
 from app.views.browser_frame_view import BrowserFrameWidget
+from app.views.top_menu_view import TopMenu
 
 class UiMainWindow(object):
     def setupUi(self, MainWindow):
@@ -25,7 +26,7 @@ class UiMainWindow(object):
         self.browserFrame = BrowserFrameWidget(parent=self.centralwidget)
         self.browserFrame.setGeometry(QtCore.QRect(0, 160, 301, 641))
 
-        self.upMenuTab = QtWidgets.QTabWidget(parent=self.centralwidget)
+        self.upMenuTab = TopMenu(parent=self.centralwidget)
         self.upMenuTab.setGeometry(QtCore.QRect(10, 0, 1081, 161))
 
         self.editorTab = EditorTabWidget(parent=self.centralwidget)
@@ -34,7 +35,7 @@ class UiMainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.plotTabs.setCurrentIndex(2)
-        self.upMenuTab.setCurrentIndex(1)
+        self.upMenuTab.setCurrentIndex(0)
         self.editorTab.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
