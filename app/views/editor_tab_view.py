@@ -5,12 +5,16 @@ class EditorTabWidget(QtWidgets.QTabWidget):
     addMFClicked = QtCore.pyqtSignal()
     removeMFClicked = QtCore.pyqtSignal()
 
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("editorTab")
         self._setup_ui()
 
     def _setup_ui(self):
+        inputMFList = ['Placeholder Input MF']
+        outputMFList = ['Placeholder Output MF']
+
         self.fisPropertiesTab = QtWidgets.QWidget()
         self.fisPropertiesTab.setObjectName("fisPropertiesTab")
 
@@ -117,11 +121,13 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.firstInputRuleLabel.setGeometry(QtCore.QRect(10, 240, 51, 16))
         self.firstInputRuleLabel.setObjectName("firstInputRuleLabel")
 
-        self.firstInputIsIsntDropdown = QtWidgets.QPushButton(parent=self.ruleEditorTab)
+        self.firstInputIsIsntDropdown = QtWidgets.QComboBox(parent=self.ruleEditorTab)
+        self.firstInputIsIsntDropdown.addItems(['Is', 'Isn\'t'])
         self.firstInputIsIsntDropdown.setGeometry(QtCore.QRect(70, 230, 71, 31))
         self.firstInputIsIsntDropdown.setObjectName("firstInputIsIsntDropdown")
 
-        self.firstInputMFDropdown = QtWidgets.QPushButton(parent=self.ruleEditorTab)
+        self.firstInputMFDropdown = QtWidgets.QComboBox(parent=self.ruleEditorTab)
+        self.firstInputMFDropdown.addItems(inputMFList)
         self.firstInputMFDropdown.setGeometry(QtCore.QRect(150, 230, 61, 31))
         self.firstInputMFDropdown.setObjectName("firstInputMFDropdown")
 
@@ -129,11 +135,13 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.andOrLabel.setGeometry(QtCore.QRect(220, 240, 55, 16))
         self.andOrLabel.setObjectName("andOrLabel")
 
-        self.finalInputMFDropdown = QtWidgets.QPushButton(parent=self.ruleEditorTab)
+        self.finalInputMFDropdown = QtWidgets.QComboBox(parent=self.ruleEditorTab)
+        self.finalInputMFDropdown.addItems(inputMFList)
         self.finalInputMFDropdown.setGeometry(QtCore.QRect(150, 270, 61, 31))
         self.finalInputMFDropdown.setObjectName("finalInputMFDropdown")
 
-        self.finalInputIsIsntDropdown = QtWidgets.QPushButton(parent=self.ruleEditorTab)
+        self.finalInputIsIsntDropdown = QtWidgets.QComboBox(parent=self.ruleEditorTab)
+        self.finalInputIsIsntDropdown.addItems(['Is', 'Isn\'t'])
         self.finalInputIsIsntDropdown.setGeometry(QtCore.QRect(70, 270, 71, 31))
         self.finalInputIsIsntDropdown.setObjectName("finalInputIsIsntDropdown")
 
@@ -157,11 +165,13 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.outputRuleLabel.setGeometry(QtCore.QRect(10, 470, 51, 16))
         self.outputRuleLabel.setObjectName("outputRuleLabel")
 
-        self.outputIsIsntDropdown = QtWidgets.QPushButton(parent=self.ruleEditorTab)
+        self.outputIsIsntDropdown = QtWidgets.QComboBox(parent=self.ruleEditorTab)
+        self.outputIsIsntDropdown.addItems(['Is', 'Isn\'t'])
         self.outputIsIsntDropdown.setGeometry(QtCore.QRect(70, 460, 71, 31))
         self.outputIsIsntDropdown.setObjectName("outputIsIsntDropdown")
 
-        self.outputMFDropdown = QtWidgets.QPushButton(parent=self.ruleEditorTab)
+        self.outputMFDropdown = QtWidgets.QComboBox(parent=self.ruleEditorTab)
+        self.outputMFDropdown.addItems(outputMFList)
         self.outputMFDropdown.setGeometry(QtCore.QRect(150, 460, 61, 31))
         self.outputMFDropdown.setObjectName("outputMFDropdown")
 
@@ -189,18 +199,12 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.ifLabel.setText(_translate("MainWindow", "If"))
         self.thenLabel.setText(_translate("MainWindow", "Then"))
         self.firstInputRuleLabel.setText(_translate("MainWindow", "Rule 1"))
-        self.firstInputIsIsntDropdown.setText(_translate("MainWindow", "is/isn\'t"))
-        self.firstInputMFDropdown.setText(_translate("MainWindow", "MF"))
         self.andOrLabel.setText(_translate("MainWindow", "and/or"))
-        self.finalInputMFDropdown.setText(_translate("MainWindow", "MF"))
-        self.finalInputIsIsntDropdown.setText(_translate("MainWindow", "is/isn\'t"))
         self.finalInputRuleLabel.setText(_translate("MainWindow", "Rule 2"))
         self.connectionLabel.setText(_translate("MainWindow", "Connection"))
         self.andRadioButton.setText(_translate("MainWindow", "And"))
         self.orRadioButton.setText(_translate("MainWindow", "Or"))
         self.outputRuleLabel.setText(_translate("MainWindow", "Rule 1"))
-        self.outputIsIsntDropdown.setText(_translate("MainWindow", "is/isn\'t"))
-        self.outputMFDropdown.setText(_translate("MainWindow", "MF"))
         self.setTabText(self.indexOf(self.ruleEditorTab), _translate("MainWindow", "rulePropertiesTab"))
 
     def get_mf_name(self) -> str:
