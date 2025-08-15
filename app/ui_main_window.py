@@ -11,11 +11,15 @@ from app.views.editor_tab_view import EditorTabWidget
 from app.views.central_tab_view import CentralTabWidget
 from app.views.browser_frame_view import BrowserFrameWidget
 from app.views.top_menu_view import TopMenu
+from app.views.bar_menu_view import BarMenuWidget
+
 
 class UiMainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1106, 830)
+        MainWindow.resize(1096, 830)
+        self.menuBar = BarMenuWidget(main_window=MainWindow, parent=MainWindow)
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1096, 26))
 
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -27,11 +31,14 @@ class UiMainWindow(object):
         self.browserFrame.setGeometry(QtCore.QRect(0, 160, 301, 641))
 
         self.upMenuTab = TopMenu(parent=self.centralwidget)
-        self.upMenuTab.setGeometry(QtCore.QRect(10, 0, 1081, 161))
+        self.upMenuTab.setGeometry(QtCore.QRect(0, 0, 1081, 161))
 
         self.editorTab = EditorTabWidget(parent=self.centralwidget)
         self.editorTab.setGeometry(QtCore.QRect(820, 160, 281, 641))
+
+        MainWindow.setMenuBar(self.menuBar)
         MainWindow.setCentralWidget(self.centralwidget)
+
 
         self.retranslateUi(MainWindow)
         self.plotTabs.setCurrentIndex(2)
@@ -42,8 +49,6 @@ class UiMainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-
-
 
 # if __name__ == "__main__":
 #     import sys

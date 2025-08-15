@@ -10,6 +10,7 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         super().__init__(parent)
         self.setObjectName("editorTab")
         self._setup_ui()
+        self._retranslate_ui()
 
     def _setup_ui(self):
         input_mf_list = ['Placeholder Input MF']

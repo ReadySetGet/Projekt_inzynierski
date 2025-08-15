@@ -7,6 +7,7 @@ class BrowserFrameWidget(QtWidgets.QFrame):
         super().__init__(parent)
         self.setObjectName("browserFrane")
         self._setup_ui()
+        self._retranslate_ui()
 
     def _setup_ui(self):
         self.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
@@ -24,8 +25,6 @@ class BrowserFrameWidget(QtWidgets.QFrame):
         self.design_browser_label = QtWidgets.QLabel(parent=self)
         self.design_browser_label.setGeometry(QtCore.QRect(10, 10, 111, 16))
         self.design_browser_label.setObjectName("design_browser_label")
-
-        self._retranslate_ui()
 
     def _retranslate_ui(self):
         _translate = QtCore.QCoreApplication.translate

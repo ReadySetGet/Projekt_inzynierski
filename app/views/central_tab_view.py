@@ -9,6 +9,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         super().__init__(parent)
         self.setObjectName("centralTab")
         self._setup_ui()
+        self._retranslate_ui()
 
     def _setup_ui(self):
         self.fis_plot = QtWidgets.QWidget()
@@ -71,8 +72,6 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.system_label_2.setObjectName("system_label_2")
 
         self.addTab(self.rule_editor, "")
-
-        self._retranslate_ui()
 
     def _retranslate_ui(self):
         _translate = QtCore.QCoreApplication.translate
