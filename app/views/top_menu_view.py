@@ -11,13 +11,14 @@ class TopMenu(QtWidgets.QTabWidget):
         super().__init__(parent)
         self.setObjectName("topMenu")
         self._setup_ui()
+        self._retranslate_ui()
 
     def _setup_ui(self):
         self.designTab = QtWidgets.QWidget()
         self.designTab.setObjectName("designTab")
 
         self.input_output_button_area = QtWidgets.QScrollArea(parent=self.designTab)
-        self.input_output_button_area.setGeometry(QtCore.QRect(180, 0, 221, 131))
+        self.input_output_button_area.setGeometry(QtCore.QRect(270, 0, 221, 131))
         self.input_output_button_area.setWidgetResizable(True)
         self.input_output_button_area.setObjectName("input_output_button_area")
 
@@ -47,12 +48,37 @@ class TopMenu(QtWidgets.QTabWidget):
 
         self.input_output_button_area.setWidget(self.scroll_area_widget_contents_3)
 
+        self.help_button = QtWidgets.QPushButton(parent=self.designTab)
+        self.help_button.setGeometry(QtCore.QRect(950, 20, 93, 28))
+        self.help_button.setObjectName("help_button")
+        self.settings_button = QtWidgets.QPushButton(parent=self.designTab)
+        self.settings_button.setGeometry(QtCore.QRect(950, 70, 93, 28))
+        self.settings_button.setObjectName("settings_button")
+        self.conversion_button = QtWidgets.QPushButton(parent=self.designTab)
+        self.conversion_button.setGeometry(QtCore.QRect(530, 30, 131, 61))
+        self.conversion_button.setObjectName("conversion_button")
+        self.files_management_button_area = QtWidgets.QScrollArea(parent=self.designTab)
+        self.files_management_button_area.setGeometry(QtCore.QRect(0, 0, 271, 131))
+        self.files_management_button_area.setWidgetResizable(True)
+        self.files_management_button_area.setObjectName("files_management_button_area")
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 269, 129))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.new_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
+        self.new_button.setGeometry(QtCore.QRect(10, 40, 81, 41))
+        self.new_button.setObjectName("new_button")
+        self.import_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
+        self.import_button.setGeometry(QtCore.QRect(100, 40, 71, 41))
+        self.import_button.setObjectName("import_button")
+        self.toolButton_3 = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
+        self.toolButton_3.setGeometry(QtCore.QRect(180, 41, 81, 41))
+        self.toolButton_3.setObjectName("toolButton_3")
+        self.files_management_button_area.setWidget(self.scrollAreaWidgetContents)
+
         self.addTab(self.designTab, "")
         self.tuningTab = QtWidgets.QWidget()
         self.tuningTab.setObjectName("tuningTab")
         self.addTab(self.tuningTab, "")
-
-        self._retranslate_ui()
 
     def _retranslate_ui(self):
         _translate = QtCore.QCoreApplication.translate
@@ -62,3 +88,9 @@ class TopMenu(QtWidgets.QTabWidget):
         self.delete_output_button.setText(_translate("MainWindow", "Delete Output"))
         self.setTabText(self.indexOf(self.designTab), _translate("MainWindow", "Design"))
         self.setTabText(self.indexOf(self.tuningTab), _translate("MainWindow", "Tuning"))
+        self.help_button.setText(_translate("MainWindow", "Help"))
+        self.settings_button.setText(_translate("MainWindow", "Settings"))
+        self.conversion_button.setText(_translate("MainWindow", "Mamdani to Sugeno"))
+        self.new_button.setText(_translate("MainWindow", "New"))
+        self.import_button.setText(_translate("MainWindow", "Import"))
+        self.toolButton_3.setText(_translate("MainWindow", "Export"))
