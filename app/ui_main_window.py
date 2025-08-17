@@ -18,8 +18,7 @@ class UiMainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1096, 830)
-        self.menuBar = BarMenuWidget(main_window=MainWindow, parent=MainWindow)
-        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1096, 26))
+
 
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -36,9 +35,10 @@ class UiMainWindow(object):
         self.editorTab = EditorTabWidget(parent=self.centralwidget)
         self.editorTab.setGeometry(QtCore.QRect(820, 160, 281, 641))
 
-        MainWindow.setMenuBar(self.menuBar)
         MainWindow.setCentralWidget(self.centralwidget)
 
+        self.menuBar = BarMenuWidget(main_window=MainWindow, parent=MainWindow)
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1096, 26))
 
         self.retranslateUi(MainWindow)
         self.plotTabs.setCurrentIndex(2)

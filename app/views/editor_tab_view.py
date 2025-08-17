@@ -5,7 +5,6 @@ class EditorTabWidget(QtWidgets.QTabWidget):
     add_mf_clicked = QtCore.pyqtSignal()
     remove_mf_clicked = QtCore.pyqtSignal()
 
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("editorTab")
@@ -18,6 +17,43 @@ class EditorTabWidget(QtWidgets.QTabWidget):
 
         self.fis_properties_tab = QtWidgets.QWidget()
         self.fis_properties_tab.setObjectName("fis_properties_tab")
+
+        self.system_type_label_1 = QtWidgets.QLabel(parent=self.fis_properties_tab)
+        self.system_type_label_1.setGeometry(QtCore.QRect(10, 20, 41, 21))
+        self.system_type_label_1.setObjectName("system_type_label_1")
+
+        self.system_name_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
+        self.system_name_label.setGeometry(QtCore.QRect(10, 70, 55, 16))
+        self.system_name_label.setObjectName("system_name_label")
+
+        self.and_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
+        self.and_method_label.setGeometry(QtCore.QRect(10, 110, 71, 16))
+        self.and_method_label.setObjectName("and_method_label")
+
+        self.or_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
+        self.or_method_label.setGeometry(QtCore.QRect(10, 150, 71, 16))
+        self.or_method_label.setObjectName("or_method_label")
+        self.implication_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
+        self.implication_method_label.setGeometry(QtCore.QRect(10, 190, 141, 16))
+        self.implication_method_label.setObjectName("implication_method_label")
+
+        self.aggregation_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
+        self.aggregation_method_label.setGeometry(QtCore.QRect(10, 230, 121, 16))
+        self.aggregation_method_label.setObjectName("aggregation_method_label")
+
+        self.defuzzification_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
+        self.defuzzification_method_label.setGeometry(QtCore.QRect(0, 295, 141, 21))
+        self.defuzzification_method_label.setObjectName("defuzzification_method_label")
+
+        self.defuzzification_dropdown = QtWidgets.QComboBox(parent=self.fis_properties_tab)
+        self.defuzzification_dropdown.setGeometry(QtCore.QRect(160, 290, 101, 31))
+        self.defuzzification_dropdown.setObjectName("defuzzification_dropdown")
+        self.defuzzification_dropdown.addItem("")
+        self.defuzzification_dropdown.addItem("")
+
+        self.system_type_label_2 = QtWidgets.QLabel(parent=self.fis_properties_tab)
+        self.system_type_label_2.setGeometry(QtCore.QRect(150, 20, 111, 21))
+        self.system_type_label_2.setObjectName("system_type_label_2")
 
         self.addTab(self.fis_properties_tab, "fis_properties_tab")
 
@@ -49,10 +85,30 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.mf_range_edit = QtWidgets.QLineEdit(parent=self.editor_frame)
         self.mf_range_edit.setGeometry(QtCore.QRect(110, 90, 161, 31))
         self.mf_range_edit.setObjectName("mf_range_edit")
+        #Placeholder
+        self.mf_range_edit.setText("[0 100]")
 
-        self.mf_table = QtWidgets.QTableView(parent=self.editor_frame)
+        self.mf_table = QtWidgets.QTableWidget(parent=self.editor_frame)
         self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
         self.mf_table.setObjectName("mf_table")
+
+        self.mf_table.setRowCount(2)
+        self.mf_table.setColumnCount(3)
+        self.mf_table.setColumnWidth(0, 80)
+        self.mf_table.setColumnWidth(1, 80)
+        self.mf_table.setColumnWidth(2, 100)
+
+        self.shape_select_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
+        self.shape_select_dropdown.addItems(['Gauss', 'Trapezoid', 'Triangle', 'Bell'])
+        self.shape_select_dropdown.setObjectName("shape_select_dropdown")
+
+        self.mf_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Name"))
+        self.mf_table.setItem(0, 1, QtWidgets.QTableWidgetItem("Type"))
+        self.mf_table.setItem(0, 2, QtWidgets.QTableWidgetItem("Parameters"))
+
+        self.mf_table.setItem(1, 0, QtWidgets.QTableWidgetItem("Placeholder"))
+        self.mf_table.setCellWidget(1, 1, self.shape_select_dropdown)
+        self.mf_table.setItem(1, 2, QtWidgets.QTableWidgetItem(self.mf_range_edit.text()))
 
         self.add_mf_button = QtWidgets.QPushButton(parent=self.editor_frame)
         self.add_mf_button.setGeometry(QtCore.QRect(60, 190, 93, 28))
@@ -182,6 +238,17 @@ class EditorTabWidget(QtWidgets.QTabWidget):
 
     def _retranslate_ui(self):
         _translate = QtCore.QCoreApplication.translate
+
+        self.system_type_label_1.setText(_translate("MainWindow", "Type:"))
+        self.system_name_label.setText(_translate("MainWindow", "Name"))
+        self.and_method_label.setText(_translate("MainWindow", "And method"))
+        self.or_method_label.setText(_translate("MainWindow", "Or method"))
+        self.implication_method_label.setText(_translate("MainWindow", "Implication method"))
+        self.aggregation_method_label.setText(_translate("MainWindow", "Aggregation method"))
+        self.defuzzification_method_label.setText(_translate("MainWindow", "Defuzzification method"))
+        self.defuzzification_dropdown.setItemText(0, _translate("MainWindow", "centroid"))
+        self.defuzzification_dropdown.setItemText(1, _translate("MainWindow", "bisector"))
+        self.system_type_label_2.setText(_translate("MainWindow", "System_type"))
         self.setTabText(self.indexOf(self.fis_properties_tab), _translate("MainWindow", "fisPropertiesTab"))
         self.property_editor_label.setText(_translate("MainWindow", "Property Editor"))
         self.mf_name_label.setText(_translate("MainWindow", "Name"))

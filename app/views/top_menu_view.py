@@ -6,6 +6,14 @@ class TopMenu(QtWidgets.QTabWidget):
     delete_input_clicked = QtCore.pyqtSignal()
     add_output_clicked = QtCore.pyqtSignal()
     delete_output_clicked = QtCore.pyqtSignal()
+    help_clicked = QtCore.pyqtSignal()
+    settings_clicked = QtCore.pyqtSignal()
+    conversion_clicked = QtCore.pyqtSignal()
+    new_clicked = QtCore.pyqtSignal()
+    import_clicked = QtCore.pyqtSignal()
+    export_clicked = QtCore.pyqtSignal()
+
+    system_type = 'Mamdani'
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -51,28 +59,42 @@ class TopMenu(QtWidgets.QTabWidget):
         self.help_button = QtWidgets.QPushButton(parent=self.designTab)
         self.help_button.setGeometry(QtCore.QRect(950, 20, 93, 28))
         self.help_button.setObjectName("help_button")
+        self.help_button.clicked.connect(self.help_clicked.emit)
+
         self.settings_button = QtWidgets.QPushButton(parent=self.designTab)
         self.settings_button.setGeometry(QtCore.QRect(950, 70, 93, 28))
         self.settings_button.setObjectName("settings_button")
+        self.settings_button.clicked.connect(self.settings_clicked.emit)
+
         self.conversion_button = QtWidgets.QPushButton(parent=self.designTab)
         self.conversion_button.setGeometry(QtCore.QRect(530, 30, 131, 61))
         self.conversion_button.setObjectName("conversion_button")
+        self.conversion_button.clicked.connect(self.conversion_clicked.emit)
+
         self.files_management_button_area = QtWidgets.QScrollArea(parent=self.designTab)
         self.files_management_button_area.setGeometry(QtCore.QRect(0, 0, 271, 131))
         self.files_management_button_area.setWidgetResizable(True)
         self.files_management_button_area.setObjectName("files_management_button_area")
+
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
         self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 269, 129))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+
         self.new_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
         self.new_button.setGeometry(QtCore.QRect(10, 40, 81, 41))
         self.new_button.setObjectName("new_button")
+        self.new_button.clicked.connect(self.new_clicked.emit)
+
         self.import_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
         self.import_button.setGeometry(QtCore.QRect(100, 40, 71, 41))
         self.import_button.setObjectName("import_button")
-        self.toolButton_3 = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
-        self.toolButton_3.setGeometry(QtCore.QRect(180, 41, 81, 41))
-        self.toolButton_3.setObjectName("toolButton_3")
+        self.import_button.clicked.connect(self.import_clicked.emit)
+
+        self.export_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
+        self.export_button.setGeometry(QtCore.QRect(180, 41, 81, 41))
+        self.export_button.setObjectName("export_button")
+        self.export_button.clicked.connect(self.export_clicked.emit)
+
         self.files_management_button_area.setWidget(self.scrollAreaWidgetContents)
 
         self.addTab(self.designTab, "")
@@ -90,7 +112,12 @@ class TopMenu(QtWidgets.QTabWidget):
         self.setTabText(self.indexOf(self.tuningTab), _translate("MainWindow", "Tuning"))
         self.help_button.setText(_translate("MainWindow", "Help"))
         self.settings_button.setText(_translate("MainWindow", "Settings"))
-        self.conversion_button.setText(_translate("MainWindow", "Mamdani to Sugeno"))
+        if self.system_type == 'Mamdani':
+            self.conversion_button.setText(_translate("MainWindow", "Mamdani to Sugeno"))
+        elif self.system_type == 'Sugeno':
+            self.conversion_button.setText(_translate("MainWindow", "Sugeno to Mamdani"))
+        else:
+            self.conversion_button.setText(_translate("MainWindow", "Error"))
         self.new_button.setText(_translate("MainWindow", "New"))
         self.import_button.setText(_translate("MainWindow", "Import"))
-        self.toolButton_3.setText(_translate("MainWindow", "Export"))
+        self.export_button.setText(_translate("MainWindow", "Export"))
