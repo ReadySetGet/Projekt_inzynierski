@@ -37,7 +37,7 @@ class UiMainWindow(object):
 
         MainWindow.setCentralWidget(self.centralwidget)
 
-        self.menuBar = BarMenuWidget(main_window=MainWindow, parent=MainWindow)
+        self.menuBar = BarMenuWidget(parent=MainWindow)
         self.menuBar.setGeometry(QtCore.QRect(0, 0, 1096, 26))
 
         self.retranslateUi(MainWindow)

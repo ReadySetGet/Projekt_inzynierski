@@ -2,68 +2,64 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class BarMenuWidget(QtWidgets.QMenuBar):
-    def __init__(self, main_window=None, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("barMenu")
-        self._setup_ui(main_window)
+        self._setup_ui()
         self._setup_actions()
         self._retranslate_ui()
 
-    def _setup_ui(self, main_window):
-        self.menuBar = QtWidgets.QMenuBar(parent=main_window)
-        self.menuBar.setObjectName("menuBar")
-
-        self.menu_files = QtWidgets.QMenu(parent=self.menuBar)
+    def _setup_ui(self):
+        self.menu_files = self.addMenu("Files")
         self.menu_files.setObjectName("menu_files")
 
-        self.submenu_new = QtWidgets.QMenu(parent=self.menu_files)
+        self.submenu_new = self.addMenu("New")
         self.submenu_new.setObjectName("submenu_new")
 
-        self.menu_view = QtWidgets.QMenu(parent=self.menuBar)
+        self.menu_view = self.addMenu("View")
         self.menu_view.setObjectName("menu_view")
 
-        self.submenu_convert = QtWidgets.QMenu(parent=self.menu_view)
+        self.submenu_convert = self.addMenu("Convert")
         self.submenu_convert.setObjectName("submenu_convert")
 
-        self.menu_settings = QtWidgets.QMenu(parent=self.menuBar)
+        self.menu_settings = self.addMenu("Settings")
         self.menu_settings.setObjectName("menu_settings")
 
-        self.menu_help = QtWidgets.QMenu(parent=self.menuBar)
+        self.menu_help = self.addMenu("Help")
         self.menu_help.setObjectName("menu_help")
 
-        self.action_save = QtGui.QAction(parent=main_window)
+        self.action_save = QtGui.QAction(parent=self)
         self.action_save.setObjectName("action_save")
 
-        self.action_import = QtGui.QAction(parent=main_window)
+        self.action_import = QtGui.QAction(parent=self)
         self.action_import.setObjectName("action_import")
 
-        self.action_export = QtGui.QAction(parent=main_window)
+        self.action_export = QtGui.QAction(parent=self)
         self.action_export.setObjectName("action_export")
 
-        self.action_mamdani = QtGui.QAction(parent=main_window)
+        self.action_mamdani = QtGui.QAction(parent=self)
         self.action_mamdani.setObjectName("action_mamdani")
 
-        self.action_sugeno = QtGui.QAction(parent=main_window)
+        self.action_sugeno = QtGui.QAction(parent=self)
         self.action_sugeno.setObjectName("action_sugeno")
 
-        self.action_clear_inputs = QtGui.QAction(parent=main_window)
+        self.action_clear_inputs = QtGui.QAction(parent=self)
         self.action_clear_inputs.setObjectName("action_clear_inputs")
 
-        self.action_clear_outputs = QtGui.QAction(parent=main_window)
+        self.action_clear_outputs = QtGui.QAction(parent=self)
         self.action_clear_outputs.setObjectName("action_clear_outputs")
 
-        self.action_mamdani_to_sugeno = QtGui.QAction(parent=main_window)
+        self.action_mamdani_to_sugeno = QtGui.QAction(parent=self)
         self.action_mamdani_to_sugeno.setObjectName("action_mamdani_to_sugeno")
 
-        self.action_sugeno_to_mamdani = QtGui.QAction(parent=main_window)
+        self.action_sugeno_to_mamdani = QtGui.QAction(parent=self)
         self.action_sugeno_to_mamdani.setObjectName("action_sugeno_to_mamdani")
 
-        self.actionPlaceholder = QtGui.QAction(parent=main_window)
+        self.actionPlaceholder = QtGui.QAction(parent=self)
         self.actionPlaceholder.setObjectName("actionPlaceholder")
 
-        self.actionPlaceholder_2 = QtGui.QAction(parent=main_window)
+        self.actionPlaceholder_2 = QtGui.QAction(parent=self)
         self.actionPlaceholder_2.setObjectName("actionPlaceholder_2")
-        main_window.setMenuBar(self.menuBar)
 
     def _setup_actions(self):
         self.submenu_new.addAction(self.action_mamdani)
@@ -87,10 +83,10 @@ class BarMenuWidget(QtWidgets.QMenuBar):
 
         self.menu_help.addAction(self.actionPlaceholder_2)
 
-        self.menuBar.addAction(self.menu_files.menuAction())
-        self.menuBar.addAction(self.menu_view.menuAction())
-        self.menuBar.addAction(self.menu_settings.menuAction())
-        self.menuBar.addAction(self.menu_help.menuAction())
+        self.addAction(self.menu_files.menuAction())
+        self.addAction(self.menu_view.menuAction())
+        self.addAction(self.menu_settings.menuAction())
+        self.addAction(self.menu_help.menuAction())
 
     def _retranslate_ui(self):
         _translate = QtCore.QCoreApplication.translate
