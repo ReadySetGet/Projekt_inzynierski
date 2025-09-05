@@ -1,4 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from app.views.rule_interference_view import RuleInterferenceTabWidget
 
 
 class CentralTabWidget(QtWidgets.QTabWidget):
@@ -73,6 +74,10 @@ class CentralTabWidget(QtWidgets.QTabWidget):
 
         self.addTab(self.rule_editor, "")
 
+        self.rule_interference = RuleInterferenceTabWidget()
+        self.rule_interference.setObjectName("rule_interference")
+        self.addTab(self.rule_interference, "")
+
     def _retranslate_ui(self):
         _translate = QtCore.QCoreApplication.translate
         self.setWhatsThis(_translate("MainWindow", "<html><head/><body><p><br/></p><p><br/></p></body></html>"))
@@ -83,3 +88,4 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.delete_rule_button.setText(_translate("MainWindow", "X"))
         self.system_label_2.setText(_translate("MainWindow", "System: Placeholder Name"))
         self.setTabText(self.indexOf(self.rule_editor), _translate("MainWindow", "Rule Editor"))
+        self.setTabText(self.indexOf(self.rule_interference), _translate("MainWindow", "Rule Interference"))

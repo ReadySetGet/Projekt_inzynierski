@@ -12,6 +12,7 @@ from app.views.central_tab_view import CentralTabWidget
 from app.views.browser_frame_view import BrowserFrameWidget
 from app.views.top_menu_view import TopMenu
 from app.views.bar_menu_view import BarMenuWidget
+from app.views.rule_interference_view import RuleInterferenceTabWidget
 
 
 class UiMainWindow(object):
