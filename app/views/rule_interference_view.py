@@ -1,11 +1,26 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 import pyqtgraph as pg
+import re
+
+
+def _hide_axi(plot):
+    left_axis = plot.getAxis('left')
+    left_axis.hide()
+    bottom_axis = plot.getAxis('bottom')
+    bottom_axis.hide()
 
 
 class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
     _counter_numb = 5
-    x = [1, 10]
-    y = [1, 10]
+    # Example Placeholder data
+    x = [0, 10]
+    y = [0, 10]
+    x_o = [0, 5, 10]
+    y_o = [0, 10, 0]
+    x_a = [0, 2.5, 7.5, 10]
+    y_a = [0, 5, 5, 0]
+    slider_1_value = 50
+    slider_2_value = 50
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -36,104 +51,142 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
         self.input_values_edit = QtWidgets.QLineEdit(parent=self)
         self.input_values_edit.setGeometry(QtCore.QRect(110, 40, 161, 31))
         self.input_values_edit.setObjectName("input_values_edit")
+        self.input_values_edit.textChanged.connect(self._update_from_editor_field)
 
         self.input_1_label = QtWidgets.QLabel(parent=self)
-        self.input_1_label.setGeometry(QtCore.QRect(50, 90, 101, 16))
+        self.input_1_label.setGeometry(QtCore.QRect(65, 90, 101, 16))
         self.input_1_label.setObjectName("input_1_label")
 
         self.input_2_label = QtWidgets.QLabel(parent=self)
-        self.input_2_label.setGeometry(QtCore.QRect(180, 90, 101, 16))
+        self.input_2_label.setGeometry(QtCore.QRect(195, 90, 101, 16))
         self.input_2_label.setObjectName("input_2_label")
 
         for i in range(self._counter_numb):
             counter = QtWidgets.QLabel(parent=self)
-            counter.setGeometry(QtCore.QRect(10, 140 + 50 * i, 16, 16))
+            counter.setGeometry(QtCore.QRect(10, 140 + 80 * i, 16, 16))
             counter.setText(str(i + 1))
             counter.setObjectName("counter_" + str(i + 1))
 
             connector_label = QtWidgets.QLabel(parent=self)
-            connector_label.setGeometry(QtCore.QRect(304, 130 + 50 * i, 61, 41))
+            connector_label.setGeometry(QtCore.QRect(304, 130 + 80 * i, 61, 41))
             connector_label.setObjectName("connector_label")
             connector_label.setText("<html><head/><body><p align=\"center\">AND <br/>(min)</p></body></html>")
 
+            self.activation_frame_input1 = QtWidgets.QFrame(parent=self)
+            self.activation_frame_input1.setGeometry(QtCore.QRect(30, 120 + 80 * i, 131, 61))
+            self.activation_frame_input1.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+            self.activation_frame_input1.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+            self.activation_frame_input1.setObjectName("activation_frame_input1")
+
+            frame_layout_1 = QtWidgets.QVBoxLayout(self.activation_frame_input1)
+            self.activation_plot_input1 = pg.PlotWidget()
+            self.activation_plot_input1.plot(self.x, self.y, pen='b')
+
+            _hide_axi(self.activation_plot_input1)
+            frame_layout_1.addWidget(self.activation_plot_input1)
+
+            self.activation_frame_input2 = QtWidgets.QFrame(parent=self)
+            self.activation_frame_input2.setGeometry(QtCore.QRect(170, 120 + 80 * i, 131, 61))
+            self.activation_frame_input2.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+            self.activation_frame_input2.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+            self.activation_frame_input2.setObjectName("activation_frame_input2")
+
+            frame_layout_2 = QtWidgets.QVBoxLayout(self.activation_frame_input2)
+            self.activation_plot_input2 = pg.PlotWidget()
+            self.activation_plot_input2.plot(self.x[::-1], self.y, pen='b')
+
+            _hide_axi(self.activation_plot_input2)
+            frame_layout_2.addWidget(self.activation_plot_input2)
+
+            self.activation_frame_output1 = QtWidgets.QFrame(parent=self)
+            self.activation_frame_output1.setGeometry(QtCore.QRect(370, 120 + 80 * i, 131, 61))
+            self.activation_frame_output1.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+            self.activation_frame_output1.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+            self.activation_frame_output1.setObjectName("activation_frame_output1")
+
+            frame_layout_3 = QtWidgets.QVBoxLayout(self.activation_frame_output1)
+            self.activation_plot_output1 = pg.PlotWidget()
+
+            self.activation_plot_output1.plot(self.x_o, self.y_o, pen='b')
+            self.activation_plot_output1.plot(self.x_a, self.y_a, brush='b', fillLevel=0.0)
+
+            _hide_axi(self.activation_plot_output1)
+            frame_layout_3.addWidget(self.activation_plot_output1)
+
         self.output_label = QtWidgets.QLabel(parent=self)
-        self.output_label.setGeometry(QtCore.QRect(380, 90, 101, 20))
+        self.output_label.setGeometry(QtCore.QRect(395, 90, 101, 20))
         self.output_label.setObjectName("output_label")
 
-        self.activation_frame_input1 = QtWidgets.QFrame(parent=self)
-        self.activation_frame_input1.setGeometry(QtCore.QRect(30, 120, 131, 61))
-        self.activation_frame_input1.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
-        self.activation_frame_input1.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-        self.activation_frame_input1.setObjectName("activation_frame_input1")
-
-        frame_layout_1 = QtWidgets.QVBoxLayout(self.activation_frame_input1)
-        self.activation_plot_input1 = pg.PlotWidget()
-        self.activation_plot_input1.plot(self.x, self.y, pen='b', )
-
-        self._hide_axi(self.activation_plot_input1)
-        frame_layout_1.addWidget(self.activation_plot_input1)
-
-        self.activation_frame_input2 = QtWidgets.QFrame(parent=self)
-        self.activation_frame_input2.setGeometry(QtCore.QRect(170, 120, 131, 61))
-        self.activation_frame_input2.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
-        self.activation_frame_input2.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-        self.activation_frame_input2.setObjectName("activation_frame_input2")
-
-        frame_layout_2 = QtWidgets.QVBoxLayout(self.activation_frame_input2)
-        self.activation_plot_input2 = pg.PlotWidget()
-        self.activation_plot_input2.plot(self.x[::-1], self.y, pen='b', )
-
-        self._hide_axi(self.activation_plot_input2)
-        frame_layout_2.addWidget(self.activation_plot_input2)
-
-        self.activation_frame_output1 = QtWidgets.QFrame(parent=self)
-        self.activation_frame_output1.setGeometry(QtCore.QRect(370, 120, 131, 61))
-        self.activation_frame_output1.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
-        self.activation_frame_output1.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-        self.activation_frame_output1.setObjectName("activation_frame_output1")
-
-        frame_layout_3 = QtWidgets.QVBoxLayout(self.activation_frame_output1)
-        self.activation_plot_output1 = pg.PlotWidget()
-        x_o = [1, 5, 10]
-        y_o = [1, 5, 1]
-        self.activation_plot_output1.plot(x_o, y_o, pen='b',)
-
-        self._hide_axi(self.activation_plot_output1)
-        frame_layout_3.addWidget(self.activation_plot_output1)
-
         self.result_frame = QtWidgets.QFrame(parent=self)
-        self.result_frame.setGeometry(QtCore.QRect(370, 200, 131, 61))
+        self.result_frame.setGeometry(QtCore.QRect(370, 200 + + 60 * self._counter_numb, 131, 61))
         self.result_frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.result_frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.result_frame.setObjectName("result_frame")
 
+        result_layout = QtWidgets.QVBoxLayout(self.result_frame)
+
+        self.result_plot = pg.PlotWidget()
+        self.result_plot.plot(self.x_a, self.y_a, pen='b', brush='b', fillLevel=0.0)
+        _hide_axi(self.result_plot)
+
+        result_layout.addWidget(self.result_plot)
+
         self.horizontalSlider = QtWidgets.QSlider(parent=self)
-        self.horizontalSlider.setGeometry(QtCore.QRect(30, 200, 121, 22))
+        self.horizontalSlider.setGeometry(QtCore.QRect(30, 200 + 60 * self._counter_numb, 121, 22))
         self.horizontalSlider.setOrientation(QtCore.Qt.Orientation.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
+        self.horizontalSlider.setValue(self.slider_1_value)
+        self.horizontalSlider.valueChanged.connect(self._update_from_sliders)
 
         self.horizontalSlider_2 = QtWidgets.QSlider(parent=self)
-        self.horizontalSlider_2.setGeometry(QtCore.QRect(170, 200, 121, 22))
+        self.horizontalSlider_2.setGeometry(QtCore.QRect(170, 200 + 60 * self._counter_numb, 121, 22))
         self.horizontalSlider_2.setOrientation(QtCore.Qt.Orientation.Horizontal)
         self.horizontalSlider_2.setObjectName("horizontalSlider_2")
+        self.horizontalSlider_2.setValue(self.slider_2_value)
+        self.horizontalSlider_2.valueChanged.connect(self._update_from_sliders)
 
     def _retranslate_ui(self):
         _translate = QtCore.QCoreApplication.translate
         self.system_label.setText(_translate("MainWindow", "System:"))
         self.name_label.setText(_translate("MainWindow", "Placeholder"))
         self.input_values_label.setText(_translate("MainWindow", "Input values"))
-        self.input_values_edit.setText(_translate("MainWindow", "[50, 50]"))
+
+        self.input_values_edit.setText(_translate("MainWindow", f"{self.slider_1_value}, {self.slider_2_value}"))
         self.input_1_label.setText(_translate("MainWindow",
-                                              "<html><head/><body><p><span style=\" font-weight:600;\">Input 1 = 50</span></p></body></html>"))
+                                              f"<html><head/><body><p><span style=\" font-weight:600;\">"
+                                              f"Input 1 = {self.slider_1_value}</span></p></body></html>"))
         self.input_2_label.setText(_translate("MainWindow",
-                                              "<html><head/><body><p><span style=\" font-weight:600;\">Input 2 = 50</span></p></body></html>"))
-        #self.counter.setText(_translate("MainWindow", "1"))
+                                              f"<html><head/><body><p><span style=\" font-weight:600;\">"
+                                              f"Input 2 = {self.slider_2_value}</span></p></body></html>"))
         self.output_label.setText(_translate("MainWindow",
                                              "<html><head/><body><p><span style=\" font-weight:600;\">Output 1 = 50</span></p></body></html>"))
-        #self.connector_label.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\">AND <br/>(min)</p></body></html>"))
 
-    def _hide_axi(self, plot):
-        left_axis = plot.getAxis('left')
-        left_axis.hide()
-        bottom_axis = plot.getAxis('bottom')
-        bottom_axis.hide()
+    def _update_from_sliders(self):
+        self.slider_1_value = self.horizontalSlider.value()
+        self.slider_2_value = self.horizontalSlider_2.value()
+        self.input_values_edit.setText(f"{self.slider_1_value}, {self.slider_2_value}")
+        self.input_1_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
+                                   f"Input 1 = {self.slider_1_value}</span></p></body></html>")
+        self.input_2_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
+                                   f"Input 2 = {self.slider_2_value}</span></p></body></html>")
+
+    def _update_from_editor_field(self):
+        # extract numbers from garbage string:
+        s = self.input_values_edit.text()
+        newstr = ''.join((ch if ch in '0123456789.-' else ' ') for ch in s)
+        list_of_numbers = [int(i) for i in newstr.split()]
+
+        self.slider_1_value = list_of_numbers[0]
+        self.slider_2_value = list_of_numbers[1]
+
+        self.horizontalSlider.setValue(self.slider_1_value)
+        self.horizontalSlider_2.setValue(self.slider_2_value)
+
+        self.input_1_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
+                                   f"Input 1 = {self.slider_1_value}</span></p></body></html>")
+        self.input_2_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
+                                   f"Input 2 = {self.slider_2_value}</span></p></body></html>")
+
+
+
+

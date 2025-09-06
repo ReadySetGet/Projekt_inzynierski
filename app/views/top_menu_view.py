@@ -97,6 +97,25 @@ class TopMenu(QtWidgets.QTabWidget):
 
         self.files_management_button_area.setWidget(self.scrollAreaWidgetContents)
 
+        self.files_management_button_area_2 = QtWidgets.QScrollArea(parent=self.designTab)
+        self.files_management_button_area_2.setGeometry(QtCore.QRect(670, 0, 201, 131))
+        self.files_management_button_area_2.setWidgetResizable(True)
+        self.files_management_button_area_2.setObjectName("files_management_button_area_2")
+
+        self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 199, 129))
+        self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
+
+        self.interference_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents_2)
+        self.interference_button.setGeometry(QtCore.QRect(10, 40, 81, 61))
+        self.interference_button.setObjectName("interference_button")
+
+        self.surface_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents_2)
+        self.surface_button.setGeometry(QtCore.QRect(110, 40, 81, 61))
+        self.surface_button.setObjectName("surface_button")
+
+        self.files_management_button_area_2.setWidget(self.scrollAreaWidgetContents_2)
+
         self.addTab(self.designTab, "")
         self.tuningTab = QtWidgets.QWidget()
         self.tuningTab.setObjectName("tuningTab")
@@ -121,3 +140,7 @@ class TopMenu(QtWidgets.QTabWidget):
         self.new_button.setText(_translate("MainWindow", "New"))
         self.import_button.setText(_translate("MainWindow", "Import"))
         self.export_button.setText(_translate("MainWindow", "Export"))
+        self.interference_button.setText(_translate("MainWindow", "Rule \n"
+                                                                  "Interference"))
+        self.surface_button.setText(_translate("MainWindow", "Control\n"
+                                                             "Surface"))
