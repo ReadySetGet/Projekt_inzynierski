@@ -4,6 +4,8 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class EditorTabWidget(QtWidgets.QTabWidget):
     add_mf_clicked = QtCore.pyqtSignal()
     remove_mf_clicked = QtCore.pyqtSignal()
+    row = 1
+    column = 2
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -88,6 +90,7 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         #Placeholder
         self.mf_range_edit.setText("[0 100]")
 
+
         self.mf_table = QtWidgets.QTableWidget(parent=self.editor_frame)
         self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
         self.mf_table.setObjectName("mf_table")
@@ -109,6 +112,8 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.mf_table.setItem(1, 0, QtWidgets.QTableWidgetItem("Placeholder"))
         self.mf_table.setCellWidget(1, 1, self.shape_select_dropdown)
         self.mf_table.setItem(1, 2, QtWidgets.QTableWidgetItem(self.mf_range_edit.text()))
+
+        self.mf_range_edit.textChanged.connect(self.set_table_text)
 
         self.add_mf_button = QtWidgets.QPushButton(parent=self.editor_frame)
         self.add_mf_button.setGeometry(QtCore.QRect(60, 190, 93, 28))
@@ -280,3 +285,8 @@ class EditorTabWidget(QtWidgets.QTabWidget):
 
     def set_number_of_mf(self, count: int):
         self.number_of_mf_label.setText(f"Number of MF: {count}")
+
+    def set_table_text(self):
+        self.mf_table.item(self.row, self.column).setText(self.mf_range_edit.text())
+
+
