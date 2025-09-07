@@ -3,7 +3,7 @@ import pyqtgraph as pg
 import re
 
 
-def _hide_axi(plot):
+def hide_axi(plot):
     left_axis = plot.getAxis('left')
     left_axis.hide()
     bottom_axis = plot.getAxis('bottom')
@@ -82,7 +82,7 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
             self.activation_plot_input1 = pg.PlotWidget()
             self.activation_plot_input1.plot(self.x, self.y, pen='b')
 
-            _hide_axi(self.activation_plot_input1)
+            hide_axi(self.activation_plot_input1)
             frame_layout_1.addWidget(self.activation_plot_input1)
 
             self.activation_frame_input2 = QtWidgets.QFrame(parent=self)
@@ -95,7 +95,7 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
             self.activation_plot_input2 = pg.PlotWidget()
             self.activation_plot_input2.plot(self.x[::-1], self.y, pen='b')
 
-            _hide_axi(self.activation_plot_input2)
+            hide_axi(self.activation_plot_input2)
             frame_layout_2.addWidget(self.activation_plot_input2)
 
             self.activation_frame_output1 = QtWidgets.QFrame(parent=self)
@@ -110,7 +110,7 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
             self.activation_plot_output1.plot(self.x_o, self.y_o, pen='b')
             self.activation_plot_output1.plot(self.x_a, self.y_a, brush='b', fillLevel=0.0)
 
-            _hide_axi(self.activation_plot_output1)
+            hide_axi(self.activation_plot_output1)
             frame_layout_3.addWidget(self.activation_plot_output1)
 
         self.output_label = QtWidgets.QLabel(parent=self)
@@ -127,7 +127,7 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
 
         self.result_plot = pg.PlotWidget()
         self.result_plot.plot(self.x_a, self.y_a, pen='b', brush='b', fillLevel=0.0)
-        _hide_axi(self.result_plot)
+        hide_axi(self.result_plot)
 
         result_layout.addWidget(self.result_plot)
 
