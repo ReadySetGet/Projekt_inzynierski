@@ -1,17 +1,34 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from app.views.rule_interference_view import RuleInterferenceTabWidget, hide_axi
+from app.views.rule_interference_view import RuleInterferenceTabWidget
 import numpy as np
 import pyqtgraph as pg
+from app.views.triangle_plot import TrianglePlot
+from app.views.trapezoid_plot import TrapezoidPlot
+from app.views.gauss_plot import GaussPlot
+from app.views.bell_plot import BellPlot
 
 
 class CentralTabWidget(QtWidgets.QTabWidget):
     addRuleClicked = QtCore.pyqtSignal()
     deleteRuleClicked = QtCore.pyqtSignal()
-    #Poprawić skalę, podzielić na klasy ig
-    tri_x = [0, 2.5, 5, 7.5, 10]
-    tri_y = [0, 0, 10, 0, 0]
-    trap_x = [0, 1, 2.5, 7.5, 9, 10]
-    trap_y = [0, 0, 10, 10, 0, 0]
+    tri_x = [0.0, 25, 50, 75, 100]
+    tri_y = [0.0, 0, 1, 0, 0]
+    trap_x = [0.0, 10, 25, 75, 90, 100]
+    trap_y = [0.0, 0, 1, 1, 0, 0]
+
+    mu = 50
+    sigma = 16.67
+    gauss_x = np.linspace(0, 100, 200)
+    gauss_y = np.exp(-(1/2) * ((gauss_x - mu) / sigma)**2)
+
+    a = 20.0
+    b = 2.0
+    c = 50.0
+    bell_x = np.linspace(0, 100, 200)
+    bell_y = 1 / (1 + np.abs((bell_x - c) / a)**(2 * b))
+
+
+    variable = "Name"
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -43,72 +60,43 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         frame_layout = QtWidgets.QVBoxLayout(self.plot_frame)
         self.mf_plot_graph = pg.PlotWidget()
 
-        self.triangle_central_anchor = pg.TargetItem(
-            pos=(self.tri_x[2], self.tri_y[2]),
-            size=10,
-            symbol='o',
-            pen="b",
-            brush='b'
+        self.triangle = (TrianglePlot(
+            plot_widget=self.mf_plot_graph,
+            x_data=self.tri_x,
+            y_data=self.tri_y,
+            color='b'
+            )
         )
-        self.triangle_central_anchor.sigPositionChanged.connect(self._central_triangle_interaction)
 
-        self.triangle_left_anchor = pg.TargetItem(
-            pos=(self.tri_x[1], self.tri_y[1]),
-            size=10,
-            symbol='o',
-            pen="b",
-            brush='b'
-        )
-        self.triangle_left_anchor.sigPositionChanged.connect(self._left_triangle_interaction)
+        #self.trapezoid = (TrapezoidPlot(
+        #    plot_widget=self.mf_plot_graph,
+        #    x_data=self.trap_x,
+        #    y_data=self.trap_y,
+        #    color='r'
+        #))
 
-        self.triangle_right_anchor = pg.TargetItem(
-            pos=(self.tri_x[3], self.tri_y[3]),
-            size=10,
-            symbol='o',
-            pen="b",
-            brush='b'
-        )
-        self.triangle_right_anchor.sigPositionChanged.connect(self._right_triangle_interaction)
+        self.gauss = (GaussPlot(
+            plot_widget=self.mf_plot_graph,
+            x_data=self.gauss_x,
+            y_data=self.gauss_y,
+            sigma_data=self.sigma,
+            mu_data=self.mu,
+            color='#22B14C'
+        ))
 
-        self.trapezoid_left_down_anchor = pg.TargetItem(
-            pos=(self.trap_x[1], self.trap_y[1]),
-            size=10,
-            symbol='o',
-            pen="r",
-            brush='r'
-        )
-        self.trapezoid_left_down_anchor.sigPositionChanged.connect(self._left_down_trap_interaction)
+        self.bell = (BellPlot(
+            plot_widget=self.mf_plot_graph,
+            x_data=self.bell_x,
+            y_data=self.bell_y,
+            a_data=self.a,
+            b_data=self.b,
+            c_data=self.c,
+            color='#B14D04'
+        ))
 
-        self.trapezoid_left_up_anchor = pg.TargetItem(
-            pos=(self.trap_x[2], self.trap_y[2]),
-            size=10,
-            symbol='o',
-            pen="r",
-            brush='r'
-        )
-        self.trapezoid_left_up_anchor.sigPositionChanged.connect(self._left_up_trap_interaction)
-
-        self.trapezoid_right_up_anchor = pg.TargetItem(
-            pos=(self.trap_x[3], self.trap_y[3]),
-            size=10,
-            symbol='o',
-            pen="r",
-            brush='r'
-        )
-        self.trapezoid_right_up_anchor.sigPositionChanged.connect(self._right_up_trap_interaction)
-
-        self.trapezoid_right_down_anchor = pg.TargetItem(
-            pos=(self.trap_x[4], self.trap_y[4]),
-            size=10,
-            symbol='o',
-            pen="r",
-            brush='r'
-        )
-        self.trapezoid_right_down_anchor.sigPositionChanged.connect(self._right_down_trap_interaction)
-
-        hide_axi(self.mf_plot_graph)
-
-        self._plot_all()
+        self.mf_plot_graph.setTitle("Membership Function Plot", color="black")
+        self.mf_plot_graph.setLabel("left", "Degree of Membership", color="black")
+        self.mf_plot_graph.setLabel("bottom", f"Input variable: {self.variable}", color="black")
 
         frame_layout.addWidget(self.mf_plot_graph)
 
@@ -169,78 +157,3 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.system_label_2.setText(_translate("MainWindow", "System: Placeholder Name"))
         self.setTabText(self.indexOf(self.rule_editor), _translate("MainWindow", "Rule Editor"))
         self.setTabText(self.indexOf(self.rule_interference), _translate("MainWindow", "Rule Interference"))
-
-    def _central_triangle_interaction(self):
-        if (self.triangle_central_anchor.pos().x() > self.triangle_right_anchor.pos().x()
-                or self.triangle_central_anchor.pos().x() < self.triangle_left_anchor.pos().x()):
-            self.triangle_central_anchor.setPos(self.tri_x[2], self.tri_y[2])
-        else:
-            self.triangle_central_anchor.setPos(self.triangle_central_anchor.pos().x(), self.tri_y[2])
-            self.tri_x[2] = self.triangle_central_anchor.pos().x()
-        self._plot_all()
-
-    def _left_triangle_interaction(self):
-        if (self.triangle_left_anchor.pos().x() > self.triangle_central_anchor.pos().x()
-                or self.triangle_left_anchor.pos().x() < 0):
-            self.triangle_left_anchor.setPos(self.tri_x[1], self.tri_y[1])
-        else:
-            self.triangle_left_anchor.setPos(self.triangle_left_anchor.pos().x(),self.tri_y[1])
-            self.tri_x[1] = self.triangle_left_anchor.pos().x()
-        self._plot_all()
-
-    def _right_triangle_interaction(self):
-        if (self.triangle_right_anchor.pos().x() < self.triangle_central_anchor.pos().x()
-                or self.triangle_right_anchor.pos().x() > 10):
-            self.triangle_right_anchor.setPos(self.tri_x[3], self.tri_y[3])
-        else:
-            self.triangle_right_anchor.setPos(self.triangle_right_anchor.pos().x(), self.tri_y[3])
-            self.tri_x[3] = self.triangle_right_anchor.pos().x()
-        self._plot_all()
-
-    def _left_down_trap_interaction(self):
-        if (self.trapezoid_left_down_anchor.pos().x() < 0
-                or self.trapezoid_left_down_anchor.pos().x() > self.trapezoid_left_up_anchor.pos().x()):
-            self.trapezoid_left_down_anchor.setPos(self.trap_x[1], self.trap_y[1])
-        else:
-            self.trapezoid_left_down_anchor.setPos(self.trapezoid_left_down_anchor.pos().x(), self.trap_y[1])
-            self.trap_x[1] = self.trapezoid_left_down_anchor.pos().x()
-        self._plot_all()
-
-    def _left_up_trap_interaction(self):
-        if (self.trapezoid_left_up_anchor.pos().x() < self.trapezoid_left_down_anchor.pos().x()
-                or self.trapezoid_left_up_anchor.pos().x() > self.trapezoid_right_up_anchor.pos().x()):
-            self.trapezoid_left_up_anchor.setPos(self.trap_x[2], self.trap_y[2])
-        else:
-            self.trapezoid_left_up_anchor.setPos(self.trapezoid_left_up_anchor.pos().x(), self.trap_y[2])
-            self.trap_x[2] = self.trapezoid_left_up_anchor.pos().x()
-        self._plot_all()
-
-    def _right_up_trap_interaction(self):
-        if (self.trapezoid_right_up_anchor.pos().x() < self.trapezoid_left_up_anchor.pos().x()
-                or self.trapezoid_right_up_anchor.pos().x() > self.trapezoid_right_down_anchor.pos().x()):
-            self.trapezoid_right_up_anchor.setPos(self.trap_x[3], self.trap_y[3])
-        else:
-            self.trapezoid_right_up_anchor.setPos(self.trapezoid_right_up_anchor.pos().x(), self.trap_y[3])
-            self.trap_x[3] = self.trapezoid_right_up_anchor.pos().x()
-        self._plot_all()
-
-    def _right_down_trap_interaction(self):
-        if (self.trapezoid_right_down_anchor.pos().x() < self.trapezoid_right_up_anchor.pos().x()
-                or self.trapezoid_right_down_anchor.pos().x() > 10):
-            self.trapezoid_right_down_anchor.setPos(self.trap_x[4], self.trap_y[4])
-        else:
-            self.trapezoid_right_down_anchor.setPos(self.trapezoid_right_down_anchor.pos().x(), self.trap_y[4])
-            self.trap_x[4] = self.trapezoid_right_down_anchor.pos().x()
-        self._plot_all()
-
-    def _plot_all(self):
-        self.mf_plot_graph.clear()
-        self.mf_plot_graph.plot(self.tri_x, self.tri_y, pen='b')
-        self.mf_plot_graph.addItem(self.triangle_central_anchor)
-        self.mf_plot_graph.addItem(self.triangle_left_anchor)
-        self.mf_plot_graph.addItem(self.triangle_right_anchor)
-        self.mf_plot_graph.plot(self.trap_x, self.trap_y, pen='r')
-        self.mf_plot_graph.addItem(self.trapezoid_left_down_anchor)
-        self.mf_plot_graph.addItem(self.trapezoid_left_up_anchor)
-        self.mf_plot_graph.addItem(self.trapezoid_right_up_anchor)
-        self.mf_plot_graph.addItem(self.trapezoid_right_down_anchor)
