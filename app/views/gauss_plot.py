@@ -32,8 +32,18 @@ class GaussPlot:
         )
         self.gauss_right_anchor.sigPositionChanged.connect(self._right_gauss_interaction)
 
+        self.position_anchor = pg.TargetItem(
+            pos=(self.mu, 0),
+            size=10,
+            symbol='s',
+            pen=self.color,
+            brush=self.color
+        )
+        self.position_anchor.sigPositionChanged.connect(self._change_position)
+
         self.plot_widget.addItem(self.gauss_left_anchor)
         self.plot_widget.addItem(self.gauss_right_anchor)
+        self.plot_widget.addItem(self.position_anchor)
 
     def _left_gauss_interaction(self):
         new_pos = self.gauss_left_anchor.pos()
@@ -51,6 +61,18 @@ class GaussPlot:
             self.sigma = new_sigma
         self.gauss_left_anchor.setPos(self.mu - self.sigma, np.exp(-0.5))
         self.gauss_right_anchor.setPos(self.mu + self.sigma, np.exp(-0.5))
+        self._update_plot()
+
+    def _change_position(self):
+        if 0 < self.position_anchor.pos().x() < 100:
+            dif = self.mu - self.position_anchor.pos().x()
+            self.gauss_x = np.array([(x - dif) for x in self.gauss_x])
+            self.mu = self.position_anchor.pos().x()
+            self.position_anchor.setPos(self.position_anchor.pos().x(), 0)
+            self.gauss_left_anchor.setPos(self.mu - self.sigma, np.exp(-0.5))
+            self.gauss_right_anchor.setPos(self.mu + self.sigma, np.exp(-0.5))
+        else:
+            self.position_anchor.setPos(self.mu, 0)
         self._update_plot()
 
     def _update_plot(self):
