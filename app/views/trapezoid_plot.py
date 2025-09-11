@@ -3,11 +3,12 @@ import pyqtgraph as pg
 
 class TrapezoidPlot:
 
-    def __init__(self, plot_widget, x_data, y_data, color):
+    def __init__(self, plot_widget, x_data, y_data, color, central_x):
         self.plot_widget = plot_widget
         self.trap_x = x_data
         self.trap_y = y_data
         self.color = color
+        self.central_x = central_x
 
         self.trapezoid_plot_line = self.plot_widget.plot(
             self.trap_x,
@@ -49,13 +50,22 @@ class TrapezoidPlot:
             pen=self.color,
             brush=self.color
         )
-
         self.trapezoid_right_down_anchor.sigPositionChanged.connect(self._right_down_trap_interaction)
+
+        self.position_anchor = pg.TargetItem(
+            pos=(self.central_x, 0),
+            size=10,
+            symbol='s',
+            pen=self.color,
+            brush=self.color
+        )
+        self.position_anchor.sigPositionChanged.connect(self._change_position)
 
         self.plot_widget.addItem(self.trapezoid_right_up_anchor)
         self.plot_widget.addItem(self.trapezoid_left_up_anchor)
         self.plot_widget.addItem(self.trapezoid_left_down_anchor)
         self.plot_widget.addItem(self.trapezoid_right_down_anchor)
+        self.plot_widget.addItem(self.position_anchor)
 
     def _left_down_trap_interaction(self):
         if (self.trapezoid_left_down_anchor.pos().x() < 0
@@ -91,6 +101,21 @@ class TrapezoidPlot:
         else:
             self.trapezoid_right_down_anchor.setPos(self.trapezoid_right_down_anchor.pos().x(), self.trap_y[4])
             self.trap_x[4] = self.trapezoid_right_down_anchor.pos().x()
+        self._update_plot()
+
+    def _change_position(self):
+        if 0 < self.position_anchor.pos().x() < 100:
+            dif = self.central_x - self.position_anchor.pos().x()
+            self.trap_x = [x - dif for x in self.trap_x]
+            self.central_x = self.position_anchor.pos().x()
+            self.position_anchor.setPos(self.position_anchor.pos().x(), 0)
+            self.trapezoid_left_down_anchor.setPos(self.trap_x[1], self.trap_y[1])
+            self.trapezoid_left_up_anchor.setPos(self.trap_x[2], self.trap_y[2])
+            self.trapezoid_right_up_anchor.setPos(self.trap_x[3], self.trap_y[3])
+            self.trapezoid_right_down_anchor.setPos(self.trap_x[4], self.trap_y[4])
+
+        else:
+            self.position_anchor.setPos(self.central_x, 0)
         self._update_plot()
 
     def _update_plot(self):

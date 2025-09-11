@@ -11,20 +11,20 @@ from app.views.bell_plot import BellPlot
 class CentralTabWidget(QtWidgets.QTabWidget):
     addRuleClicked = QtCore.pyqtSignal()
     deleteRuleClicked = QtCore.pyqtSignal()
-    tri_x = [0.0, 25, 50, 75, 100]
+    tri_x = [-100.0, 25, 50, 75, 200]
     tri_y = [0.0, 0, 1, 0, 0]
-    trap_x = [0.0, 10, 25, 75, 90, 100]
+    trap_x = [-100.0, 10, 25, 75, 90, 200]
     trap_y = [0.0, 0, 1, 1, 0, 0]
 
     mu = 50
     sigma = 16.67
-    gauss_x = np.linspace(0, 100, 200)
+    gauss_x = np.linspace(-100, 200, 400)
     gauss_y = np.exp(-(1/2) * ((gauss_x - mu) / sigma)**2)
 
     a = 20.0
     b = 2.0
     c = 50.0
-    bell_x = np.linspace(0, 100, 200)
+    bell_x = np.linspace(-100, 200, 200)
     bell_y = 1 / (1 + np.abs((bell_x - c) / a)**(2 * b))
 
 
@@ -59,21 +59,24 @@ class CentralTabWidget(QtWidgets.QTabWidget):
 
         frame_layout = QtWidgets.QVBoxLayout(self.plot_frame)
         self.mf_plot_graph = pg.PlotWidget()
+        self.mf_plot_graph.setXRange(0,100)
 
         self.triangle = (TrianglePlot(
             plot_widget=self.mf_plot_graph,
             x_data=self.tri_x,
             y_data=self.tri_y,
-            color='b'
+            color='b',
+            central_x=50
             )
         )
 
-        #self.trapezoid = (TrapezoidPlot(
-        #    plot_widget=self.mf_plot_graph,
-        #    x_data=self.trap_x,
-        #    y_data=self.trap_y,
-        #    color='r'
-        #))
+        self.trapezoid = (TrapezoidPlot(
+            plot_widget=self.mf_plot_graph,
+            x_data=self.trap_x,
+            y_data=self.trap_y,
+            color='r',
+            central_x=50
+        ))
 
         self.gauss = (GaussPlot(
             plot_widget=self.mf_plot_graph,
