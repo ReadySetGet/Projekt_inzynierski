@@ -1,4 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from app.views.area_plot_view import AreaPlot
 
 
 class TopMenu(QtWidgets.QTabWidget):
@@ -18,6 +19,7 @@ class TopMenu(QtWidgets.QTabWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("topMenu")
+        self.w = None
         self._setup_ui()
         self._retranslate_ui()
 
@@ -113,6 +115,7 @@ class TopMenu(QtWidgets.QTabWidget):
         self.surface_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents_2)
         self.surface_button.setGeometry(QtCore.QRect(110, 40, 81, 61))
         self.surface_button.setObjectName("surface_button")
+        self.surface_button.clicked.connect(self._show_area_plot_window)
 
         self.files_management_button_area_2.setWidget(self.scrollAreaWidgetContents_2)
 
@@ -144,3 +147,8 @@ class TopMenu(QtWidgets.QTabWidget):
                                                                   "Interference"))
         self.surface_button.setText(_translate("MainWindow", "Control\n"
                                                              "Surface"))
+
+    def _show_area_plot_window(self):
+        if self.w is None:
+            self.w = AreaPlot()
+        self.w.show()

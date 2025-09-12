@@ -27,7 +27,6 @@ class CentralTabWidget(QtWidgets.QTabWidget):
     bell_x = np.linspace(-100, 200, 200)
     bell_y = 1 / (1 + np.abs((bell_x - c) / a)**(2 * b))
 
-
     variable = "Name"
 
     def __init__(self, parent=None):
