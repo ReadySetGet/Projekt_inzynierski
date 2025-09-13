@@ -1,5 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from app.views.area_plot_view import AreaPlot
+from app.views.settings_view import SettingsView
 
 
 class TopMenu(QtWidgets.QTabWidget):
@@ -18,6 +19,7 @@ class TopMenu(QtWidgets.QTabWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.s = None
         self.setObjectName("topMenu")
         self.w = None
         self._setup_ui()
@@ -66,7 +68,7 @@ class TopMenu(QtWidgets.QTabWidget):
         self.settings_button = QtWidgets.QPushButton(parent=self.designTab)
         self.settings_button.setGeometry(QtCore.QRect(950, 70, 93, 28))
         self.settings_button.setObjectName("settings_button")
-        self.settings_button.clicked.connect(self.settings_clicked.emit)
+        self.settings_button.clicked.connect(self._show_settings_window)
 
         self.conversion_button = QtWidgets.QPushButton(parent=self.designTab)
         self.conversion_button.setGeometry(QtCore.QRect(530, 30, 131, 61))
@@ -152,3 +154,8 @@ class TopMenu(QtWidgets.QTabWidget):
         if self.w is None:
             self.w = AreaPlot()
         self.w.show()
+
+    def _show_settings_window(self):
+        if self.s is None:
+            self.s = SettingsView()
+        self.s.show()
