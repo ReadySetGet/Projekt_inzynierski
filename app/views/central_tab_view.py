@@ -6,6 +6,8 @@ from app.views.triangle_plot import TrianglePlot
 from app.views.trapezoid_plot import TrapezoidPlot
 from app.views.gauss_plot import GaussPlot
 from app.views.bell_plot import BellPlot
+from app.views.rule import Rule
+from app.views.in_output import InOutput
 
 
 class CentralTabWidget(QtWidgets.QTabWidget):
@@ -15,6 +17,19 @@ class CentralTabWidget(QtWidgets.QTabWidget):
     tri_y = [0.0, 0, 1, 0, 0]
     trap_x = [-100.0, 10, 25, 75, 90, 200]
     trap_y = [0.0, 0, 1, 1, 0, 0]
+
+    inputs = []
+    input_1 = InOutput("wysokie", ["wysokie", "przeciętne", "niskie"])
+    input_2 = InOutput("drzewa", ["obiekt", "drzewo"])
+    inputs.append(input_1)
+    inputs.append(input_2)
+
+    outputs = []
+    output = InOutput("wysokie drzewa", ["niski obiekt", "średni obiekt", "wysoki obiekt",
+                                         "niskie drzewo", "średnie drzewo", "wysokie drzewo"])
+    outputs.append(output)
+
+    rules = []
 
     mu = 50
     sigma = 16.67
@@ -116,11 +131,26 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.rule_editor = QtWidgets.QWidget()
         self.rule_editor.setObjectName("rule_editor")
 
+        self.add_all_rules_button = QtWidgets.QPushButton(parent=self.rule_editor)
+        self.add_all_rules_button.setGeometry(QtCore.QRect(20, 60, 140, 28))
+        self.add_all_rules_button.setObjectName("add_all_rules")
+        self.add_all_rules_button.clicked.connect(self.generateRules)
+
         self.table_widget = QtWidgets.QTableWidget(parent=self.rule_editor)
         self.table_widget.setGeometry(QtCore.QRect(20, 100, 431, 491))
         self.table_widget.setObjectName("table_widget")
-        self.table_widget.setColumnCount(0)
-        self.table_widget.setRowCount(0)
+        self.table_widget.setRowCount(1)
+        self.table_widget.setColumnCount(3)
+        self.table_widget.setColumnWidth(0, 314)
+        self.table_widget.setColumnWidth(1, 50)
+        self.table_widget.setColumnWidth(2, 50)
+
+        self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
+
+        self.clear_rules_button = QtWidgets.QPushButton(parent=self.rule_editor)
+        self.clear_rules_button.setGeometry(QtCore.QRect(180, 60, 100, 28))
+        self.clear_rules_button.setObjectName("clear_rules")
+        self.clear_rules_button.clicked.connect(self.clearTable)
 
         self.add_rule_button = QtWidgets.QPushButton(parent=self.rule_editor)
         self.add_rule_button.setGeometry(QtCore.QRect(460, 100, 41, 28))
@@ -153,9 +183,52 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.setWhatsThis(_translate("MainWindow", "<html><head/><body><p><br/></p><p><br/></p></body></html>"))
         self.setTabText(self.indexOf(self.fis_plot), _translate("MainWindow", "FIS Plot"))
         self.system_name_label.setText(_translate("MainWindow", "System: Placeholder Name"))
+        self.add_all_rules_button.setText(_translate("MainWindow", "Add All Possible Rules"))
         self.setTabText(self.indexOf(self.mf_plot), _translate("MainWindow", "MF Editor"))
+        self.clear_rules_button.setText(_translate("MainWindow", "Clear Rules"))
         self.add_rule_button.setText(_translate("MainWindow", "+"))
         self.delete_rule_button.setText(_translate("MainWindow", "X"))
         self.system_label_2.setText(_translate("MainWindow", "System: Placeholder Name"))
         self.setTabText(self.indexOf(self.rule_editor), _translate("MainWindow", "Rule Editor"))
         self.setTabText(self.indexOf(self.rule_interference), _translate("MainWindow", "Rule Interference"))
+
+
+    #Placeholder bo nie mam danych z back endu jak to generować
+    def generateRules(self):
+        in_numb = len(self.inputs)
+        out_numb = len(self.outputs)
+
+        for i in range(in_numb-1):
+            input1 = self.inputs[i]
+            input2 = self.inputs[i+1]
+            for j in range(out_numb):
+                output = self.outputs[j]
+                input1_mfs = input1.GetMfs()
+                input2_mfs = input2.GetMfs()
+                output_mfs = output.GetMfs()
+                output_index = 0
+
+                for k in range(len(input1_mfs)):
+                    for g in range(len(input2_mfs)):
+                        new_rule = Rule(input1.GetName(), input1_mfs[k],
+                                        input2.GetName(), input2_mfs[g],
+                                        output.GetName(), output_mfs[output_index],
+                                        "is", "and", "1", f"Rule {len(self.rules)+1}")
+                        self.rules.append(new_rule)
+                        output_index += 1
+        self.fillTable()
+
+    def fillTable(self):
+        rule_numb = len(self.rules)
+        self.table_widget.setRowCount(rule_numb)
+        for i in range(rule_numb):
+            self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(self.rules[i].getRule()))
+            self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(self.rules[i].getWeight()))
+            self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(self.rules[i].getName()))
+
+    def clearTable(self):
+        self.table_widget.clear()
+        self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
+        self.table_widget.setRowCount(1)
+        self.table_widget.setColumnCount(3)
+        self.rules = []
