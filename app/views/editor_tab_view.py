@@ -90,7 +90,6 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         #Placeholder
         self.mf_range_edit.setText("[0 100]")
 
-
         self.mf_table = QtWidgets.QTableWidget(parent=self.editor_frame)
         self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
         self.mf_table.setObjectName("mf_table")
@@ -105,13 +104,11 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.shape_select_dropdown.addItems(['Gauss', 'Trapezoid', 'Triangle', 'Bell'])
         self.shape_select_dropdown.setObjectName("shape_select_dropdown")
 
-        self.mf_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Name"))
-        self.mf_table.setItem(0, 1, QtWidgets.QTableWidgetItem("Type"))
-        self.mf_table.setItem(0, 2, QtWidgets.QTableWidgetItem("Parameters"))
+        self.mf_table.setHorizontalHeaderLabels(["Name", "Type", "Parameters"])
 
-        self.mf_table.setItem(1, 0, QtWidgets.QTableWidgetItem("Placeholder"))
-        self.mf_table.setCellWidget(1, 1, self.shape_select_dropdown)
-        self.mf_table.setItem(1, 2, QtWidgets.QTableWidgetItem(self.mf_range_edit.text()))
+        self.mf_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Placeholder"))
+        self.mf_table.setCellWidget(0, 1, self.shape_select_dropdown)
+        self.mf_table.setItem(0, 2, QtWidgets.QTableWidgetItem(self.mf_range_edit.text()))
 
         self.mf_range_edit.textChanged.connect(self.set_table_text)
 
@@ -288,5 +285,3 @@ class EditorTabWidget(QtWidgets.QTabWidget):
 
     def set_table_text(self):
         self.mf_table.item(self.row, self.column).setText(self.mf_range_edit.text())
-
-
