@@ -540,8 +540,8 @@ class FISModel:
 
             -1 - value lower or higher than set border values
         """
-        if new_val > NR_OF_INTERPOLATION_POINTS_MIN or \
-                new_val < NR_OF_INTERPOLATION_POINTS_MAX:
+        if new_val < NR_OF_INTERPOLATION_POINTS_MIN or \
+                new_val > NR_OF_INTERPOLATION_POINTS_MAX:
             return -1
 
         self._interpolation_points_nr = new_val
