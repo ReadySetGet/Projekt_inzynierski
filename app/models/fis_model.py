@@ -6,6 +6,8 @@ Classes:
     FISModel: data model class for a fis system
 
 """
+import itertools
+
 import fuzzylab as fl
 from fuzzylab.FuzzyInferenceSystem import FuzzyInferenceSystem
 from .modelsresources.fisrule_ext import FisRuleEx
@@ -499,6 +501,53 @@ class FISModel:
         new_rule = FisRuleEx(new_rule_is_mf, new_rule_name, [new_rule_data],
                              len(self._fis.Inputs))
         self._fis.Rules.insert(rule_idx, new_rule)
+        return 1
+
+    def generate_all_rules(self):
+        """Generate all possible rules, based on current input/output/mf
+        configuration. If some rules are already present, generate only the
+        missing ones.
+
+        To stay compatible with Matlab, this function does not generate rules
+        with input mfs being null. Also, it does not override such rules if
+        they were added manually, instead appending a new, full rule.
+
+        Output variations, like in Matlab, are not considered, for time
+        complexity's sake.
+
+        Returns:
+
+            1 - rules added successfully
+
+            -1 - there are no outputs and/or inputs, rules can't be generated
+
+            -2 - one or more variables do not have mfs defined, rules can't be
+            generated
+        """
+        if len(self._fis.Outputs) == 0 or len(self._fis.Inputs) == 0:
+            return -1
+
+        if not self._check_if_every_variable_has_mf():
+            return -2
+
+        output_mfs = [1 for _ in range(len(self._fis.Outputs))]
+        mfs_per_input = []
+        for input_nr in range(len(self._fis.Inputs)):
+            mfs_per_input.append([])
+            for mf_nr in range(1, len(self._fis.Inputs[input_nr]
+                                           .MembershipFunctions)+1):
+                mfs_per_input[input_nr].append(mf_nr)
+
+        rule_combinations_tuple = list(itertools.product(*mfs_per_input))
+        rule_combinations = [list(tup) for tup in rule_combinations_tuple]
+
+        rules_input_part = [rule.Antecedent for rule in self._fis.Rules]
+        fak = 1
+        for potential_rule in rule_combinations:
+            if potential_rule not in rules_input_part:
+                potential_rule_ext = [*potential_rule, *output_mfs, 1, 1]
+                self.add_rule(None, potential_rule_ext)
+
         return 1
 
     def _find_variable(self, io_variable_name: str,
