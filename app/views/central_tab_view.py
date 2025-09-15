@@ -34,20 +34,21 @@ class CentralTabWidget(QtWidgets.QTabWidget):
     mu = 50
     sigma = 16.67
     gauss_x = np.linspace(-100, 200, 400)
-    gauss_y = np.exp(-(1/2) * ((gauss_x - mu) / sigma)**2)
+    gauss_y = np.exp(-(1 / 2) * ((gauss_x - mu) / sigma) ** 2)
 
     a = 20.0
     b = 2.0
     c = 50.0
     bell_x = np.linspace(-100, 200, 200)
-    bell_y = 1 / (1 + np.abs((bell_x - c) / a)**(2 * b))
+    bell_y = 1 / (1 + np.abs((bell_x - c) / a) ** (2 * b))
 
     variable = "Name"
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, status_bar=None):
         super().__init__(parent)
         pg.setConfigOption('background', 'w')
         self.setObjectName("centralTab")
+        self.status_bar = status_bar
         self._setup_ui()
         self._retranslate_ui()
 
@@ -73,7 +74,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
 
         frame_layout = QtWidgets.QVBoxLayout(self.plot_frame)
         self.mf_plot_graph = pg.PlotWidget()
-        self.mf_plot_graph.setXRange(0,100)
+        self.mf_plot_graph.setXRange(0, 100)
 
         self.triangle = (TrianglePlot(
             plot_widget=self.mf_plot_graph,
@@ -81,7 +82,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
             y_data=self.tri_y,
             color='b',
             central_x=50
-            )
+        )
         )
 
         self.trapezoid = (TrapezoidPlot(
@@ -155,12 +156,12 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.add_rule_button = QtWidgets.QPushButton(parent=self.rule_editor)
         self.add_rule_button.setGeometry(QtCore.QRect(460, 100, 41, 28))
         self.add_rule_button.setObjectName("addRuleButton")
-        self.add_rule_button.clicked.connect(self.addRuleClicked.emit)
+        self.add_rule_button.clicked.connect(self.add_rule)
 
         self.delete_rule_button = QtWidgets.QPushButton(parent=self.rule_editor)
         self.delete_rule_button.setGeometry(QtCore.QRect(460, 140, 41, 28))
         self.delete_rule_button.setObjectName("delete_rule_button")
-        self.delete_rule_button.clicked.connect(self.deleteRuleClicked.emit)
+        self.delete_rule_button.clicked.connect(self.remove_rule)
 
         self.seperator_line_2 = QtWidgets.QFrame(parent=self.rule_editor)
         self.seperator_line_2.setGeometry(QtCore.QRect(0, 20, 501, 31))
@@ -174,7 +175,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
 
         self.addTab(self.rule_editor, "")
 
-        self.rule_interference = RuleInterferenceTabWidget()
+        self.rule_interference = RuleInterferenceTabWidget(status_bar=self.status_bar)
         self.rule_interference.setObjectName("rule_interference")
         self.addTab(self.rule_interference, "")
 
@@ -192,15 +193,14 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.setTabText(self.indexOf(self.rule_editor), _translate("MainWindow", "Rule Editor"))
         self.setTabText(self.indexOf(self.rule_interference), _translate("MainWindow", "Rule Interference"))
 
-
     #Placeholder bo nie mam danych z back endu jak to generować
     def generateRules(self):
         in_numb = len(self.inputs)
         out_numb = len(self.outputs)
 
-        for i in range(in_numb-1):
+        for i in range(in_numb - 1):
             input1 = self.inputs[i]
-            input2 = self.inputs[i+1]
+            input2 = self.inputs[i + 1]
             for j in range(out_numb):
                 output = self.outputs[j]
                 input1_mfs = input1.GetMfs()
@@ -213,10 +213,11 @@ class CentralTabWidget(QtWidgets.QTabWidget):
                         new_rule = Rule(input1.GetName(), input1_mfs[k],
                                         input2.GetName(), input2_mfs[g],
                                         output.GetName(), output_mfs[output_index],
-                                        "is", "and", "1", f"Rule {len(self.rules)+1}")
+                                        "is", "and", "1", f"Rule {len(self.rules) + 1}")
                         self.rules.append(new_rule)
                         output_index += 1
         self.fillTable()
+        self.status_bar.showMessage("Last action: added all possible rule combinations.")
 
     def fillTable(self):
         rule_numb = len(self.rules)
@@ -232,3 +233,28 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.table_widget.setRowCount(1)
         self.table_widget.setColumnCount(3)
         self.rules = []
+        self.status_bar.showMessage("Last action: cleared all rules.")
+
+    def add_rule(self):
+        self.addRuleClicked.emit()
+        input1 = self.inputs[0]
+        input2 = self.inputs[1]
+        output = self.outputs[0]
+        input1_mfs = input1.GetMfs()
+        input2_mfs = input2.GetMfs()
+        output_mfs = output.GetMfs()
+        new_rule = Rule(input1.GetName(), input1_mfs[0],
+                        input2.GetName(), input2_mfs[0],
+                        output.GetName(), output_mfs[0],
+                        "is", "and", "1", f"Rule {len(self.rules) + 1}")
+        self.rules.append(new_rule)
+        self.fillTable()
+        self.status_bar.showMessage("Last action: added new rule.")
+
+    def remove_rule(self):
+        row = self.table_widget.currentRow()
+
+        del self.rules[row]
+        self.fillTable()
+        self.deleteRuleClicked.emit()
+        self.status_bar.showMessage("Last action: removed a rule.")
