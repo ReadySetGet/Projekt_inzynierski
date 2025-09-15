@@ -18,22 +18,27 @@ from app.views.rule_interference_view import RuleInterferenceTabWidget
 class UiMainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1096, 830)
+        MainWindow.resize(1096, 780)
 
 
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
-        self.plotTabs = CentralTabWidget(parent=self.centralwidget)
-        self.plotTabs.setGeometry(QtCore.QRect(310, 160, 531, 641))
+        self.statusBar = QtWidgets.QStatusBar(parent=MainWindow)
+        self.statusBar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusBar)
+        self.statusBar.showMessage("Started application")
+
+        self.plotTabs = CentralTabWidget(parent=self.centralwidget, status_bar=self.statusBar)
+        self.plotTabs.setGeometry(QtCore.QRect(310, 160, 531, 601))
 
         self.browserFrame = BrowserFrameWidget(parent=self.centralwidget)
         self.browserFrame.setGeometry(QtCore.QRect(0, 160, 301, 641))
 
-        self.upMenuTab = TopMenu(parent=self.centralwidget)
+        self.upMenuTab = TopMenu(parent=self.centralwidget, status_bar=self.statusBar)
         self.upMenuTab.setGeometry(QtCore.QRect(0, 0, 1081, 161))
 
-        self.editorTab = EditorTabWidget(parent=self.centralwidget)
+        self.editorTab = EditorTabWidget(parent=self.centralwidget, status_bar=self.statusBar)
         self.editorTab.setGeometry(QtCore.QRect(820, 160, 281, 641))
 
         MainWindow.setCentralWidget(self.centralwidget)

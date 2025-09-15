@@ -22,10 +22,11 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
     slider_1_value = 50
     slider_2_value = 50
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, status_bar=None):
         super().__init__(parent)
         pg.setConfigOption('background', 'w')
         self.setObjectName("interferenceTab")
+        self.status_bar = status_bar
         self._setup_ui()
         self._retranslate_ui()
 
@@ -169,9 +170,9 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
                                    f"Input 1 = {self.slider_1_value}</span></p></body></html>")
         self.input_2_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
                                    f"Input 2 = {self.slider_2_value}</span></p></body></html>")
+        self.status_bar.showMessage("Last action: Edited interference values via slider.")
 
     def _update_from_editor_field(self):
-        # extract numbers from garbage string:
         s = self.input_values_edit.text()
         newstr = ''.join((ch if ch in '0123456789.-' else ' ') for ch in s)
         list_of_numbers = [int(i) for i in newstr.split()]
@@ -186,6 +187,7 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
                                    f"Input 1 = {self.slider_1_value}</span></p></body></html>")
         self.input_2_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
                                    f"Input 2 = {self.slider_2_value}</span></p></body></html>")
+        self.status_bar.showMessage("Last action: Edited interference values via editor.")
 
 
 

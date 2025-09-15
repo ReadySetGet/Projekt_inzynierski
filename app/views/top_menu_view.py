@@ -17,11 +17,12 @@ class TopMenu(QtWidgets.QTabWidget):
 
     system_type = 'Mamdani'
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, status_bar=None):
         super().__init__(parent)
         self.s = None
         self.setObjectName("topMenu")
         self.w = None
+        self.status_bar = status_bar
         self._setup_ui()
         self._retranslate_ui()
 
@@ -41,29 +42,29 @@ class TopMenu(QtWidgets.QTabWidget):
         self.add_input_button = QtWidgets.QPushButton(parent=self.scroll_area_widget_contents_3)
         self.add_input_button.setGeometry(QtCore.QRect(10, 10, 91, 41))
         self.add_input_button.setObjectName("add_input_button")
-        self.add_input_button.clicked.connect(self.add_input_clicked.emit)
+        self.add_input_button.clicked.connect(self._add_input_button_clicked)
 
         self.delete_input_button = QtWidgets.QPushButton(parent=self.scroll_area_widget_contents_3)
         self.delete_input_button.setGeometry(QtCore.QRect(110, 10, 91, 41))
         self.delete_input_button.setObjectName("delete_input_button")
-        self.delete_input_button.clicked.connect(self.delete_input_clicked.emit)
+        self.delete_input_button.clicked.connect(self._del_input_button_clicked)
 
         self.add_output_button = QtWidgets.QPushButton(parent=self.scroll_area_widget_contents_3)
         self.add_output_button.setGeometry(QtCore.QRect(10, 70, 91, 41))
         self.add_output_button.setObjectName("add_output_button")
-        self.add_output_button.clicked.connect(self.add_output_clicked.emit)
+        self.add_output_button.clicked.connect(self._add_output_button_clicked)
 
         self.delete_output_button = QtWidgets.QPushButton(parent=self.scroll_area_widget_contents_3)
         self.delete_output_button.setGeometry(QtCore.QRect(110, 70, 91, 41))
         self.delete_output_button.setObjectName("delete_output_button")
-        self.delete_output_button.clicked.connect(self.delete_output_clicked.emit)
+        self.delete_output_button.clicked.connect(self._del_output_button_clicked)
 
         self.input_output_button_area.setWidget(self.scroll_area_widget_contents_3)
 
         self.help_button = QtWidgets.QPushButton(parent=self.designTab)
         self.help_button.setGeometry(QtCore.QRect(950, 20, 93, 28))
         self.help_button.setObjectName("help_button")
-        self.help_button.clicked.connect(self.help_clicked.emit)
+        self.help_button.clicked.connect(self._help_button_clicked)
 
         self.settings_button = QtWidgets.QPushButton(parent=self.designTab)
         self.settings_button.setGeometry(QtCore.QRect(950, 70, 93, 28))
@@ -73,7 +74,7 @@ class TopMenu(QtWidgets.QTabWidget):
         self.conversion_button = QtWidgets.QPushButton(parent=self.designTab)
         self.conversion_button.setGeometry(QtCore.QRect(530, 30, 131, 61))
         self.conversion_button.setObjectName("conversion_button")
-        self.conversion_button.clicked.connect(self.conversion_clicked.emit)
+        self.conversion_button.clicked.connect(self._conversion_button_clicked)
 
         self.files_management_button_area = QtWidgets.QScrollArea(parent=self.designTab)
         self.files_management_button_area.setGeometry(QtCore.QRect(0, 0, 271, 131))
@@ -87,39 +88,24 @@ class TopMenu(QtWidgets.QTabWidget):
         self.new_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
         self.new_button.setGeometry(QtCore.QRect(10, 40, 81, 41))
         self.new_button.setObjectName("new_button")
-        self.new_button.clicked.connect(self.new_clicked.emit)
+        self.new_button.clicked.connect(self._new_button_clicked)
 
         self.import_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
         self.import_button.setGeometry(QtCore.QRect(100, 40, 71, 41))
         self.import_button.setObjectName("import_button")
-        self.import_button.clicked.connect(self.import_clicked.emit)
+        self.import_button.clicked.connect(self._import_button_clicked)
 
         self.export_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
         self.export_button.setGeometry(QtCore.QRect(180, 41, 81, 41))
         self.export_button.setObjectName("export_button")
-        self.export_button.clicked.connect(self.export_clicked.emit)
+        self.export_button.clicked.connect(self._export_button_clicked)
 
         self.files_management_button_area.setWidget(self.scrollAreaWidgetContents)
 
-        self.files_management_button_area_2 = QtWidgets.QScrollArea(parent=self.designTab)
-        self.files_management_button_area_2.setGeometry(QtCore.QRect(670, 0, 201, 131))
-        self.files_management_button_area_2.setWidgetResizable(True)
-        self.files_management_button_area_2.setObjectName("files_management_button_area_2")
-
-        self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 199, 129))
-        self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
-
-        self.interference_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents_2)
-        self.interference_button.setGeometry(QtCore.QRect(10, 40, 81, 61))
-        self.interference_button.setObjectName("interference_button")
-
-        self.surface_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents_2)
-        self.surface_button.setGeometry(QtCore.QRect(110, 40, 81, 61))
+        self.surface_button = QtWidgets.QToolButton(parent=self.designTab)
+        self.surface_button.setGeometry(QtCore.QRect(700, 30, 101, 61))
         self.surface_button.setObjectName("surface_button")
         self.surface_button.clicked.connect(self._show_area_plot_window)
-
-        self.files_management_button_area_2.setWidget(self.scrollAreaWidgetContents_2)
 
         self.addTab(self.designTab, "")
         self.tuningTab = QtWidgets.QWidget()
@@ -145,17 +131,59 @@ class TopMenu(QtWidgets.QTabWidget):
         self.new_button.setText(_translate("MainWindow", "New"))
         self.import_button.setText(_translate("MainWindow", "Import"))
         self.export_button.setText(_translate("MainWindow", "Export"))
-        self.interference_button.setText(_translate("MainWindow", "Rule \n"
-                                                                  "Interference"))
         self.surface_button.setText(_translate("MainWindow", "Control\n"
                                                              "Surface"))
 
     def _show_area_plot_window(self):
+        self.status_bar.showMessage("Last action: Opened area plot window.")
         if self.w is None:
             self.w = AreaPlot()
         self.w.show()
 
     def _show_settings_window(self):
+        self.status_bar.showMessage("Last action: Opened settings window.")
         if self.s is None:
             self.s = SettingsView()
         self.s.show()
+
+    def _add_input_button_clicked(self):
+        self.status_bar.showMessage("Last action: Add input clicked.")
+        self.add_input_clicked.emit()
+
+    def _del_input_button_clicked(self):
+        self.status_bar.showMessage("Last action: Delete input clicked.")
+        self.delete_input_clicked.emit()
+
+    def _add_output_button_clicked(self):
+        self.status_bar.showMessage("Last action: Add output clicked.")
+        self.add_output_clicked.emit()
+
+    def _del_output_button_clicked(self):
+        self.status_bar.showMessage("Last action: Delete ooutputput clicked.")
+        self.delete_output_clicked.emit()
+
+    def _help_button_clicked(self):
+        self.status_bar.showMessage("Last action: Help clicked.")
+        self.help_clicked.emit()
+
+    def _conversion_button_clicked(self):
+        if self.system_type == "Mamdani":
+            self.system_type = "Sugeno"
+            self.conversion_button.setText("Sugeno to Mamdani")
+        else:
+            self.system_type = "Mamdani"
+            self.conversion_button.setText("Mamdani to Sugeno")
+        self.status_bar.showMessage(f"Last action: Conversion clicked. System type: {self.system_type}")
+        self.conversion_clicked.emit()
+
+    def _new_button_clicked(self):
+        self.status_bar.showMessage("Last action: New clicked.")
+        self.new_clicked.emit()
+
+    def _export_button_clicked(self):
+        self.status_bar.showMessage("Last action: Export clicked.")
+        self.export_clicked.emit()
+
+    def _import_button_clicked(self):
+        self.status_bar.showMessage("Last action: Import clicked.")
+        self.import_clicked.emit()
