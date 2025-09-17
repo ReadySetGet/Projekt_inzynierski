@@ -12,14 +12,26 @@ from app.views.central_tab_view import CentralTabWidget
 from app.views.browser_frame_view import BrowserFrameWidget
 from app.views.top_menu_view import TopMenu
 from app.views.bar_menu_view import BarMenuWidget
-from app.views.rule_interference_view import RuleInterferenceTabWidget
+
+
+def retranslateUi(MainWindow):
+    _translate = QtCore.QCoreApplication.translate
+    MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
 
 
 class UiMainWindow(object):
+    def __init__(self):
+        self.editorTab = None
+        self.upMenuTab = None
+        self.browserFrame = None
+        self.plotTabs = None
+        self.statusBar = None
+        self.menuBar = None
+
     def setupUi(self, MainWindow):
+        """Sets up the main window of application. All of the specific widgets are initiated via seperate classes."""
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1096, 780)
-
 
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -46,15 +58,13 @@ class UiMainWindow(object):
         self.menuBar = BarMenuWidget(parent=MainWindow)
         self.menuBar.setGeometry(QtCore.QRect(0, 0, 1096, 26))
 
-        self.retranslateUi(MainWindow)
+        retranslateUi(MainWindow)
+
+        """Sets up the default tabs of tab widgets."""
         self.plotTabs.setCurrentIndex(2)
         self.upMenuTab.setCurrentIndex(0)
         self.editorTab.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
 
 # if __name__ == "__main__":
 #     import sys

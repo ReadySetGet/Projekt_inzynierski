@@ -2,6 +2,9 @@ from PyQt6 import QtWidgets, QtCore, QtGui
 
 
 class SettingsView(QtWidgets.QWidget):
+    """Class used to display settings window widget. It does not have a Parent
+    attribute as to be displayed in a separate window."""
+
     styles = ['Light', 'Dark', 'Blue', 'Red', 'Green']
 
     def __init__(self):
@@ -176,6 +179,8 @@ class SettingsView(QtWidgets.QWidget):
         self.font_tab.show()
 
     def _checkbox(self):
+        """Whenever 'unified color' option is selected disable the other color options.
+        Whenver 'unified color' option is unselected disable it and enable the other color options."""
         if self.unified_color_checkbox.isChecked():
             self.central_color_dropdown.setDisabled(True)
             self.editor_color_dropdown.setDisabled(True)
@@ -190,6 +195,7 @@ class SettingsView(QtWidgets.QWidget):
             self.unified_color_dropdown.setDisabled(True)
 
     def _change_style(self):
+        """Change the colour style of the window."""
         style = self.central_color_dropdown.currentText()
         if style == 'Light':
             self.frame.setStyleSheet("background-color: #FCFCFC")
@@ -203,12 +209,14 @@ class SettingsView(QtWidgets.QWidget):
             self.frame.setStyleSheet("background-color: #31B04B")
 
     def _font_size(self):
+        """Change the font size in the window."""
         font = self.font_size_label.font()
         size = self.font_size_spinbox.value()
         font.setPointSize(size)
         self.font_size_label.setFont(font)
 
     def _font_family(self):
+        """Change the font family in the window."""
         font = self.font_family_label.font()
         family = self.font_family_dropdown.currentText()
         font.setFamily(family)

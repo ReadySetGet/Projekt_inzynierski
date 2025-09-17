@@ -2,6 +2,9 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class EditorTabWidget(QtWidgets.QTabWidget):
+    """Class responsible for the editor tab on the right side of the main window.
+    The class allows selecting shape of mfs, their range, defuzzification method
+    as well as properties of rules."""
     add_mf_clicked = QtCore.pyqtSignal()
     remove_mf_clicked = QtCore.pyqtSignal()
     row = 0
@@ -48,6 +51,7 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.defuzzification_method_label.setGeometry(QtCore.QRect(0, 295, 141, 21))
         self.defuzzification_method_label.setObjectName("defuzzification_method_label")
 
+        """Dropdown allowing the user to choose their prefered defuzzififcation method."""
         self.defuzzification_dropdown = QtWidgets.QComboBox(parent=self.fis_properties_tab)
         self.defuzzification_dropdown.setGeometry(QtCore.QRect(160, 290, 101, 31))
         self.defuzzification_dropdown.setObjectName("defuzzification_dropdown")
@@ -96,6 +100,7 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
         self.mf_table.setObjectName("mf_table")
 
+        """Table displaying all MFs"""
         self.mf_table.setRowCount(2)
         self.mf_table.setColumnCount(3)
         self.mf_table.setColumnWidth(0, 80)

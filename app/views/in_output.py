@@ -1,4 +1,5 @@
 class InOutput:
+    """Placeholder helper class."""
     def __init__(self, name, mfs):
         self._name = name
         self._mfs = mfs

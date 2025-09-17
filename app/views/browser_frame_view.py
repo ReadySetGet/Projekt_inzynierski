@@ -2,6 +2,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class BrowserFrameWidget(QtWidgets.QFrame):
+    """Class responsible for displaying the system browser in the left window of the program."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
