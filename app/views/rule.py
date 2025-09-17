@@ -1,4 +1,5 @@
 class Rule:
+    """Placeholder helper class meant to simulate a structure of a rule in the system."""
     def __init__(self, input1, mf1, input2, mf2, output, mf3, condition, connector, weight, name):
         self._input1 = input1
         self._mf1 = mf1

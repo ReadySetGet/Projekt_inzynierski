@@ -2,7 +2,8 @@ import pyqtgraph as pg
 
 
 class TrapezoidPlot:
-
+    """Support class used to plot trapezoid plot objects in the main window of the application.
+    The class requires central window plot widget in order to display its data."""
     def __init__(self, plot_widget, x_data, y_data, color, central_x):
         self.plot_widget = plot_widget
         self.trap_x = x_data
@@ -16,6 +17,7 @@ class TrapezoidPlot:
             pen=self.color
         )
 
+        """Anchors are interaction points provided to the user."""
         self.trapezoid_left_down_anchor = pg.TargetItem(
             pos=(self.trap_x[1], self.trap_y[1]),
             size=10,
@@ -68,6 +70,8 @@ class TrapezoidPlot:
         self.plot_widget.addItem(self.position_anchor)
 
     def _left_down_trap_interaction(self):
+        """Allows the user to change the shape of the plot by moving the bottom left point of the plot.
+        The anchor cannot be moved beyond 0 and the position of top left anchor."""
         if (self.trapezoid_left_down_anchor.pos().x() < 0
                 or self.trapezoid_left_down_anchor.pos().x() > self.trapezoid_left_up_anchor.pos().x()):
             self.trapezoid_left_down_anchor.setPos(self.trap_x[1], self.trap_y[1])
@@ -77,6 +81,8 @@ class TrapezoidPlot:
         self._update_plot()
 
     def _left_up_trap_interaction(self):
+        """Allows the user to change the shape of the plot by moving the top left point of the plot.
+        The anchor cannot be moved beyond the positions of bottom left anchor and top right anchor."""
         if (self.trapezoid_left_up_anchor.pos().x() < self.trapezoid_left_down_anchor.pos().x()
                 or self.trapezoid_left_up_anchor.pos().x() > self.trapezoid_right_up_anchor.pos().x()):
             self.trapezoid_left_up_anchor.setPos(self.trap_x[2], self.trap_y[2])
@@ -86,6 +92,8 @@ class TrapezoidPlot:
         self._update_plot()
 
     def _right_up_trap_interaction(self):
+        """Allows the user to change the shape of the plot by moving the top left point of the plot.
+        The anchor cannot be moved beyond the positions of top left anchor and bottom right anchor."""
         if (self.trapezoid_right_up_anchor.pos().x() < self.trapezoid_left_up_anchor.pos().x()
                 or self.trapezoid_right_up_anchor.pos().x() > self.trapezoid_right_down_anchor.pos().x()):
             self.trapezoid_right_up_anchor.setPos(self.trap_x[3], self.trap_y[3])
@@ -95,6 +103,8 @@ class TrapezoidPlot:
         self._update_plot()
 
     def _right_down_trap_interaction(self):
+        """Allows the user to change the shape of the plot by moving the top left point of the plot.
+        The anchor cannot be moved beyond the positions of top right anchor and 100."""
         if (self.trapezoid_right_down_anchor.pos().x() < self.trapezoid_right_up_anchor.pos().x()
                 or self.trapezoid_right_down_anchor.pos().x() > 100):
             self.trapezoid_right_down_anchor.setPos(self.trap_x[4], self.trap_y[4])
@@ -104,6 +114,8 @@ class TrapezoidPlot:
         self._update_plot()
 
     def _change_position(self):
+        """Function responsible for changing the position of the entire plot. The position anchor has to
+        be between 0 and 100."""
         if 0 < self.position_anchor.pos().x() < 100:
             dif = self.central_x - self.position_anchor.pos().x()
             self.trap_x = [x - dif for x in self.trap_x]

@@ -1,6 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-
+"""Class responsible for the menu on top of the main window. Responsible for easy access to 
+most essential functions of the application."""
 class BarMenuWidget(QtWidgets.QMenuBar):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -10,17 +11,13 @@ class BarMenuWidget(QtWidgets.QMenuBar):
         self._retranslate_ui()
 
     def _setup_ui(self):
+        """Menu refers to the 'main' categories under which certain actions fall. Menu items
+        are visible at all times on the bar."""
         self.menu_files = self.addMenu("Files")
         self.menu_files.setObjectName("menu_files")
 
-        self.submenu_new = self.addMenu("New")
-        self.submenu_new.setObjectName("submenu_new")
-
         self.menu_view = self.addMenu("View")
         self.menu_view.setObjectName("menu_view")
-
-        self.submenu_convert = self.addMenu("Convert")
-        self.submenu_convert.setObjectName("submenu_convert")
 
         self.menu_settings = self.addMenu("Settings")
         self.menu_settings.setObjectName("menu_settings")
@@ -28,6 +25,15 @@ class BarMenuWidget(QtWidgets.QMenuBar):
         self.menu_help = self.addMenu("Help")
         self.menu_help.setObjectName("menu_help")
 
+        """Submenu refers to 'secondary' categories which are visible to the user and can be hovered over
+        to display additional options"""
+        self.submenu_new = self.addMenu("New")
+        self.submenu_new.setObjectName("submenu_new")
+
+        self.submenu_convert = self.addMenu("Convert")
+        self.submenu_convert.setObjectName("submenu_convert")
+
+        "Actions are the buttons the user will be pressing to access functions of the program."
         self.action_save = QtGui.QAction(parent=self)
         self.action_save.setObjectName("action_save")
 

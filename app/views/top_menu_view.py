@@ -4,6 +4,8 @@ from app.views.settings_view import SettingsView
 
 
 class TopMenu(QtWidgets.QTabWidget):
+    """Class responsible for the rectangle widget at the top of the window.
+    It's main function is to display buttons essential for functioning of the app."""
     add_input_clicked = QtCore.pyqtSignal()
     delete_input_clicked = QtCore.pyqtSignal()
     add_output_clicked = QtCore.pyqtSignal()
@@ -30,6 +32,7 @@ class TopMenu(QtWidgets.QTabWidget):
         self.designTab = QtWidgets.QWidget()
         self.designTab.setObjectName("designTab")
 
+        """Area grouping buttons responsible for managing inputs and outputs in the fis system."""
         self.input_output_button_area = QtWidgets.QScrollArea(parent=self.designTab)
         self.input_output_button_area.setGeometry(QtCore.QRect(270, 0, 221, 131))
         self.input_output_button_area.setWidgetResizable(True)
@@ -76,6 +79,7 @@ class TopMenu(QtWidgets.QTabWidget):
         self.conversion_button.setObjectName("conversion_button")
         self.conversion_button.clicked.connect(self._conversion_button_clicked)
 
+        """Button area grouping buttons responsible for files management."""
         self.files_management_button_area = QtWidgets.QScrollArea(parent=self.designTab)
         self.files_management_button_area.setGeometry(QtCore.QRect(0, 0, 271, 131))
         self.files_management_button_area.setWidgetResizable(True)
@@ -135,12 +139,16 @@ class TopMenu(QtWidgets.QTabWidget):
                                                              "Surface"))
 
     def _show_area_plot_window(self):
+        """Function responsible for showing and hiding the Area Plot window.
+        Only one such window can exist at any given time."""
         self.status_bar.showMessage("Last action: Opened area plot window.")
         if self.w is None:
             self.w = AreaPlot()
         self.w.show()
 
     def _show_settings_window(self):
+        """Function responsible for showing and hiding the settings window.
+        Only one such window can exist at any given time."""
         self.status_bar.showMessage("Last action: Opened settings window.")
         if self.s is None:
             self.s = SettingsView()
@@ -167,6 +175,7 @@ class TopMenu(QtWidgets.QTabWidget):
         self.help_clicked.emit()
 
     def _conversion_button_clicked(self):
+        """Function responsible for converting system from mamdani to sugeno and vice versa"""
         if self.system_type == "Mamdani":
             self.system_type = "Sugeno"
             self.conversion_button.setText("Sugeno to Mamdani")

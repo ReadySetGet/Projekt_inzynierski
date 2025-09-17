@@ -11,6 +11,8 @@ from app.views.in_output import InOutput
 
 
 class CentralTabWidget(QtWidgets.QTabWidget):
+    """Central tab of the program responsible for displaying MF plots, input/output plots,
+    rule interference plots and all the rules present in the program."""
     addRuleClicked = QtCore.pyqtSignal()
     deleteRuleClicked = QtCore.pyqtSignal()
     tri_x = [-100.0, 25, 50, 75, 200]
@@ -18,6 +20,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
     trap_x = [-100.0, 10, 25, 75, 90, 200]
     trap_y = [0.0, 0, 1, 1, 0, 0]
 
+    """Placeholder data for rule generation"""
     inputs = []
     input_1 = InOutput("wysokie", ["wysokie", "przeciętne", "niskie"])
     input_2 = InOutput("drzewa", ["obiekt", "drzewo"])
@@ -66,16 +69,21 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.mf_plot = QtWidgets.QWidget()
         self.mf_plot.setObjectName("mf_plot")
 
+        """Creation of the plot frame in which membership functions will be displayed."""
         self.plot_frame = QtWidgets.QFrame(parent=self.mf_plot)
         self.plot_frame.setGeometry(QtCore.QRect(-5, 40, 521, 521))
         self.plot_frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.plot_frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.plot_frame.setObjectName("plot_frame")
 
+        """Creating layout and binding it to the frame."""
         frame_layout = QtWidgets.QVBoxLayout(self.plot_frame)
+
+        """Creation of plot widget which is responsible for plotting the membership functions."""
         self.mf_plot_graph = pg.PlotWidget()
         self.mf_plot_graph.setXRange(0, 100)
 
+        """Creating plots"""
         self.triangle = (TrianglePlot(
             plot_widget=self.mf_plot_graph,
             x_data=self.tri_x,
@@ -115,7 +123,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.mf_plot_graph.setTitle("Membership Function Plot", color="black")
         self.mf_plot_graph.setLabel("left", "Degree of Membership", color="black")
         self.mf_plot_graph.setLabel("bottom", f"Input variable: {self.variable}", color="black")
-
+        """Adding plot widget to the layout to display it."""
         frame_layout.addWidget(self.mf_plot_graph)
 
         self.seperator_line = QtWidgets.QFrame(parent=self.mf_plot)
@@ -137,6 +145,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.add_all_rules_button.setObjectName("add_all_rules")
         self.add_all_rules_button.clicked.connect(self.generateRules)
 
+        """Setting up the rules table widget."""
         self.table_widget = QtWidgets.QTableWidget(parent=self.rule_editor)
         self.table_widget.setGeometry(QtCore.QRect(20, 100, 431, 491))
         self.table_widget.setObjectName("table_widget")
@@ -220,6 +229,8 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.status_bar.showMessage("Last action: added all possible rule combinations.")
 
     def fillTable(self):
+        """Function responsible for filling the rules table with rules.
+        Displays as many rows as there are rules in the program"""
         rule_numb = len(self.rules)
         self.table_widget.setRowCount(rule_numb)
         for i in range(rule_numb):
@@ -228,6 +239,8 @@ class CentralTabWidget(QtWidgets.QTabWidget):
             self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(self.rules[i].getName()))
 
     def clearTable(self):
+        """Function responsible for clearing the rule table and deleting rules present in the system.
+        Sets one empty row as default for aesthetic purposes."""
         self.table_widget.clear()
         self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
         self.table_widget.setRowCount(1)
@@ -236,6 +249,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.status_bar.showMessage("Last action: cleared all rules.")
 
     def add_rule(self):
+        """Adds a new rule to the table and data of the application."""
         self.addRuleClicked.emit()
         input1 = self.inputs[0]
         input2 = self.inputs[1]
@@ -252,6 +266,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.status_bar.showMessage("Last action: added new rule.")
 
     def remove_rule(self):
+        """Removes selected rule from the table and data of the application."""
         row = self.table_widget.currentRow()
 
         del self.rules[row]

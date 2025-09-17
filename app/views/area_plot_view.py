@@ -2,15 +2,21 @@ from PyQt6 import QtWidgets, QtCore
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+
+"""Import necessary for project=3D to be available in matplotlib"""
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
 
 def fun(x, y):
+    """Placeholder function implemented to showcase the 3D plot"""
     return x ** 2 + y
 
 
 class AreaPlot(QtWidgets.QWidget):
+    """Class used to display area plot widget. It does not have a Parent
+    attribute as to be displayed in a separate window."""
+
     def __init__(self):
         super().__init__()
         self.setObjectName("area_plot")
@@ -21,6 +27,10 @@ class AreaPlot(QtWidgets.QWidget):
         self.resize(650, 629)
         self.setWindowTitle("Area Plot")
 
+        """Setting up plot area for the 3D plot. 
+        We set up a frame which serves as an area for our Vertical Box Layout. 
+        The class uses matplotlib PyQT integration in order to be able to 
+        embed matplotlib cavas in the layout."""
         self.area_plot_frame = QtWidgets.QFrame(parent=self)
         self.area_plot_frame.setGeometry(QtCore.QRect(10, 170, 621, 401))
         self.area_plot_frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
@@ -29,11 +39,12 @@ class AreaPlot(QtWidgets.QWidget):
 
         self.frame_layout = QtWidgets.QVBoxLayout(self.area_plot_frame)
 
-        #Exapmple Data
+        """Example placeholder data"""""
         x = y = np.arange(0.0, 100.0, 5)
         X, Y = np.meshgrid(x, y)
         zs = np.array(fun(np.ravel(X), np.ravel(Y)))
         Z = zs.reshape(X.shape)
+        mfs = ['Mf1', "Mf2"]
 
         fig = plt.Figure(figsize=(1500, 1500))
 
@@ -66,11 +77,11 @@ class AreaPlot(QtWidgets.QWidget):
         self.axes_label.setGeometry(QtCore.QRect(10, 40, 55, 21))
         self.axes_label.setObjectName("axes_label")
 
+        """ComboBox is QT name for dropdown widgets."""
         self.x_combobox = QtWidgets.QComboBox(parent=self)
         self.x_combobox.setGeometry(QtCore.QRect(120, 40, 121, 22))
         self.x_combobox.setObjectName("x_combobox")
-        self.x_combobox.addItem("MF 1")
-        self.x_combobox.addItem("MF 2")
+        self.x_combobox.addItems(mfs)
 
         self.x_label = QtWidgets.QLabel(parent=self)
         self.x_label.setGeometry(QtCore.QRect(100, 40, 16, 21))
@@ -83,8 +94,7 @@ class AreaPlot(QtWidgets.QWidget):
         self.y_combobox = QtWidgets.QComboBox(parent=self)
         self.y_combobox.setGeometry(QtCore.QRect(300, 40, 121, 22))
         self.y_combobox.setObjectName("y_combobox")
-        self.y_combobox.addItem("MF 1")
-        self.y_combobox.addItem("MF 2")
+        self.y_combobox.addItems(mfs)
 
         self.z_combobox = QtWidgets.QComboBox(parent=self)
         self.z_combobox.setGeometry(QtCore.QRect(470, 40, 121, 22))

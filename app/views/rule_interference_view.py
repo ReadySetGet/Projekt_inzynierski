@@ -4,6 +4,7 @@ import re
 
 
 def hide_axi(plot):
+    """Umiversal function to hide the left and bottom axis of the plot"""
     left_axis = plot.getAxis('left')
     left_axis.hide()
     bottom_axis = plot.getAxis('bottom')
@@ -11,6 +12,9 @@ def hide_axi(plot):
 
 
 class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
+    """Class responsible for the rule interference tab of the main window.
+    It displays plots of membership functions and the results of existing rules.
+    It aggregates the results into a central plot."""
     _counter_numb = 5
     # Example Placeholder data
     x = [0, 10]
@@ -63,6 +67,8 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
         self.input_2_label.setObjectName("input_2_label")
 
         for i in range(self._counter_numb):
+            """"For loop responsible for plotting the variable number of membership 
+            function plots and result plots."""
             counter = QtWidgets.QLabel(parent=self)
             counter.setGeometry(QtCore.QRect(10, 140 + 80 * i, 16, 16))
             counter.setText(str(i + 1))
@@ -126,6 +132,7 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
 
         result_layout = QtWidgets.QVBoxLayout(self.result_frame)
 
+        """Plotting the resulting function after aggregating all of the ouputs."""
         self.result_plot = pg.PlotWidget()
         self.result_plot.plot(self.x_a, self.y_a, pen='b', brush='b', fillLevel=0.0)
         hide_axi(self.result_plot)
@@ -163,6 +170,7 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
                                              "<html><head/><body><p><span style=\" font-weight:600;\">Output 1 = 50</span></p></body></html>"))
 
     def _update_from_sliders(self):
+        """Function which updates the editor field whenever slider positions change."""
         self.slider_1_value = self.horizontalSlider.value()
         self.slider_2_value = self.horizontalSlider_2.value()
         self.input_values_edit.setText(f"{self.slider_1_value}, {self.slider_2_value}")
@@ -173,7 +181,9 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
         self.status_bar.showMessage("Last action: Edited interference values via slider.")
 
     def _update_from_editor_field(self):
+        """Function which updates the slider positions whenever the editor field changes."""
         s = self.input_values_edit.text()
+        """Get only numbers from editor field and separate them when a coma is encountered."""
         newstr = ''.join((ch if ch in '0123456789.-' else ' ') for ch in s)
         list_of_numbers = [int(i) for i in newstr.split()]
 

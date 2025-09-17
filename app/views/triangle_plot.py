@@ -2,7 +2,8 @@ import pyqtgraph as pg
 
 
 class TrianglePlot:
-
+    """Support class used to plot triangle plot objects in the main window of the application.
+    The class requires central window plot widget in order to display its data."""
     def __init__(self, plot_widget, x_data, y_data, color, central_x):
         self.plot_widget = plot_widget
         self.tri_x = x_data
@@ -15,7 +16,7 @@ class TrianglePlot:
             self.tri_y,
             pen=self.color
         )
-
+        """Anchors are interaction points provided to the user."""
         self.triangle_central_anchor = pg.TargetItem(
             pos=(self.tri_x[2], self.tri_y[2]),
             size=10,
@@ -67,6 +68,8 @@ class TrianglePlot:
         self._update_plot()
 
     def _left_triangle_interaction(self):
+        """Allows the user to change the shape of the plot by moving the bottom left point of the plot.
+        The anchor cannot be moved beyond 0 and the position of central anchor."""
         if (self.triangle_left_anchor.pos().x() > self.triangle_central_anchor.pos().x()
                 or self.triangle_left_anchor.pos().x() < 0):
             self.triangle_left_anchor.setPos(self.tri_x[1], self.tri_y[1])
@@ -76,6 +79,8 @@ class TrianglePlot:
         self._update_plot()
 
     def _right_triangle_interaction(self):
+        """Allows the user to change the shape of the plot by moving the bottom left point of the plot.
+        The anchor cannot be moved beyond 100 and the position of central anchor."""
         if (self.triangle_right_anchor.pos().x() < self.triangle_central_anchor.pos().x()
                 or self.triangle_right_anchor.pos().x() > 100):
             self.triangle_right_anchor.setPos(self.tri_x[3], self.tri_y[3])
@@ -85,6 +90,8 @@ class TrianglePlot:
         self._update_plot()
 
     def _change_position(self):
+        """Function responsible for changing the position of the entire plot. The position anchor has to
+        be between 0 and 100."""
         if 0 < self.position_anchor.pos().x() < 100:
             dif = self.central_x - self.position_anchor.pos().x()
             self.tri_x = [x - dif for x in self.tri_x]

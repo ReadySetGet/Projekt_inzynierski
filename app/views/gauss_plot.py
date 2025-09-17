@@ -3,6 +3,8 @@ import pyqtgraph as pg
 
 
 class GaussPlot:
+    """Support class used to plot gauss plot objects in the main window of the application.
+    The class requires central window plot widget in order to display its data."""
 
     def __init__(self, plot_widget, x_data, y_data, sigma_data, mu_data, color):
         self.plot_widget = plot_widget
@@ -14,6 +16,8 @@ class GaussPlot:
 
         self.gauss_plot_line = self.plot_widget.plot(self.gauss_x, self.gauss_y, pen=self.color)
 
+        """Left and right anchors are interaction points 
+        which can be used by the user to change the width of the plot."""
         self.gauss_left_anchor = pg.TargetItem(
             pos=(self.mu - self.sigma, np.exp(-0.5)),
             size=10,
@@ -32,6 +36,7 @@ class GaussPlot:
         )
         self.gauss_right_anchor.sigPositionChanged.connect(self._right_gauss_interaction)
 
+        """Interaction point responsible for moving the entire plot."""
         self.position_anchor = pg.TargetItem(
             pos=(self.mu, 0),
             size=10,
@@ -46,6 +51,8 @@ class GaussPlot:
         self.plot_widget.addItem(self.position_anchor)
 
     def _left_gauss_interaction(self):
+        """Function responsible for changing the width of the plot when interacting with left anchor.
+        The user is unable to drag the anchor past points 0 and 49"""
         new_pos = self.gauss_left_anchor.pos()
         new_sigma = abs(new_pos.x() - self.mu)
         if new_sigma > 0 and new_pos.x() < 49:
@@ -55,6 +62,8 @@ class GaussPlot:
         self._update_plot()
 
     def _right_gauss_interaction(self):
+        """Function responsible for changing the width of the plot when interacting with right anchor.
+        The user is unable to drag the anchor past points 51 and 100"""
         new_pos = self.gauss_right_anchor.pos()
         new_sigma = abs(new_pos.x() - self.mu)
         if new_sigma > 0 and new_pos.x() > 51:
@@ -64,6 +73,8 @@ class GaussPlot:
         self._update_plot()
 
     def _change_position(self):
+        """Function responsible for changing the position of the entire plot. The position anchor has to
+        be between 0 and 100."""
         if 0 < self.position_anchor.pos().x() < 100:
             dif = self.mu - self.position_anchor.pos().x()
             self.gauss_x = np.array([(x - dif) for x in self.gauss_x])
