@@ -61,7 +61,7 @@ class UiMainWindow(object):
         retranslateUi(MainWindow)
 
         """Sets up the default tabs of tab widgets."""
-        self.plotTabs.setCurrentIndex(2)
+        self.plotTabs.setCurrentIndex(0)
         self.upMenuTab.setCurrentIndex(0)
         self.editorTab.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
