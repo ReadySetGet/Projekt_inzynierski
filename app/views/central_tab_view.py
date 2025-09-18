@@ -8,6 +8,7 @@ from app.views.gauss_plot import GaussPlot
 from app.views.bell_plot import BellPlot
 from app.views.rule import Rule
 from app.views.in_output import InOutput
+from app.views.fis_tab_view import FisTabView
 
 
 class CentralTabWidget(QtWidgets.QTabWidget):
@@ -56,14 +57,8 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self._retranslate_ui()
 
     def _setup_ui(self):
-        self.fis_plot = QtWidgets.QWidget()
+        self.fis_plot = FisTabView()
         self.fis_plot.setObjectName("fis_plot")
-
-        self.graph_frame = QtWidgets.QFrame(parent=self.fis_plot)
-        self.graph_frame.setGeometry(QtCore.QRect(-1, 49, 461, 471))
-        self.graph_frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
-        self.graph_frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-        self.graph_frame.setObjectName("graph_frame")
         self.addTab(self.fis_plot, "")
 
         self.mf_plot = QtWidgets.QWidget()
