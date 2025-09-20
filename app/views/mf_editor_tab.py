@@ -65,9 +65,6 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.mf_table.setCellWidget(0, 1, self.shape_select_dropdown)
         self.mf_table.setItem(0, 2, QtWidgets.QTableWidgetItem(self.mf_range_edit.text()))
 
-        self.mf_range_edit.textChanged.connect(self.set_range_table_text)
-        self.mf_name_edit.textChanged.connect(self.set_name_table_text)
-
         self.add_mf_button = QtWidgets.QPushButton(parent=self.editor_frame)
         self.add_mf_button.setGeometry(QtCore.QRect(60, 190, 93, 28))
         self.add_mf_button.setObjectName("add_mf_button")
@@ -95,13 +92,8 @@ class MFPropertiesWidget(QtWidgets.QWidget):
     def set_number_of_mf(self, count: int):
         self.number_of_mf_label.setText(f"Number of MF: {count}")
 
-    def set_name_table_text(self):
-        self.mf_table.item(self.row, 0).setText(self.mf_name_edit.text())
-
-    def set_range_table_text(self):
-        self.mf_table.item(self.row, 2).setText(self.mf_range_edit.text())
-
     def add_mf(self):
+        """On add_mf_button click add new membership function with default parameters."""
         rows = self.mf_table.rowCount()
         shape_select_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
         shape_select_dropdown.addItems(['Triangle'])
@@ -111,14 +103,4 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.mf_table.setCellWidget(rows, 1, shape_select_dropdown)
         self.mf_table.setItem(rows, 2, QtWidgets.QTableWidgetItem(self.default_parameters))
         self.add_mf_clicked.emit()
-
-
-
-    def radio_button_clicked(self):
-        #self.status_bar.showMessage("Last action: And/or radio button clicked.")
-        return
-
-    def mf_changed(self):
-        #self.status_bar.showMessage("Last action: Changed selected membership function.")
-        return
 
