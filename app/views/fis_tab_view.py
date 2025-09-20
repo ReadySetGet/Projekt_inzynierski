@@ -1,5 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from app.views.mf import MembershipFunction
+from app.views.in_output import InOutput
 import pyqtgraph as pg
 
 
@@ -12,30 +13,45 @@ def hide_axi(plot):
 
 
 class FisTabView(QtWidgets.QTabWidget):
-    input1 = []
+    membership_functions = []
     inputs = []
     outputs = []
     points = []
+    plots = []
 
     colors = ["#0027FF", "#FF0000", "#3D7A00", "#FF2BE7", "#FFAE21", "#2AFF83"
                                                                      "#DF79FF", "#09FF24", "#FF723B", "#FF6CBA"]
 
     def __init__(self, parent=None):
-        self.input1.append(MembershipFunction(x=[0, 10], y=[0, 10]))
-        self.input1.append(MembershipFunction(x=[0, 10], y=[10, 0]))
-        self.input1.append(MembershipFunction(x=[0, 10], y=[5, 5]))
-        self.inputs.append(self.input1)
-        self.inputs.append(self.input1)
-        #self.inputs.append(self.input1)
-        #self.inputs.append(self.input1)
-        self.outputs.append(self.input1)
+        self.membership_functions.append(MembershipFunction(x=[0, 10], y=[0, 10]))
+        self.membership_functions.append(MembershipFunction(x=[0, 10], y=[10, 0]))
+        self.membership_functions.append(MembershipFunction(x=[0, 10], y=[5, 5]))
+        self.input_1 = InOutput(mfs=self.membership_functions, name="Input 1")
+        self.inputs.append(self.input_1)
+        self.inputs.append(self.input_1)
+        self.output_1 = InOutput(mfs=self.membership_functions, name="Output 1")
+        self.outputs.append(self.output_1)
         super().__init__(parent)
         pg.setConfigOption('background', 'w')
         self.setObjectName("fisTab")
         self._setup_ui()
-        #self._retranslate_ui()
+        self._retranslate_ui()
 
     def _setup_ui(self):
+        self.system_label = QtWidgets.QLabel(parent=self)
+        self.system_label.setGeometry(QtCore.QRect(10, 10, 51, 16))
+        self.system_label.setObjectName("system_label")
+
+        self.name_label = QtWidgets.QLabel(parent=self)
+        self.name_label.setGeometry(QtCore.QRect(70, 10, 71, 16))
+        self.name_label.setObjectName("name_label")
+
+        self.seperator_line = QtWidgets.QFrame(parent=self)
+        self.seperator_line.setGeometry(QtCore.QRect(10, 20, 491, 20))
+        self.seperator_line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+        self.seperator_line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
+        self.seperator_line.setObjectName("seperator_line")
+
         self.graph_frame = QtWidgets.QGraphicsView(parent=self)
         self.graph_frame.setGeometry(QtCore.QRect(10, 60, 490, 500))
         self.graph_frame.setFrameShape(QtWidgets.QGraphicsView.Shape.StyledPanel)
@@ -56,8 +72,8 @@ class FisTabView(QtWidgets.QTabWidget):
                 position_y = int(height / len(self.inputs) * i + 10)
             else:
                 position_y = int(5 + 50 * i)
-            self.points.append([175, position_y])
-            self.plot_inputs(i, position_y)
+            self.points.append([160, position_y])
+            self.plot_graphs(position_y, position_x=20, data=self.inputs[i])
 
         for i in range(len(self.outputs)):
             if len(self.outputs) == 1:
@@ -71,7 +87,7 @@ class FisTabView(QtWidgets.QTabWidget):
             else:
                 position_y = int(5 + 50 * i)
             self.points.append([340, position_y])
-            self.plot_outputs(i, position_y)
+            self.plot_graphs(position_y, position_x=330, data=self.outputs[i])
 
         scene = QtWidgets.QGraphicsScene(parent=self.graph_frame)
         self.graph_frame.setScene(scene)
@@ -79,51 +95,37 @@ class FisTabView(QtWidgets.QTabWidget):
         pen.setColor(QtGui.QColor("black"))
         pen.setWidth(2)
         for point in self.points:
-            print(point)
             scene.addLine(point[0], point[1], 255, 180, pen)
 
-        system_label = QtWidgets.QLabel(parent=self.graph_frame)
-        system_label.setGeometry(177, 190, 140, 140)
-        system_label.setText("Mamdani \nType 1")
-        system_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        system_label.setStyleSheet("background-color: white; border: 1px solid gray")
+        self.box_system_label = QtWidgets.QLabel(parent=self.graph_frame)
+        self.box_system_label.setGeometry(175, 180, 140, 140)
+        self.box_system_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.box_system_label.setStyleSheet("background-color: white; border: 1px solid gray")
 
-    def plot_inputs(self, i, position_y):
-        frame_input = QtWidgets.QFrame(parent=self.graph_frame)
-        frame_input.setGeometry(QtCore.QRect(15, position_y, 160, 160))
-        frame_input.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
-        frame_input.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-        frame_input.setStyleSheet("background-color: #E5E8E8; border: 0px")
-        frame_input.setObjectName("activation_frame_input1")
+    def _retranslate_ui(self):
+        _translate = QtCore.QCoreApplication.translate
+        self.box_system_label.setText(_translate("Main Window", "Mamdani \nType 1"))
+        self.system_label.setText(_translate("MainWindow", "System:"))
+        self.name_label.setText(_translate("MainWindow", "Placeholder"))
 
-        frame_layout_1 = QtWidgets.QVBoxLayout(frame_input)
-        plot_input = pg.PlotWidget()
-        for j in range(len(self.inputs[i])):
-            if j >= 10:
-                plot_input.plot(self.inputs[i][j].getX(), self.inputs[i][j].getY(), pen='b')
+
+
+    def plot_graphs(self, position_y, position_x, data):
+        in_out_plot = pg.PlotWidget(parent=self.graph_frame)
+        mfs = data.GetMfs()
+        for i in range(len(mfs)):
+            if i >= 10:
+                in_out_plot.plot(mfs[i].getX(), mfs[i].getY(), pen='b')
             else:
-                plot_input.plot(self.inputs[i][j].getX(), self.inputs[i][j].getY(), pen=self.colors[j])
-        plot_input.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
+                in_out_plot.plot(mfs[i].getX(), mfs[i].getY(), pen=self.colors[i])
+        self.plots.append(in_out_plot)
+        in_out_plot.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
+        in_out_plot.setGeometry(QtCore.QRect(position_x, position_y, 140, 140))
 
-        hide_axi(plot_input)
-        frame_layout_1.addWidget(plot_input)
+        name_label = QtWidgets.QLabel(parent=self.graph_frame)
+        name_label.setGeometry(QtCore.QRect(position_x, position_y + 140, 140, 20))
+        name_label.setStyleSheet("border: 0px")
+        name_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        name_label.setText(f"{data.GetName()} ({len(data.GetMfs())} MFs)")
 
-    def plot_outputs(self, i, position_y):
-        frame_output = QtWidgets.QFrame(parent=self.graph_frame)
-        frame_output.setGeometry(QtCore.QRect(320, position_y, 160, 160))
-        frame_output.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
-        frame_output.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-        frame_output.setStyleSheet("background-color: #E5E8E8; border: 0px")
-        frame_output.setObjectName("activation_frame_input1")
-
-        frame_layout_2 = QtWidgets.QVBoxLayout(frame_output)
-        plot_output = pg.PlotWidget()
-        for j in range(len(self.inputs[i])):
-            if j >= 10:
-                plot_output.plot(self.inputs[i][j].getX(), self.inputs[i][j].getY(), pen='b')
-            else:
-                plot_output.plot(self.inputs[i][j].getX(), self.inputs[i][j].getY(), pen=self.colors[j])
-        plot_output.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
-
-        hide_axi(plot_output)
-        frame_layout_2.addWidget(plot_output)
+        hide_axi(in_out_plot)
