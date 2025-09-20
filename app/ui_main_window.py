@@ -11,8 +11,6 @@ from app.views.editor_tab_view import EditorTabWidget
 from app.views.central_tab_view import CentralTabWidget
 from app.views.browser_frame_view import BrowserFrameWidget
 from app.views.top_menu_view import TopMenu
-from app.views.bar_menu_view import BarMenuWidget
-
 
 class UiMainWindow(object):
     def setupUi(self, MainWindow):
@@ -36,9 +34,6 @@ class UiMainWindow(object):
         self.editorTab.setGeometry(QtCore.QRect(820, 160, 281, 641))
 
         MainWindow.setCentralWidget(self.centralwidget)
-
-        self.menuBar = BarMenuWidget(parent=MainWindow)
-        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1096, 26))
 
         self.retranslateUi(MainWindow)
         self.plotTabs.setCurrentIndex(2)
