@@ -2,9 +2,6 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class CentralTabWidget(QtWidgets.QTabWidget):
-    addRuleClicked = QtCore.pyqtSignal()
-    deleteRuleClicked = QtCore.pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("centralTab")
@@ -51,26 +48,6 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.table_widget.setColumnCount(0)
         self.table_widget.setRowCount(0)
 
-        self.add_rule_button = QtWidgets.QPushButton(parent=self.rule_editor)
-        self.add_rule_button.setGeometry(QtCore.QRect(460, 100, 41, 28))
-        self.add_rule_button.setObjectName("addRuleButton")
-        self.add_rule_button.clicked.connect(self.addRuleClicked.emit)
-
-        self.delete_rule_button = QtWidgets.QPushButton(parent=self.rule_editor)
-        self.delete_rule_button.setGeometry(QtCore.QRect(460, 140, 41, 28))
-        self.delete_rule_button.setObjectName("delete_rule_button")
-        self.delete_rule_button.clicked.connect(self.deleteRuleClicked.emit)
-
-        self.seperator_line_2 = QtWidgets.QFrame(parent=self.rule_editor)
-        self.seperator_line_2.setGeometry(QtCore.QRect(0, 20, 501, 31))
-        self.seperator_line_2.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        self.seperator_line_2.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
-        self.seperator_line_2.setObjectName("seperator_line_2")
-
-        self.system_label_2 = QtWidgets.QLabel(parent=self.rule_editor)
-        self.system_label_2.setGeometry(QtCore.QRect(0, 10, 211, 16))
-        self.system_label_2.setObjectName("system_label_2")
-
         self.addTab(self.rule_editor, "")
 
     def _retranslate_ui(self):
@@ -79,7 +56,4 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.setTabText(self.indexOf(self.fis_plot), _translate("MainWindow", "FIS Plot"))
         self.system_name_label.setText(_translate("MainWindow", "System: Placeholder Name"))
         self.setTabText(self.indexOf(self.mf_plot), _translate("MainWindow", "MF Editor"))
-        self.add_rule_button.setText(_translate("MainWindow", "+"))
-        self.delete_rule_button.setText(_translate("MainWindow", "X"))
-        self.system_label_2.setText(_translate("MainWindow", "System: Placeholder Name"))
         self.setTabText(self.indexOf(self.rule_editor), _translate("MainWindow", "Rule Editor"))
