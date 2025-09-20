@@ -2,6 +2,9 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class CentralTabWidget(QtWidgets.QTabWidget):
+    clearRulesClicked = QtCore.pyqtSignal()
+    rules = []
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("centralTab")
@@ -42,11 +45,32 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.rule_editor = QtWidgets.QWidget()
         self.rule_editor.setObjectName("rule_editor")
 
+        """Setting up the rules table widget."""
         self.table_widget = QtWidgets.QTableWidget(parent=self.rule_editor)
         self.table_widget.setGeometry(QtCore.QRect(20, 100, 431, 491))
         self.table_widget.setObjectName("table_widget")
-        self.table_widget.setColumnCount(0)
-        self.table_widget.setRowCount(0)
+        self.table_widget.setRowCount(1)
+        self.table_widget.setColumnCount(3)
+        self.table_widget.setColumnWidth(0, 314)
+        self.table_widget.setColumnWidth(1, 50)
+        self.table_widget.setColumnWidth(2, 50)
+
+        self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
+
+        self.clear_rules_button = QtWidgets.QPushButton(parent=self.rule_editor)
+        self.clear_rules_button.setGeometry(QtCore.QRect(180, 60, 100, 28))
+        self.clear_rules_button.setObjectName("clear_rules")
+        self.clear_rules_button.clicked.connect(self.clear_rules)
+
+        self.seperator_line_2 = QtWidgets.QFrame(parent=self.rule_editor)
+        self.seperator_line_2.setGeometry(QtCore.QRect(0, 20, 501, 31))
+        self.seperator_line_2.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+        self.seperator_line_2.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
+        self.seperator_line_2.setObjectName("seperator_line_2")
+
+        self.system_label_2 = QtWidgets.QLabel(parent=self.rule_editor)
+        self.system_label_2.setGeometry(QtCore.QRect(0, 10, 211, 16))
+        self.system_label_2.setObjectName("system_label_2")
 
         self.addTab(self.rule_editor, "")
 
@@ -55,5 +79,16 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.setWhatsThis(_translate("MainWindow", "<html><head/><body><p><br/></p><p><br/></p></body></html>"))
         self.setTabText(self.indexOf(self.fis_plot), _translate("MainWindow", "FIS Plot"))
         self.system_name_label.setText(_translate("MainWindow", "System: Placeholder Name"))
+        self.clear_rules_button.setText(_translate("MainWindow", "Clear Rules"))
         self.setTabText(self.indexOf(self.mf_plot), _translate("MainWindow", "MF Editor"))
         self.setTabText(self.indexOf(self.rule_editor), _translate("MainWindow", "Rule Editor"))
+
+    def clear_rules(self):
+        """Function responsible for clearing the rule table and deleting rules present in the system.
+        Sets one empty row as default for aesthetic purposes."""
+        self.table_widget.clear()
+        self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
+        self.table_widget.setRowCount(1)
+        self.table_widget.setColumnCount(3)
+        self.rules = []
+        self.clearRulesClicked.emit()
