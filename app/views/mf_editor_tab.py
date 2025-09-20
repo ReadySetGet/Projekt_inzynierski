@@ -92,6 +92,9 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.number_of_mf_label.setText(f"Number of MF: {count}")
 
     def set_new_range(self):
+        """Sets new range according to what's inside Line Edit.
+        Returns if there is no selected table row.
+        If the selected range is wrong then it resotres default parameters."""
         row = self.mf_table.currentRow()
         if row == -1:
             return
