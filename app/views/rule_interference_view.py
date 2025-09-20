@@ -38,16 +38,16 @@ class RuleInterferenceTabWidget(QtWidgets.QTabWidget):
         self.system_label = QtWidgets.QLabel(parent=self)
         self.system_label.setGeometry(QtCore.QRect(10, 10, 51, 16))
         self.system_label.setObjectName("system_label")
-        self.name_label = QtWidgets.QLabel(parent=self)
 
+        self.name_label = QtWidgets.QLabel(parent=self)
         self.name_label.setGeometry(QtCore.QRect(70, 10, 71, 16))
         self.name_label.setObjectName("name_label")
 
-        self.ifLine_2 = QtWidgets.QFrame(parent=self)
-        self.ifLine_2.setGeometry(QtCore.QRect(10, 20, 491, 20))
-        self.ifLine_2.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        self.ifLine_2.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
-        self.ifLine_2.setObjectName("seperator_line")
+        self.seperator_line = QtWidgets.QFrame(parent=self)
+        self.seperator_line.setGeometry(QtCore.QRect(10, 20, 491, 20))
+        self.seperator_line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+        self.seperator_line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
+        self.seperator_line.setObjectName("seperator_line")
 
         self.input_values_label = QtWidgets.QLabel(parent=self)
         self.input_values_label.setGeometry(QtCore.QRect(10, 45, 81, 21))
