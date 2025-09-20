@@ -1,4 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from app.views.rules_editor_tab import RulesEditorTab
 
 
 class EditorTabWidget(QtWidgets.QTabWidget):
@@ -25,7 +26,7 @@ class EditorTabWidget(QtWidgets.QTabWidget):
 
         self.addTab(self.mf_properties_tab, "mf_properties_tab")
 
-        self.rule_editor_tab = QtWidgets.QWidget()
+        self.rule_editor_tab = RulesEditorTab(parent=self)
         self.rule_editor_tab.setObjectName("rule_editor_tab")
 
         self.addTab(self.rule_editor_tab, "rule_editor_tab")
