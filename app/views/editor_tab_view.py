@@ -1,16 +1,40 @@
+"""Create a GUI object at the right of the central window of the application allowing the user to edit
+ parameters of the fis system.
+
+    Classes:
+        EditorTabWidget: button area element inheriting from QTabWidget.
+
+Imports  classes <tu wpisać klasy> and adds them as tabs.
+"""
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class EditorTabWidget(QtWidgets.QTabWidget):
+    """Class inheriting from QTabWidget.
+        Allows user interaction via QPushButton and QComboBox GUI elements .
+
+        Methods:
+            __init__(parent): create an instance of EditorTabWidget and bind it to the parent window.
+
+        Attributes:
+            defuzzification_changed_signal: pyqtSignal which gets emitted to backend when the defuzzification
+                dropdown value changes
+    """
     defuzzification_changed_signal = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
+        """Initialize a new class instance.
+
+            Parameters:
+                parent: The parent widget, in this case main window, to which the widget will be attached.
+        """
         super().__init__(parent)
         self.setObjectName("editorTab")
         self._setup_ui()
         self._retranslate_ui()
 
     def _setup_ui(self):
+        """Set up all the GUI sub elements."""
         self.fis_properties_tab = QtWidgets.QWidget()
         self.fis_properties_tab.setObjectName("fis_properties_tab")
 
@@ -41,14 +65,13 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.defuzzification_method_label.setGeometry(QtCore.QRect(0, 295, 141, 21))
         self.defuzzification_method_label.setObjectName("defuzzification_method_label")
 
-        """Dropdown allowing the user to choose their prefered defuzzififcation method."""
         self.defuzzification_dropdown = QtWidgets.QComboBox(parent=self.fis_properties_tab)
         self.defuzzification_dropdown.setGeometry(QtCore.QRect(160, 290, 101, 31))
         self.defuzzification_dropdown.setObjectName("defuzzification_dropdown")
         self.defuzzification_dropdown.addItem("")
         self.defuzzification_dropdown.addItem("")
         self.defuzzification_dropdown.addItem("")
-        self.defuzzification_dropdown.currentTextChanged.connect(self.defuzzification_changed)
+        self.defuzzification_dropdown.currentTextChanged.connect(self._defuzzification_changed)
 
         self.system_type_label_2 = QtWidgets.QLabel(parent=self.fis_properties_tab)
         self.system_type_label_2.setGeometry(QtCore.QRect(150, 20, 111, 21))
@@ -69,6 +92,7 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self._retranslate_ui()
 
     def _retranslate_ui(self):
+        """Add text to all the respective GUI elements."""
         _translate = QtCore.QCoreApplication.translate
         self.system_type_label_1.setText(_translate("MainWindow", "Type:"))
         self.system_name_label.setText(_translate("MainWindow", "Name"))
@@ -85,5 +109,6 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.setTabText(self.indexOf(self.mf_properties_tab), _translate("MainWindow", "mfPropertiesTab"))
         self.setTabText(self.indexOf(self.rule_editor_tab), _translate("MainWindow", "rulePropertiesTab"))
 
-    def defuzzification_changed(self):
+    def _defuzzification_changed(self):
+        """Emit the signal to backend about the change in preferred defuzzification method."""
         self.defuzzification_changed_signal.emit()
