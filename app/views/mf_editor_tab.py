@@ -26,7 +26,7 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         """Initialize a new class instance.
 
             Parameters:
-                parent: The parent widget, in this case main window, to which the widget will be attached.
+                parent: The parent widget, in this case editor tab, to which the widget will be attached.
         """
         super().__init__(parent)
         self.setObjectName("mf_properties_tab")
