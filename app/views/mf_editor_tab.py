@@ -14,6 +14,7 @@ class MFPropertiesWidget(QtWidgets.QWidget):
 
         Methods:
            __init__(parent): create an instance of MFPropertiesWidget and bind it to the parent window.
+           get_mf_name(): get the name of the mf from the line edit.
 
         Attributes:
                add_mf_clicked: pyqtSignal which gets emitted to backend when add_mf_button is clicked.
