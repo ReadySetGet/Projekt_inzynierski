@@ -1,16 +1,36 @@
+"""Create a button area element GUI object above the central window of the application.
+
+    Classes:
+        TopMenu: button area element inheriting from QTabWidget.
+"""
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class TopMenu(QtWidgets.QTabWidget):
+    """Class inheriting from QTabWidget.
+        Allows user interaction via QPushButton and QToolButton GUI elements .
+
+        Methods:
+            __init__(parent): create an instance of TopMenu and bind it to the parent window.
+
+        Attributes:
+            new_clicked: pyqtSignal which gets emitted to back end when new_button is clicked.
+    """
     new_clicked = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
+        """Initialize a new class instance.
+
+            Parameters:
+                parent: The parent widget, in this case main window, to which the widget will be attached.
+        """
         super().__init__(parent)
         self.setObjectName("topMenu")
         self._setup_ui()
         self._retranslate_ui()
 
     def _setup_ui(self):
+        """Set up all the GUI sub elements."""
         self.designTab = QtWidgets.QWidget()
         self.designTab.setObjectName("designTab")
 
@@ -37,10 +57,12 @@ class TopMenu(QtWidgets.QTabWidget):
         self.addTab(self.tuningTab, "")
 
     def _retranslate_ui(self):
+        """Add text to all the respective GUI elements."""
         _translate = QtCore.QCoreApplication.translate
         self.new_button.setText(_translate("MainWindow", "New"))
         self.setTabText(self.indexOf(self.designTab), _translate("MainWindow", "Design"))
         self.setTabText(self.indexOf(self.tuningTab), _translate("MainWindow", "Tuning"))
 
     def _new_button_clicked(self):
+        """Emit a signal that new system is supposed to get created."""
         self.new_clicked.emit()
