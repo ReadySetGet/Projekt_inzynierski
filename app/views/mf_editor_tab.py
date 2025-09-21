@@ -13,7 +13,7 @@ class MFPropertiesWidget(QtWidgets.QWidget):
     The current membership functions in the system are displayed within the table.
 
         Methods:
-           __init__(parent): create an instance of TopMenu and bind it to the parent window.
+           __init__(parent): create an instance of MFPropertiesWidget and bind it to the parent window.
 
         Attributes:
                add_mf_clicked: pyqtSignal which gets emitted to backend when add_mf_button is clicked.
