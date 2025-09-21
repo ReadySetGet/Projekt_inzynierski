@@ -1,22 +1,41 @@
+"""Create a widget GUI element responsible for customising the parameters of a membership function
+(range, shape, name) as well as adding and deleting functions from inputs and outputs.
+    Classes:
+        MFPropertiesWidget: a widget inheriting from QWidget responsible for allowing the user to
+            edit membership functions inside the system.
+"""
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class MFPropertiesWidget(QtWidgets.QWidget):
+    """Class inheriting from QWidget.
+     Allows user interaction via QPushButton, QLineEdit and QComboBox GUI elements.
+     The current membership functions in the system are displayed within the table.
+
+         Methods:
+            __init__(parent): create an instance of MFPropertiesWidget and bind it to the parent window.
+            get_mf_name(): get the name of the mf from the line edit.
+
+         Attributes:
+                shape_changed_emit: pyqtSignal which gets emitted to backend when the dropdown item has changed.
+                default_parameters: default parameters of a new function.
+     """
     shape_changed_emit = QtCore.pyqtSignal()
-    row = 0
-    column = 2
     default_parameters = "[0, 0.5, 1]"
 
     def __init__(self, parent=None):
+        """Initialize a new class instance.
+
+            Parameters:
+                parent: The parent widget, in this case editor tab, to which the widget will be attached.
+        """
         super().__init__(parent)
         self.setObjectName("mf_properties_tab")
         self._setup_ui()
         self._retranslate_ui()
 
     def _setup_ui(self):
-        input_mf_list = ['Placeholder Input MF']
-        output_mf_list = ['Placeholder Output MF']
-
+        """Set up all the GUI sub elements."""
         self.editor_frame = QtWidgets.QFrame(parent=self)
         self.editor_frame.setGeometry(QtCore.QRect(-10, 0, 291, 641))
         self.editor_frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
@@ -48,7 +67,6 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
         self.mf_table.setObjectName("mf_table")
 
-        """Table displaying all MFs"""
         self.mf_table.setRowCount(1)
         self.mf_table.setColumnCount(3)
         self.mf_table.setColumnWidth(0, 80)
@@ -58,7 +76,7 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.shape_select_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
         self.shape_select_dropdown.addItems(['Triangle', 'Trapezoid', 'Gauss', 'Bell'])
         self.shape_select_dropdown.setObjectName("shape_select_dropdown")
-        self.shape_select_dropdown.currentIndexChanged.connect(self.shape_changed)
+        self.shape_select_dropdown.currentIndexChanged.connect(self._shape_changed)
 
         self.mf_table.setHorizontalHeaderLabels(["Name", "Type", "Parameters"])
 
@@ -73,6 +91,7 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self._retranslate_ui()
 
     def _retranslate_ui(self):
+        """Add text to all the respective GUI elements."""
         _translate = QtCore.QCoreApplication.translate
         self.property_editor_label.setText(_translate("MainWindow", "Property Editor"))
         self.mf_name_label.setText(_translate("MainWindow", "Name"))
@@ -82,10 +101,13 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.number_of_mf_label.setText(_translate("MainWindow", "Number of MF:"))
 
     def get_mf_name(self) -> str:
+        """Get the current name of the membership function via the line edit"""
         return self.mf_name_edit.text()
 
-    def set_number_of_mf(self, count: int):
+    def _set_number_of_mf(self, count: int):
+        """Update the label text to reflect current mf count"""
         self.number_of_mf_label.setText(f"Number of MF: {count}")
 
-    def shape_changed(self):
+    def _shape_changed(self):
+        """Emit the signal that the shape of mf was changed to the backend."""
         self.shape_changed_emit.emit()
