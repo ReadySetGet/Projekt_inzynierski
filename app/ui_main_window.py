@@ -44,7 +44,7 @@ class UiMainWindow(object):
         self.plotTabs = CentralTabWidget(parent=self.centralwidget, status_bar=self.statusBar)
         self.plotTabs.setGeometry(QtCore.QRect(310, 160, 531, 601))
 
-        self.browserFrame = BrowserFrameWidget(parent=self.centralwidget)
+        self.browserFrame = BrowserFrameWidget(parent=self.centralwidget, status_bar=self.statusBar)
         self.browserFrame.setGeometry(QtCore.QRect(0, 160, 301, 641))
 
         self.upMenuTab = TopMenu(parent=self.centralwidget, status_bar=self.statusBar)
