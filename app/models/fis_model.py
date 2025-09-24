@@ -102,19 +102,29 @@ class FISModel:
             Update a given rule.
     """
 
-    _fis: FuzzyInferenceSystem
+    _fis: fl.mamfis | fl.sugfis
     """The contained fis system."""
 
-    def __init__(self, fis: FuzzyInferenceSystem = None):
-        """Initialize a new class instance.
+    def __init__(self, fis: fl.mamfis | fl.sugfis = None,
+                 fis_name: str = "fis", fis_type: str = None):
+        """Initialize a new class instance, with the given fis system. If
+        "fis_type" is provided, a new 2-input-1-output (with 3 mfs each) fis of
+        the given type will be initiated.
 
         Parameters:
 
             fis (FuzzyInferenceSystem): The fis system to be used. If None,
                 a new Mamdani system will be generated.
+            fis_name (str): Name of the fis system.
+            fis_type (str): Type of the new fis system, "mamdani" or "sugeno".
         """
-        if fis is None:
-            self._fis = fl.mamfis("fis")
+        if fis_type is not None:
+            if fis_type == "sugeno":
+                self._fis = fl.sugfis(fis_name)
+            if fis_type == "mamdani":
+                self._fis = fl.mamfis(fis_name)
+        elif fis is None:
+            self._fis = fl.mamfis(fis_name)
         else:
             self._fis = fis
 
@@ -156,7 +166,7 @@ class FISModel:
                     .count(0)
                 nr_of_not_none_variables = len(self._fis.Rules[rule_idx]
                                                .Antecedent) \
-                                               - nr_of_none_variables
+                                           - nr_of_none_variables
                 if nr_of_not_none_variables > 1:
                     self._fis.Rules[rule_idx].Antecedent.pop(input_idx)
                     self._fis.Rules[rule_idx].numInputs -= 1
@@ -203,7 +213,7 @@ class FISModel:
                     .count(0)
                 nr_of_not_none_variables = len(self._fis.Rules[rule_idx]
                                                .Consequent) \
-                                               - nr_of_none_variables
+                                           - nr_of_none_variables
                 if nr_of_not_none_variables > 1:
                     self._fis.Rules[rule_idx].Consequent.pop(output_idx)
                 else:
@@ -243,8 +253,9 @@ class FISModel:
         next_mf_number = self._find_available_element_number("mf", io_variable)
         mf_name = "mf" + str(next_mf_number)
 
-        mf_adding_validity_check = self._check_if_new_mf_type_is_valid(input_or_output,
-                                                                       mf_type)
+        mf_adding_validity_check = self._check_if_new_mf_type_is_valid(
+            input_or_output,
+            mf_type)
         if not mf_adding_validity_check[0]:
             return -2
 
@@ -337,8 +348,9 @@ class FISModel:
         if mf_idx >= len(io_variable.MembershipFunctions):
             return -1
 
-        mf_changing_validity_check = self._check_if_new_mf_type_is_valid(input_or_output,
-                                                                         new_mf_type)
+        mf_changing_validity_check = self._check_if_new_mf_type_is_valid(
+            input_or_output,
+            new_mf_type)
         if not mf_changing_validity_check[0]:
             return -3
 
@@ -483,10 +495,10 @@ class FISModel:
             return -2
 
         if len(new_rule_is_mf) != len(self._fis.Inputs) \
-            + len(self._fis.Outputs):
+                + len(self._fis.Outputs):
             return -3
         if len(new_rule_data) != len(self._fis.Inputs) \
-            + len(self._fis.Outputs) + 2:
+                + len(self._fis.Outputs) + 2:
             return -3
 
         if not self._check_if_is_behaviour_list_is_valid(new_rule_is_mf):
@@ -500,6 +512,71 @@ class FISModel:
                              len(self._fis.Inputs))
         self._fis.Rules.insert(rule_idx, new_rule)
         return 1
+
+    def return_all_input_variables(self) -> list[fl.fisvar]:
+        """Get all input variables of the system.
+
+        Returns:
+
+            A list (potentially empty) of all input variables of the system.
+        """
+        return self._fis.Inputs
+
+    def return_all_output_variables(self) -> list[fl.fisvar]:
+        """Get all output variables of the system.
+
+        Returns:
+
+            A list (potentially empty) of all input variables of the system.
+        """
+
+        return self._fis.Outputs
+
+    def return_all_mfs_of_io_variable(self, io_variable_name: str,
+                                      io_variable_type: str) -> list[fl.fismf] | None:
+        """Get all input variables of the system.
+
+        Parameters:
+
+            io_variable_name (str): name of the input/output variable whose mfs
+                are to be returned
+            io_variable_type (str): whether it is an input or output variable.
+                Accepted values: input, output
+
+        Returns:
+
+            None, if a variable of the given type with the given name does not
+                exist. A list (potentially empty) of all its membership
+                functions otherwise.
+        """
+        if io_variable_type == "input":
+            for input_variable in self._fis.Inputs:
+                if input_variable.Name == io_variable_name:
+                    return input_variable.MembershipFunctions
+        if io_variable_type == "output":
+            for output_variable in self._fis.Outputs:
+                if output_variable.Name == io_variable_name:
+                    return output_variable.MembershipFunctions
+
+        return None
+
+    def return_all_rules(self) -> list[FisRuleEx]:
+        """Return a list if all available rules.
+
+        Returns:
+
+            A list (potentially empty) of all rules in the system.
+        """
+        return self._fis.Rules
+
+    def return_system_name(self) -> str:
+        """Return the name of the Fuzzy Inference System used.
+
+        Returns:
+
+            The name (str) of the system.
+        """
+        return self._fis.Name
 
     def _find_variable(self, io_variable_name: str,
                        input_or_output: str) -> [fl.fisvar, int]:
