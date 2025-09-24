@@ -440,7 +440,7 @@ class FISModel:
         self._fis.Rules.pop(rule_idx)
 
     def clear_all_rules(self) -> None:
-        """Delete all rules."""
+        """Delete all rules from the system."""
         self._fis.Rules.clear()
 
     def update_rule(self, rule_idx: int, new_rule_is_mf: list[int],
@@ -500,6 +500,12 @@ class FISModel:
                              len(self._fis.Inputs))
         self._fis.Rules.insert(rule_idx, new_rule)
         return 1
+
+    def clear_all_io_variables(self) -> None:
+        """Delete all input/output variables from the system."""
+        self._fis.Inputs.clear()
+        self._fis.Outputs.clear()
+        self.clear_all_rules()
 
     def _find_variable(self, io_variable_name: str,
                        input_or_output: str) -> [fl.fisvar, int]:
