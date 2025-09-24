@@ -1,0 +1,38 @@
+from PyQt6 import QtCore, QtGui, QtWidgets
+from app.views.editor_tab_view import EditorTabWidget
+from app.views.central_tab_view import CentralTabWidget
+from app.views.browser_frame_view import BrowserFrameWidget
+from app.views.top_menu_view import TopMenu
+
+
+class UiMainWindow(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(1096, 830)
+
+        self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+
+        self.plotTabs = CentralTabWidget(parent=self.centralwidget)
+        self.plotTabs.setGeometry(QtCore.QRect(310, 160, 531, 641))
+
+        self.browserFrame = BrowserFrameWidget(parent=self.centralwidget)
+        self.browserFrame.setGeometry(QtCore.QRect(0, 160, 301, 641))
+
+        self.upMenuTab = TopMenu(parent=self.centralwidget)
+        self.upMenuTab.setGeometry(QtCore.QRect(0, 0, 1081, 161))
+
+        self.editorTab = EditorTabWidget(parent=self.centralwidget)
+        self.editorTab.setGeometry(QtCore.QRect(820, 160, 281, 641))
+
+        MainWindow.setCentralWidget(self.centralwidget)
+
+        self.retranslateUi(MainWindow)
+        self.plotTabs.setCurrentIndex(2)
+        self.upMenuTab.setCurrentIndex(0)
+        self.editorTab.setCurrentIndex(1)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
