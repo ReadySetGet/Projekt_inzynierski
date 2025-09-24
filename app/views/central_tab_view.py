@@ -53,6 +53,11 @@ class CentralTabWidget(QtWidgets.QTabWidget):
     variable = "Name"
 
     def __init__(self, parent=None):
+        """Initialize a new class instance.
+
+            Parameters:
+                parent: The parent widget, in this case main window, to which the widget will be attached.
+        """
         super().__init__(parent)
         pg.setConfigOption('background', 'w')
         self.setObjectName("centralTab")
@@ -60,6 +65,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self._retranslate_ui()
 
     def _setup_ui(self):
+        """Set up all the GUI sub elements."""
         self.fis_plot = QtWidgets.QWidget(parent=self)
         self.fis_plot.setObjectName("fis_plot")
         self.addTab(self.fis_plot, "")
@@ -123,6 +129,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.addTab(self.rule_interference, "")
 
     def _retranslate_ui(self):
+        """Add text to all the respective GUI elements."""
         _translate = QtCore.QCoreApplication.translate
         self.setWhatsThis(_translate("MainWindow", "<html><head/><body><p><br/></p><p><br/></p></body></html>"))
         self.setTabText(self.indexOf(self.fis_plot), _translate("MainWindow", "FIS Plot"))
