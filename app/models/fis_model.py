@@ -15,8 +15,17 @@ DEFAULT_MF_PARAMS: dict[str, list] = {
     "dzwonowa": [0.5, 3, 4],
     "trojkatna": [0, 0.5, 1],
     "trapezoidalna": [1, 3, 4, 4.5],
+    "stala": 0.5,
 }
 """Default parameters for certain types of membership functions."""
+
+DEFAULT_MF_PARAMS_SUGENO: dict[str, list | float] = {
+    "stala": 0.5,
+    "liniowa": [1, 1, 0.5],
+}
+"""Default parameters for certain types of membership functions, for Sugeno
+output variables.
+"""
 
 MF_TYPE_TO_FUNCTION_NAME = {
     "gaussowska": "gaussmf",
@@ -25,6 +34,14 @@ MF_TYPE_TO_FUNCTION_NAME = {
     "trapezoidalna": "trapmf",
 }
 """Application-used name to library name membership function type converter."""
+
+MF_TYPE_TO_FUNCTION_NAME_SUGENO = {
+    "stala": "constant",
+    "liniowa": "linear",
+}
+"""Application-used name to library name membership function type converter,
+for Sugeno output variables.
+"""
 
 DEFAULT_IO_RANGE = [0, 1]
 """Default range of an input/output variable."""
@@ -217,6 +234,9 @@ class FISModel:
 
             -1 - no io variable with the given name found
 
+            -2 - mf type provided not available for the inference type used
+                and/or variable type provided
+
         """
         [io_variable, _] = self._find_variable(io_variable_name,
                                                input_or_output)
@@ -225,8 +245,15 @@ class FISModel:
 
         next_mf_number = self._find_available_element_number("mf", io_variable)
         mf_name = "mf" + str(next_mf_number)
-        self._fis.addMF(io_variable_name, MF_TYPE_TO_FUNCTION_NAME[mf_type],
-                        DEFAULT_MF_PARAMS[mf_type], Name=mf_name)
+
+        mf_adding_validity_check = self._check_if_new_mf_type_is_valid(input_or_output,
+                                                                       mf_type)
+        if not mf_adding_validity_check[0]:
+            return -2
+
+        self._fis.addMF(io_variable_name, mf_adding_validity_check[1],
+                        mf_adding_validity_check[2], Name=mf_name)
+
         return 1
 
     def delete_mf(self, io_variable_name: str, input_or_output: str,
@@ -301,6 +328,9 @@ class FISModel:
             -1 - mf with the given index does not exist
 
             -2 - no io variable with a given name found
+
+            -3 - mf type provided not available for the inference type used
+                and/or variable type provided
         """
         [io_variable, _] = self._find_variable(io_variable_name,
                                                input_or_output)
@@ -310,9 +340,14 @@ class FISModel:
         if mf_idx >= len(io_variable.MembershipFunctions):
             return -1
 
+        mf_changing_validity_check = self._check_if_new_mf_type_is_valid(input_or_output,
+                                                                         new_mf_type)
+        if not mf_changing_validity_check[0]:
+            return -3
+
         old_mf = io_variable.MembershipFunctions.pop(mf_idx)
-        new_mf = fl.fismf(MF_TYPE_TO_FUNCTION_NAME[new_mf_type],
-                          DEFAULT_MF_PARAMS[new_mf_type], old_mf.Name)
+        new_mf = fl.fismf(mf_changing_validity_check[1],
+                          mf_changing_validity_check[2], old_mf.Name)
         io_variable.MembershipFunctions.insert(mf_idx, new_mf)
         return 1
 
@@ -346,6 +381,9 @@ class FISModel:
 
             -2 - not all input/output variables have mfs added (at least 1 is
                 mandatory)
+
+            -3 - output variables in Sugeno inference cannot have IS NOT
+                behaviour - incorrect data provided
         """
         if not self._check_if_every_variable_has_mf():
             return -2
@@ -377,6 +415,8 @@ class FISModel:
             is_mf_list = [DEFAULT_VARIABLE_TO_MF_MAPPING_BEHAVIOUR for _ in
                           range(len(self._fis.Inputs + self._fis.Outputs))]
         else:
+            if not self._check_if_is_behaviour_list_is_valid(is_mf):
+                return -3
             is_mf_list = is_mf
 
         new_rule_name = "rule" \
@@ -435,6 +475,9 @@ class FISModel:
                 -2 - new weight not in [0, 1]
 
                 -3 - the lists provided are of wrong length
+
+                -4 - output variables in Sugeno inference cannot have IS NOT
+                behaviour - incorrect data provided
         """
         if rule_idx >= len(self._fis.Rules):
             return -1
@@ -448,6 +491,9 @@ class FISModel:
         if len(new_rule_data) != len(self._fis.Inputs) \
             + len(self._fis.Outputs) + 2:
             return -3
+
+        if not self._check_if_is_behaviour_list_is_valid(new_rule_is_mf):
+            return -4
 
         self._fis.Rules.pop(rule_idx)
 
@@ -541,6 +587,36 @@ class FISModel:
     def _check_if_every_variable_has_mf(self) -> bool:
         for variable in self._fis.Inputs + self._fis.Outputs:
             if len(variable.MembershipFunctions) == 0:
+                return False
+
+        return True
+
+    def _check_if_new_mf_type_is_valid(self, input_or_output: str,
+                                       mf_type: str) -> [bool, str,
+                                                         list | int]:
+        if type(self._fis) is fl.mamfis:
+            if mf_type not in MF_TYPE_TO_FUNCTION_NAME.keys():
+                return [False, "", -1]
+            return [True, MF_TYPE_TO_FUNCTION_NAME[mf_type],
+                    DEFAULT_MF_PARAMS[mf_type]]
+
+        if type(self._fis) is fl.sugfis:
+            if input_or_output == "input":
+                if mf_type not in MF_TYPE_TO_FUNCTION_NAME.keys():
+                    return [False, "", -1]
+                return [True, MF_TYPE_TO_FUNCTION_NAME[mf_type],
+                        DEFAULT_MF_PARAMS[mf_type]]
+            if input_or_output == "output":
+                if mf_type not in MF_TYPE_TO_FUNCTION_NAME_SUGENO.keys():
+                    return [False, "", -1]
+                return [True, MF_TYPE_TO_FUNCTION_NAME_SUGENO[mf_type],
+                        DEFAULT_MF_PARAMS_SUGENO[mf_type]]
+
+    def _check_if_is_behaviour_list_is_valid(self, is_mf: list[int]) -> bool:
+        if type(self._fis) is fl.sugfis:
+            check_if_correct_for_sugeno = is_mf[len(self._fis.Inputs):]
+            if check_if_correct_for_sugeno.count(1) != len(
+                    check_if_correct_for_sugeno):
                 return False
 
         return True
