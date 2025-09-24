@@ -68,9 +68,6 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.mf_range_edit.setObjectName("mf_range_edit")
         self.mf_range_edit.setText(self.default_parameters)
 
-        self.mf_range_submit_button = QtWidgets.QPushButton(parent=self.editor_frame)
-        self.mf_range_submit_button.setGeometry(QtCore.QRect(190, 90, 80, 31))
-
         self.mf_table = QtWidgets.QTableWidget(parent=self.editor_frame)
         self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
         self.mf_table.setObjectName("mf_table")
