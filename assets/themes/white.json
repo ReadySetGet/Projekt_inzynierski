@@ -1,0 +1,12 @@
+{
+   "colors": {
+      "primary": "#007bff",
+      "secondary": "#6c757d",
+      "background": "#f8f9fa",
+      "surface": "#fff",
+      "text": "#232629",
+      "button": "#e9ecef",
+      "button-hover": "#dee2e6",
+      "border": "#ccc"
+   }
+} 
