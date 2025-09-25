@@ -1,9 +1,8 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from app.views.mf_editor_tab import MFPropertiesWidget
 
 
 class EditorTabWidget(QtWidgets.QTabWidget):
-    add_mf_clicked = QtCore.pyqtSignal()
-    remove_mf_clicked = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -12,16 +11,14 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self._retranslate_ui()
 
     def _setup_ui(self):
-        input_mf_list = ['Placeholder Input MF']
-        output_mf_list = ['Placeholder Output MF']
 
         self.fis_properties_tab = QtWidgets.QWidget()
         self.fis_properties_tab.setObjectName("fis_properties_tab")
 
         self.addTab(self.fis_properties_tab, "fis_properties_tab")
 
-        self.mf_properties_tab = QtWidgets.QWidget()
-        self.mf_properties_tab.setObjectName("fis_properties_tab")
+        self.mf_properties_tab = MFPropertiesWidget()
+        self.mf_properties_tab.setObjectName("mf_properties_tab")
 
         self.addTab(self.mf_properties_tab, "mf_properties_tab")
 
