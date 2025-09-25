@@ -9,18 +9,20 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 class MFPropertiesWidget(QtWidgets.QWidget):
     """Class inheriting from QWidget.
-       Allows user interaction via QPushButton, QLineEdit and QComboBox GUI elements.
-       The current membership functions in the system are displayed within the table.
+     Allows user interaction via QPushButton, QLineEdit and QComboBox GUI elements.
+     The current membership functions in the system are displayed within the table.
 
-        Methods:
-            __init__(parent): create an instance of MFPropertiesWidget and bind it to the parent window.
+         Methods:
+            __init__(QtWidgets.*): create an instance of MFPropertiesWidget and bind it to the parent window.
             get_mf_name(): get the name of the mf from the line edit.
 
-        Attributes:
-            remove_mf_clicked: pyqtSignal which gets emitted to backend when remove_mf_button is clicked.
-            add_mf_clicked: pyqtSignal which gets emitted to backend when add_mf_button is clicked.
-            default_parameters: default parameters of a new function.
-    """
+         Attributes:
+                shape_changed_emit: pyqtSignal which gets emitted to backend when the dropdown item has changed.
+                remove_mf_clicked: pyqtSignal which gets emitted to backend when remove_mf_button is clicked.
+                add_mf_clicked: pyqtSignal which gets emitted to backend when add_mf_button is clicked.
+                default_parameters: default parameters of a new function.
+     """
+    shape_changed_emit = QtCore.pyqtSignal()
     remove_mf_clicked = QtCore.pyqtSignal()
     add_mf_clicked = QtCore.pyqtSignal()
     default_parameters = "[0, 0.5, 1]"
@@ -76,8 +78,10 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.mf_table.setColumnWidth(2, 100)
 
         self.shape_select_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
-        self.shape_select_dropdown.addItems(['Triangle'])
+        self.shape_select_dropdown.addItems(['Triangle', 'Trapezoid', 'Gauss', 'Bell'])
         self.shape_select_dropdown.setObjectName("shape_select_dropdown")
+        self.shape_select_dropdown.currentIndexChanged.connect(self._shape_changed)
+
 
         self.mf_table.setHorizontalHeaderLabels(["Name", "Type", "Parameters"])
 
@@ -93,6 +97,7 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.number_of_mf_label = QtWidgets.QLabel(parent=self.editor_frame)
         self.number_of_mf_label.setGeometry(QtCore.QRect(20, 150, 151, 16))
         self.number_of_mf_label.setObjectName("number_of_mf_label")
+
 
         self.remove_mf_button = QtWidgets.QPushButton(parent=self.editor_frame)
         self.remove_mf_button.setGeometry(QtCore.QRect(160, 190, 93, 28))
@@ -122,6 +127,10 @@ class MFPropertiesWidget(QtWidgets.QWidget):
     def _set_number_of_mf(self, count: int):
         """Update the label text to reflect current mf count"""
         self.number_of_mf_label.setText(f"Number of MF: {count}")
+
+    def _shape_changed(self):
+        """Emit the signal that the shape of mf was changed to the backend."""
+        self.shape_changed_emit.emit()
 
     def _remove_mf(self):
         """Remove the selected row from the table. Emit the signal to remove the mf from the backend."""
