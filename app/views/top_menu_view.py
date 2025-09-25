@@ -111,6 +111,15 @@ class TopMenu(QtWidgets.QTabWidget):
         self.surface_button.setObjectName("surface_button")
         self.surface_button.clicked.connect(self._show_area_plot_window)
 
+        self.interpolation_spinbox = QtWidgets.QSpinBox(parent=self.designTab)
+        self.interpolation_spinbox.setGeometry(QtCore.QRect(830, 60, 81, 22))
+        self.interpolation_spinbox.setObjectName("interpolation_spinbox")
+
+        self.interpolation_label = QtWidgets.QLabel(parent=self.designTab)
+        self.interpolation_label.setGeometry(QtCore.QRect(810, 30, 121, 20))
+        self.interpolation_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.interpolation_label.setObjectName("interpolation_label")
+
         self.addTab(self.designTab, "")
         self.tuningTab = QtWidgets.QWidget()
         self.tuningTab.setObjectName("tuningTab")
@@ -137,6 +146,7 @@ class TopMenu(QtWidgets.QTabWidget):
         self.export_button.setText(_translate("MainWindow", "Export"))
         self.surface_button.setText(_translate("MainWindow", "Control\n"
                                                              "Surface"))
+        self.interpolation_label.setText(_translate("MainWindow", "Interpolation Points"))
 
     def _show_area_plot_window(self):
         """Function responsible for showing and hiding the Area Plot window.
