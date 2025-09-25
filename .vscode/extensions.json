@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "ms-python.isort",
+    "ms-python.flake8",
+    "PKief.material-icon-theme",
+    "littlefoxteam.vscode-python-test-adapter",
+    "njpwerner.autodocstring",
+    "formulahendry.code-runner",
+    "batisteo.vscode-django",
+    "eamodio.gitlens"
+  ]
+} 
