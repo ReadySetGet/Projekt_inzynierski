@@ -15,12 +15,11 @@ class ClearAllRulesTestCase(unittest.TestCase):
 
     def test_1_all_rules_deleted(self) -> None:
         self.model.clear_all_rules()
-        self.assertEqual(len(self.model._fis.Rules), 0,
-                         "Not all rules deleted")
+        self.assertEqual(len(self.model._fis.Rules), 0, "Not all rules deleted")
 
     def tearDown(self) -> None:
         del self.model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
