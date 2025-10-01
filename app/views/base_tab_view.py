@@ -1,16 +1,16 @@
-"""Base class for all views with dependency injection for AppContext."""
+"""Base class for all tab views with dependency injection for AppContext."""
 
 import os
 from typing import Callable, Optional
 
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QTabWidget
 
 from app.app_context import AppContext
 from app.utils.paths import local_path
 
 
-class BaseView(QWidget):
-    """Base class for all views with AppContext dependency injection.
+class BaseTabView(QTabWidget):
+    """Base class for all tab views with AppContext dependency injection.
 
     - Uses a class-level context provider for dependency injection.
     - Applies local stylesheet if exists and updates on theme change.
@@ -34,15 +34,15 @@ class BaseView(QWidget):
         self,
         context: AppContext | None = None,
         qss_filename: Optional[str] = None,
-        parent: QWidget | None = None,
+        parent=None,
     ) -> None:
-        """Initialize the BaseView with an optional context and QSS filename.
+        """Initialize the BaseTabView with an optional context and QSS filename.
 
         Args:
             context (optional): The AppContext instance. If not provided, uses the
                 provider.
             qss_filename (Optional[str]): The QSS file to use for styling.
-            parent (Optional[QWidget]): The parent QWidget, if any.
+            parent (optional): The parent widget, if any.
 
         Raises:
             RuntimeError: If no context is provided or set as provider.
@@ -54,7 +54,7 @@ class BaseView(QWidget):
             self.context = self._context_provider()
         else:
             raise RuntimeError(
-                "No AppContext provided or set as provider for BaseView."
+                "No AppContext provided or set as provider for BaseTabView."
             )
         self.theme_manager = self.context.theme_manager
         self.qss_filename = qss_filename
@@ -83,7 +83,3 @@ class BaseView(QWidget):
                 self.setStyleSheet("")
         else:
             self.setStyleSheet("")
-
-
-# Alias for backward compatibility
-BaseWidget = BaseView

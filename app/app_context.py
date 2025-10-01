@@ -1,5 +1,6 @@
 from typing import Optional
 
+from app.services.fuzzy_calculation_service import FuzzyCalculationService
 from app.services.theme_manager import ThemeManager
 from app.services.translate_manager import TranslateManager
 from app.utils.config import AppConfig
@@ -42,6 +43,9 @@ class AppContext:
 
         # Theme manager (not global)
         self.theme_manager = ThemeManager(str(THEMES_DIR))
+
+        # Fuzzy calculation service
+        self.fuzzy_service = FuzzyCalculationService()
 
         self._initialized = True
 
