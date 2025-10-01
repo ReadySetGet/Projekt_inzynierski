@@ -1,14 +1,13 @@
 import configparser
-import os
-from typing import Optional
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../../config.ini")
+from app.utils.keys import CONFIG_PATH
 
 
 class AppConfig:
     """Application configuration loader and accessor."""
 
-    config: Optional[configparser.ConfigParser] = None
+    _config = configparser.ConfigParser()
+    _initialized = False
 
     @classmethod
     def initialize(cls, path: str = CONFIG_PATH) -> None:
@@ -17,8 +16,9 @@ class AppConfig:
         Args:
             path (str): The path to the configuration file.
         """
-        cls.config = configparser.ConfigParser()
-        cls.config.read(path)
+        if not cls._initialized:
+            cls._config.read(path)
+            cls._initialized = True
 
     @classmethod
     def get_var(cls, section: str, key: str) -> str:
@@ -34,9 +34,9 @@ class AppConfig:
         Raises:
             RuntimeError: If AppConfig is not initialized.
         """
-        if cls.config is None:
+        if not cls._initialized:
             raise RuntimeError("AppConfig not initialized")
-        return cls.config.get(section, key)
+        return cls._config.get(section, key)
 
     @classmethod
     def app_name(cls) -> str:
@@ -45,7 +45,7 @@ class AppConfig:
         Returns:
             str: The application name.
         """
-        return cls.get_var("app", "name")
+        return cls._config.get("app", "name", fallback="Default App")
 
     @classmethod
     def window_width(cls) -> int:
@@ -54,7 +54,7 @@ class AppConfig:
         Returns:
             int: The window width.
         """
-        return int(cls.get_var("window", "width"))
+        return cls._config.getint("window", "width", fallback=800)
 
     @classmethod
     def window_height(cls) -> int:
@@ -63,4 +63,4 @@ class AppConfig:
         Returns:
             int: The window height.
         """
-        return int(cls.get_var("window", "height"))
+        return cls._config.getint("window", "height", fallback=600)

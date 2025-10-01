@@ -12,7 +12,7 @@ lint:
 	$(VENV_PY) -m flake8 app
 
 lint-fix:
-	$(VENV_PY) -m isort app && $(VENV_PY) -m black app
+	python -m isort app && python -m black app
 
 format:
 	$(VENV_PY) -m black app
