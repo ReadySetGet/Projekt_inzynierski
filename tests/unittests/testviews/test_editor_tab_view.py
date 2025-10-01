@@ -30,8 +30,10 @@ def test_tabs_structure(tested_widget):
 
 def test_fis_properties_tab_initial_state(tested_widget):
     fis_tab = tested_widget.findChild(QtWidgets.QWidget, "fis_properties_tab")
+    assert isinstance(fis_tab, QtWidgets.QWidget)
 
     sys_type_label = fis_tab.findChild(QtWidgets.QLabel, "system_type_label_1")
+    assert isinstance(sys_type_label, QtWidgets.QLabel)
     assert sys_type_label.text() == "Type:"
 
     sys_name_label = fis_tab.findChild(QtWidgets.QLabel, "system_name_label")
@@ -57,3 +59,25 @@ def test_fis_properties_tab_initial_state(tested_widget):
 
     sys_type_label_2 = tested_widget.findChild(QtWidgets.QLabel, "system_type_label_2")
     assert sys_type_label_2.text() == "System_type"
+
+
+def test_defuz_dropdown(tested_widget):
+    defuz_dropdown = tested_widget.findChild(QtWidgets.QComboBox, "defuzzification_dropdown")
+
+    assert defuz_dropdown.currentIndex() == 0
+    assert defuz_dropdown.currentText() == "centroid"
+
+    defuz_dropdown.setCurrentIndex(1)
+
+    assert defuz_dropdown.currentIndex() == 1
+    assert defuz_dropdown.currentText() == "bisector"
+
+    defuz_dropdown.setCurrentIndex(2)
+
+    assert defuz_dropdown.currentIndex() == 2
+    assert defuz_dropdown.currentText() == "lom"
+
+    defuz_dropdown.setCurrentIndex(0)
+
+    assert defuz_dropdown.currentIndex() == 0
+    assert defuz_dropdown.currentText() == "centroid"

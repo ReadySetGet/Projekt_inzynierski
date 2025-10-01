@@ -80,7 +80,7 @@ class EditorTabWidget(QtWidgets.QTabWidget):
         self.addTab(self.fis_properties_tab, "fis_properties_tab")
 
         self.mf_properties_tab = QtWidgets.QWidget()
-        self.mf_properties_tab.setObjectName("fis_properties_tab")
+        self.mf_properties_tab.setObjectName("mf_properties_tab")
 
         self.addTab(self.mf_properties_tab, "mf_properties_tab")
 
