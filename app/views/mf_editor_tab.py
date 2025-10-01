@@ -67,7 +67,7 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.mf_table.setColumnWidth(2, 100)
 
         self.shape_select_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
-        self.shape_select_dropdown.addItems(['Gauss', 'Trapezoid', 'Triangle', 'Bell'])
+        self.shape_select_dropdown.addItems(['Triangle', 'Trapezoid', 'Gauss', 'Bell'])
         self.shape_select_dropdown.setObjectName("shape_select_dropdown")
         self.shape_select_dropdown.currentIndexChanged.connect(self._shape_changed)
 
