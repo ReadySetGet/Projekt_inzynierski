@@ -102,7 +102,6 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.mf_name_label.setText(_translate("MainWindow", "Name"))
         self.mf_range_label.setText(_translate("MainWindow", "Range"))
         self.mf_name_edit.setText(_translate("MainWindow", "Placeholder"))
-        self.mf_range_submit_button.setText(_translate("MainWindow", "Submit"))
         self.mf_range_edit.setText(_translate("MainWindow", self.default_parameters))
         self.number_of_mf_label.setText(_translate("MainWindow", "Number of MF:"))
 
