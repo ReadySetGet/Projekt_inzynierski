@@ -95,6 +95,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.mf_plot_graph.setTitle("Membership Function Plot", color="black")
         self.mf_plot_graph.setLabel("left", "Degree of Membership", color="black")
         self.mf_plot_graph.setLabel("bottom", f"Input variable: {self.variable}", color="black")
+        self.mf_plot_graph.setObjectName("plot")
         """Adding plot widget to the layout to display it."""
         frame_layout.addWidget(self.mf_plot_graph)
 
