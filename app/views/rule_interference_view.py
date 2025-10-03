@@ -27,6 +27,7 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
 
         Attributes:
             placeholder attributes for testing purposes
+            block_sliders: boolean, used to control cyclical signal calls
     """
 
     _counter_numb = 5
@@ -39,6 +40,8 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
     y_a = [0, 5, 5, 0]
     slider_1_value = 50
     slider_2_value = 50
+
+    block_sliders = False
 
     def __init__(self, parent=None):
         """Initialize a new class instance.
@@ -151,6 +154,7 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
 
         self.result_plot = pg.PlotWidget()
         self.result_plot.plot(self.x_a, self.y_a, pen='b', brush='b', fillLevel=0.0)
+        self.result_plot.setObjectName("result_plot")
         hide_axi(self.result_plot)
 
         result_layout.addWidget(self.result_plot)
@@ -189,19 +193,24 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
 
     def _update_from_sliders(self) -> None:
         """Function which updates the editor field whenever slider positions change."""
-        self.slider_1_value = self.horizontalSlider.value()
-        self.slider_2_value = self.horizontalSlider_2.value()
-        self.input_values_edit.setText(f"{self.slider_1_value}, {self.slider_2_value}")
-        self.input_1_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
-                                   f"Input 1 = {self.slider_1_value}</span></p></body></html>")
-        self.input_2_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
-                                   f"Input 2 = {self.slider_2_value}</span></p></body></html>")
+        if not self.block_sliders:
+            self.slider_1_value = self.horizontalSlider.value()
+            self.slider_2_value = self.horizontalSlider_2.value()
+            self.input_values_edit.setText(f"{self.slider_1_value}, {self.slider_2_value}")
+            self.input_1_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
+                                       f"Input 1 = {self.slider_1_value}</span></p></body></html>")
+            self.input_2_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
+                                       f"Input 2 = {self.slider_2_value}</span></p></body></html>")
 
     def _update_from_editor_field(self) -> None:
         """Function which updates the slider positions whenever the editor field changes."""
         s = self.input_values_edit.text()
         newstr = ''.join((ch if ch in '0123456789.-' else ' ') for ch in s)
         list_of_numbers = [int(i) for i in newstr.split()]
+
+        self.block_sliders = True
+
+        print(list_of_numbers)
 
         self.slider_1_value = list_of_numbers[0]
         self.slider_2_value = list_of_numbers[1]
@@ -213,3 +222,4 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
                                    f"Input 1 = {self.slider_1_value}</span></p></body></html>")
         self.input_2_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
                                    f"Input 2 = {self.slider_2_value}</span></p></body></html>")
+        self.block_sliders = False
