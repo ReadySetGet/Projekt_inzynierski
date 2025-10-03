@@ -15,12 +15,12 @@ class RulesEditorTab(QtWidgets.QWidget):
             __init__(parent): create an instance of RulesEditorTab and bind it to the parent window.
 
         Attributes:
-            is_or_radio_changed: pyqtSignal which gets emitted to backend whenever one of the is or
+            and_or_radio_changed: pyqtSignal which gets emitted to backend whenever one of the is or
                 radio buttons gets clicked.
             is_dropdown_changed: pyqtSignal which gets emitted to backend whenever is or isn't condition gets changed.
             mf_changed: pyqtSignal which gets emitted to backend whenever a chosen mf gets changed.
     """
-    is_or_radio_changed = QtCore.pyqtSignal()
+    and_or_radio_changed = QtCore.pyqtSignal()
     is_dropdown_changed = QtCore.pyqtSignal()
     mf_changed = QtCore.pyqtSignal()
 
@@ -175,7 +175,7 @@ class RulesEditorTab(QtWidgets.QWidget):
 
     def _radio_button_clicked(self):
         """Emit the signal that chosen connection was changed to the backend."""
-        self.is_or_radio_changed.emit()
+        self.and_or_radio_changed.emit()
 
     def _mf_changed_func(self):
         """Emit the signal that chosen mf was changed to the backend."""
