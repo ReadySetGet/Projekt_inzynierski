@@ -43,7 +43,7 @@ class BrowserFrameWidget(QtWidgets.QFrame):
                 parent: The parent QtWidget, in this case centralwidget, to which the widget will be attached.
         """
         super().__init__(parent)
-        self.setObjectName("browserFrane")
+        self.setObjectName("browserFrame")
         self._setup_ui()
         self._retranslate_ui()
 
@@ -51,13 +51,13 @@ class BrowserFrameWidget(QtWidgets.QFrame):
         """Set up all the GUI sub elements."""
         self.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-        self.setObjectName("browserFrame")
 
         self.system_browser_tree_view = QtWidgets.QTreeView(parent=self)
         self.system_browser_tree_view.setGeometry(QtCore.QRect(0, 300, 301, 295))
         self.system_browser_tree_view.setObjectName("system_browser_tree_view")
 
         self.tree = QtWidgets.QTreeWidget(parent=self.system_browser_tree_view)
+        self.tree.setObjectName("tree")
         self.tree.resize(301, 295)
         self.tree.setHeaderHidden(True)
 
