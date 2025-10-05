@@ -52,6 +52,28 @@ def test_object_names(tested_widget):
     assert tested_widget.horizontalSlider.objectName() == "horizontalSlider"
     assert tested_widget.horizontalSlider_2.objectName() == "horizontalSlider_2"
 
+    for i in range(5):
+        counter = tested_widget.findChild(QtWidgets.QLabel, "counter_" + str(i + 1))
+        assert counter.objectName() == "counter_" + str(i + 1)
+
+        activation_input_1 = tested_widget.findChild(QtWidgets.QFrame, f"activation_frame_input1_{i}")
+        assert activation_input_1.objectName() == f"activation_frame_input1_{i}"
+
+        activation_plot_1 = activation_input_1.findChild(pg.PlotWidget, f"activation_plot_input1_{i}")
+        assert activation_plot_1.objectName() == f"activation_plot_input1_{i}"
+
+        activation_input_2 = tested_widget.findChild(QtWidgets.QFrame, f"activation_frame_input2_{i}")
+        assert activation_input_2.objectName() == f"activation_frame_input2_{i}"
+
+        activation_plot_2 = activation_input_2.findChild(pg.PlotWidget, f"activation_plot_input2_{i}")
+        assert activation_plot_2.objectName() == f"activation_plot_input2_{i}"
+
+        activation_output_1 = tested_widget.findChild(QtWidgets.QFrame, f"activation_frame_output1_{i}")
+        assert activation_output_1.objectName() == f"activation_frame_output1_{i}"
+
+        activation_plot_3 = activation_output_1.findChild(pg.PlotWidget, f"activation_plot_output1_{i}")
+        assert activation_plot_3.objectName() == f"activation_plot_output1_{i}"
+
 
 def test_types(tested_widget):
     assert isinstance(tested_widget, QtWidgets.QWidget)
@@ -68,10 +90,34 @@ def test_types(tested_widget):
     assert isinstance(tested_widget.horizontalSlider, QtWidgets.QSlider)
     assert isinstance(tested_widget.horizontalSlider_2, QtWidgets.QSlider)
 
+    for i in range(5):
+        counter = tested_widget.findChild(QtWidgets.QLabel, "counter_" + str(i + 1))
+        assert isinstance(counter, QtWidgets.QLabel)
+
+        activation_input_1 = tested_widget.findChild(QtWidgets.QFrame, f"activation_frame_input1_{i}")
+        assert isinstance(activation_input_1, QtWidgets.QFrame)
+
+        activation_plot_1 = activation_input_1.findChild(pg.PlotWidget, f"activation_plot_input1_{i}")
+        assert isinstance(activation_plot_1, pg.PlotWidget)
+
+        activation_input_2 = tested_widget.findChild(QtWidgets.QFrame, f"activation_frame_input2_{i}")
+        assert isinstance(activation_input_2, QtWidgets.QFrame)
+
+        activation_plot_2 = activation_input_2.findChild(pg.PlotWidget, f"activation_plot_input2_{i}")
+        assert isinstance(activation_plot_2, pg.PlotWidget)
+
+        activation_output_1 = tested_widget.findChild(QtWidgets.QFrame, f"activation_frame_output1_{i}")
+        assert isinstance(activation_output_1, QtWidgets.QFrame)
+
+        activation_plot_3 = activation_output_1.findChild(pg.PlotWidget, f"activation_plot_output1_{i}")
+        assert isinstance(activation_plot_3, pg.PlotWidget)
+
 
 def test_slider_1(qtbot, tested_widget):
     slider = tested_widget.findChild(QtWidgets.QSlider, "horizontalSlider")
-    slider.setValue(75)
+
+    with qtbot.waitSignal(tested_widget.value_changed, timeout=1000, raising=True):
+        slider.setValue(75)
 
     assert tested_widget.slider_1_value == 75
     assert tested_widget.input_values_edit.text() == "75, 50"
@@ -79,7 +125,8 @@ def test_slider_1(qtbot, tested_widget):
 
 def test_slider_2(qtbot, tested_widget):
     slider = tested_widget.findChild(QtWidgets.QSlider, "horizontalSlider_2")
-    slider.setValue(75)
+    with qtbot.waitSignal(tested_widget.value_changed, timeout=1000, raising=True):
+        slider.setValue(75)
 
     assert tested_widget.slider_2_value == 75
     assert tested_widget.input_values_edit.text() == "50, 75"
@@ -87,9 +134,12 @@ def test_slider_2(qtbot, tested_widget):
 
 def test_edit_valid(qtbot, tested_widget):
     edit = tested_widget.findChild(QtWidgets.QLineEdit, "input_values_edit")
-    edit.setText("75, 75")
+    with qtbot.waitSignal(tested_widget.value_changed, timeout=1000, raising=True):
+        edit.setText("75, 75")
 
     assert tested_widget.horizontalSlider.value() == 75
     assert tested_widget.input_values_edit.text() == "75, 75"
     assert tested_widget.horizontalSlider_2.value() == 75
+
+
 
