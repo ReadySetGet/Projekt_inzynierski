@@ -28,6 +28,7 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
         Attributes:
             placeholder attributes for testing purposes
             block_sliders: boolean, used to control cyclical signal calls
+            value_changed: pyQtSignal emitted to the backend whenever the slider or LineEdit value changes
     """
 
     _counter_numb = 5
@@ -42,6 +43,7 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
     slider_2_value = 50
 
     block_sliders = False
+    value_changed = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         """Initialize a new class instance.
@@ -103,11 +105,13 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
             self.activation_frame_input1.setGeometry(QtCore.QRect(30, 120 + 80 * i, 131, 61))
             self.activation_frame_input1.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
             self.activation_frame_input1.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-            self.activation_frame_input1.setObjectName("activation_frame_input1")
+            self.activation_frame_input1.setObjectName(f"activation_frame_input1_{i}")
 
             frame_layout_1 = QtWidgets.QVBoxLayout(self.activation_frame_input1)
+            frame_layout_1.setObjectName(f"frame_layoud_1_{i}")
             self.activation_plot_input1 = pg.PlotWidget()
             self.activation_plot_input1.plot(self.x, self.y, pen='b')
+            self.activation_plot_input1.setObjectName(f"activation_plot_input1_{i}")
 
             hide_axi(self.activation_plot_input1)
             frame_layout_1.addWidget(self.activation_plot_input1)
@@ -116,11 +120,12 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
             self.activation_frame_input2.setGeometry(QtCore.QRect(170, 120 + 80 * i, 131, 61))
             self.activation_frame_input2.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
             self.activation_frame_input2.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-            self.activation_frame_input2.setObjectName("activation_frame_input2")
+            self.activation_frame_input2.setObjectName(f"activation_frame_input2_{i}")
 
             frame_layout_2 = QtWidgets.QVBoxLayout(self.activation_frame_input2)
             self.activation_plot_input2 = pg.PlotWidget()
             self.activation_plot_input2.plot(self.x[::-1], self.y, pen='b')
+            self.activation_plot_input2.setObjectName(f"activation_plot_input2_{i}")
 
             hide_axi(self.activation_plot_input2)
             frame_layout_2.addWidget(self.activation_plot_input2)
@@ -129,13 +134,14 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
             self.activation_frame_output1.setGeometry(QtCore.QRect(370, 120 + 80 * i, 131, 61))
             self.activation_frame_output1.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
             self.activation_frame_output1.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-            self.activation_frame_output1.setObjectName("activation_frame_output1")
+            self.activation_frame_output1.setObjectName(f"activation_frame_output1_{i}")
 
             frame_layout_3 = QtWidgets.QVBoxLayout(self.activation_frame_output1)
             self.activation_plot_output1 = pg.PlotWidget()
 
             self.activation_plot_output1.plot(self.x_o, self.y_o, pen='b')
             self.activation_plot_output1.plot(self.x_a, self.y_a, brush='b', fillLevel=0.0)
+            self.activation_plot_output1.setObjectName(f"activation_plot_output1_{i}")
 
             hide_axi(self.activation_plot_output1)
             frame_layout_3.addWidget(self.activation_plot_output1)
@@ -201,6 +207,7 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
                                        f"Input 1 = {self.slider_1_value}</span></p></body></html>")
             self.input_2_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
                                        f"Input 2 = {self.slider_2_value}</span></p></body></html>")
+            self.value_changed.emit()
 
     def _update_from_editor_field(self) -> None:
         """Function which updates the slider positions whenever the editor field changes."""
@@ -222,4 +229,5 @@ class RuleInterferenceTabWidget(QtWidgets.QWidget):
                                    f"Input 1 = {self.slider_1_value}</span></p></body></html>")
         self.input_2_label.setText(f"<html><head/><body><p><span style=\" font-weight:600;\">"
                                    f"Input 2 = {self.slider_2_value}</span></p></body></html>")
+        self.value_changed.emit()
         self.block_sliders = False
