@@ -2,6 +2,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from app.views.rule_interference_view import RuleInterferenceTabWidget
 import numpy as np
 import pyqtgraph as pg
+import re
 from app.views.triangle_plot import TrianglePlot
 from app.views.trapezoid_plot import TrapezoidPlot
 from app.views.gauss_plot import GaussPlot
@@ -11,11 +12,27 @@ from app.views.in_output import InOutput
 from app.views.fis_tab_view import FisTabView
 
 
+def _regex_func(match) -> str:
+    """Fuction responsible for substituting the antecedent ==
+    with consequent = after the => symbol"""
+    then = match.group(1)
+    after = match.group(2)
+    consequent = re.sub(r"==", r'=', after)
+    return then + consequent
+
+
 class CentralTabWidget(QtWidgets.QTabWidget):
     """Central tab of the program responsible for displaying MF plots, input/output plots,
     rule interference plots and all the rules present in the program."""
     addRuleClicked = QtCore.pyqtSignal()
     deleteRuleClicked = QtCore.pyqtSignal()
+    _symbols = {
+        "is": "==",
+        "is not": "~=",
+        "then": "=>",
+        "and": "&",
+        "or": "|"
+    }
     tri_x = [-100.0, 25, 50, 75, 200]
     tri_y = [0.0, 0, 1, 0, 0]
     trap_x = [-100.0, 10, 25, 75, 90, 200]
@@ -157,6 +174,12 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.clear_rules_button.setObjectName("clear_rules")
         self.clear_rules_button.clicked.connect(self.clearTable)
 
+        self.rule_style_dropdown = QtWidgets.QComboBox(parent=self.rule_editor)
+        self.rule_style_dropdown.setGeometry(QtCore.QRect(300, 60, 100, 28))
+        self.rule_style_dropdown.setObjectName("rule_style_dropdown")
+        self.rule_style_dropdown.addItems(['Verbose', 'Symbolic', 'Indexed'])
+        self.rule_style_dropdown.currentIndexChanged.connect(self._update_rule_style)
+
         self.add_rule_button = QtWidgets.QPushButton(parent=self.rule_editor)
         self.add_rule_button.setGeometry(QtCore.QRect(460, 100, 41, 28))
         self.add_rule_button.setObjectName("addRuleButton")
@@ -214,9 +237,9 @@ class CentralTabWidget(QtWidgets.QTabWidget):
 
                 for k in range(len(input1_mfs)):
                     for g in range(len(input2_mfs)):
-                        new_rule = Rule(input1.GetName(), input1_mfs[k],
-                                        input2.GetName(), input2_mfs[g],
-                                        output.GetName(), output_mfs[output_index],
+                        new_rule = Rule(input1.GetName(), input1_mfs[k], "1",
+                                        input2.GetName(), input2_mfs[g], "2",
+                                        output.GetName(), output_mfs[output_index], "3",
                                         "is", "and", "1", f"Rule {len(self.rules) + 1}")
                         self.rules.append(new_rule)
                         output_index += 1
@@ -227,9 +250,22 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         """Function responsible for filling the rules table with rules.
         Displays as many rows as there are rules in the program"""
         rule_numb = len(self.rules)
+        display_type = self.rule_style_dropdown.currentText()
         self.table_widget.setRowCount(rule_numb)
         for i in range(rule_numb):
-            self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(self.rules[i].getRule()))
+            if display_type == "Symbolic":
+                symbolic_rule = self.rules[i].getRule()
+                pattern = r'\b({})\b'.format('|'.join(sorted(re.escape(k) for k in self._symbols)))
+                symbolic_rule = re.sub(pattern, lambda m: self._symbols.get(m.group(0)), symbolic_rule)
+                symbolic_rule = re.sub(r'(=>)(.*)', _regex_func, symbolic_rule)
+                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(symbolic_rule))
+            elif display_type == "Indexed":
+                rule = self.rules[i]
+                indexed_rule = (f"{rule.getInputMfNumbers()}, {rule.getOutputMfNumbers()}, ({rule.getWeight()}) "
+                                f": {rule.getConnector()}")
+                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(indexed_rule))
+            else:
+                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(self.rules[i].getRule()))
             self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(self.rules[i].getWeight()))
             self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(self.rules[i].getName()))
 
@@ -255,7 +291,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         new_rule = Rule(input1.GetName(), input1_mfs[0],
                         input2.GetName(), input2_mfs[0],
                         output.GetName(), output_mfs[0],
-                        "is", "and", "1", f"Rule {len(self.rules) + 1}")
+                        "is not", "and", "1", f"Rule {len(self.rules) + 1}")
         self.rules.append(new_rule)
         self.fillTable()
         self.status_bar.showMessage("Last action: added new rule.")
@@ -268,3 +304,9 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.fillTable()
         self.deleteRuleClicked.emit()
         self.status_bar.showMessage("Last action: removed a rule.")
+
+    def _update_rule_style(self):
+        self.table_widget.clear()
+        self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
+        self.table_widget.setColumnCount(3)
+        self.fillTable()
