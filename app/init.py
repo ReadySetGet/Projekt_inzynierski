@@ -28,7 +28,7 @@ def run() -> int:
     BaseView.set_context_provider(lambda *a, **kw: context)
     BaseTabView.set_context_provider(lambda *a, **kw: context)
     BaseFrameView.set_context_provider(lambda *a, **kw: context)
-    context.theme_manager.set_theme("dark", app)
+    context.theme_manager.set_theme("light", app)
 
     # Create main window with context
     window: MainWindow = MainWindow(context)
