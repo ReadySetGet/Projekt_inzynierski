@@ -105,7 +105,7 @@ class MFPropertiesWidget(BaseWidget):
         self.mf_range_edit.setText(self.view_model.default_parameters)
 
         self.mf_table = QtWidgets.QTableWidget(parent=self.editor_frame)
-        self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
+        self.mf_table.setGeometry(QtCore.QRect(10, 238, 281, 421))
         self.mf_table.setObjectName("mf_table")
 
         self.mf_table.setRowCount(0)  # Start with empty table
