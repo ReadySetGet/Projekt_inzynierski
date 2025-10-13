@@ -78,7 +78,7 @@ class TopMenu(BaseTabView):
         self.delete_output_button = QtWidgets.QPushButton(
             parent=self.scroll_area_widget_contents_3
         )
-        self.delete_output_button.setGeometry(QtCore.QRect(110, 70, 91, 41))
+        self.delete_output_button.setGeometry(QtCore.QRect(110, 70, 95, 41))
         self.delete_output_button.setObjectName("delete_output_button")
         self.delete_output_button.clicked.connect(self._del_output_button_clicked)
 
@@ -92,7 +92,7 @@ class TopMenu(BaseTabView):
         self.delete_input_button = QtWidgets.QPushButton(
             parent=self.scroll_area_widget_contents_3
         )
-        self.delete_input_button.setGeometry(QtCore.QRect(110, 10, 91, 41))
+        self.delete_input_button.setGeometry(QtCore.QRect(110, 10, 95, 41))
         self.delete_input_button.setObjectName("delete_input_button")
         self.delete_input_button.clicked.connect(self._del_input_button_clicked)
 

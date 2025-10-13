@@ -58,7 +58,7 @@ class RulesEditorTab(BaseView):
         self.rule_weight_edit.setObjectName("rule_weight_edit")
 
         self.rule_weight_label = QtWidgets.QLabel(parent=self)
-        self.rule_weight_label.setGeometry(QtCore.QRect(10, 100, 55, 16))
+        self.rule_weight_label.setGeometry(QtCore.QRect(10, 100, 55, 18))
         self.rule_weight_label.setObjectName("rule_weight_label")
 
         self.rule_name_edit = QtWidgets.QLineEdit(parent=self)
