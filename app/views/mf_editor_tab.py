@@ -92,7 +92,7 @@ class MFPropertiesWidget(BaseWidget):
         self.mf_name_label.setObjectName("mf_name_label")
 
         self.mf_range_label = QtWidgets.QLabel(parent=self.editor_frame)
-        self.mf_range_label.setGeometry(QtCore.QRect(20, 100, 55, 16))
+        self.mf_range_label.setGeometry(QtCore.QRect(20, 115, 55, 18))
         self.mf_range_label.setObjectName("mf_range_label")
 
         self.mf_name_edit = QtWidgets.QLineEdit(parent=self.editor_frame)
