@@ -323,7 +323,12 @@ class RulesEditorViewModel(BaseViewModel):
             return True
         return False
 
-    def refresh_data(self) -> None:
-        """Refresh all data from the model."""
+    def update_data(self) -> None:
+        """Update data from the model. Override from base class."""
         self._update_rules()
         self._update_mf_options()
+
+    def refresh_data(self) -> None:
+        """Refresh all data and notify of changes."""
+        self.update_data()
+        self.notify_data_changed()

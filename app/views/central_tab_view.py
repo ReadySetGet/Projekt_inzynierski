@@ -5,6 +5,7 @@ Classes:
         important information about the system. Inherits from QTabWidget.
 """
 
+import pyqtgraph as pg
 from PyQt6 import QtCore, QtWidgets
 
 from app.view_models.base_view_model import BaseViewModel
@@ -51,12 +52,24 @@ class CentralTabWidget(BaseTabView):
         """
         super().__init__(parent=parent)
         self._view_model = view_model
+        self._plotting = False
         self.setObjectName("centralTab")
         self._setup_ui()
         self._retranslate_ui()
 
     def _setup_ui(self):
         """Set up all the GUI sub elements."""
+        # Use shared fuzzy service from context
+        if hasattr(self, "context") and self.context:
+            self.fuzzy_service = self.context.fuzzy_service
+        else:
+            # Fallback: create a new service if no context is available
+            from app.services.fuzzy_calculation_service import FuzzyCalculationService
+
+            self.fuzzy_service = FuzzyCalculationService("mamdani")
+
+        self._view_model.set_fuzzy_service(self.fuzzy_service)
+
         self.fis_plot = QtWidgets.QWidget()
         self.fis_plot.setObjectName("fis_plot")
 
@@ -65,6 +78,15 @@ class CentralTabWidget(BaseTabView):
         self.graph_frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.graph_frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.graph_frame.setObjectName("graph_frame")
+
+        self.fis_graph_widget = pg.PlotWidget(parent=self.graph_frame)
+        self.fis_graph_widget.setGeometry(QtCore.QRect(5, 5, 451, 461))
+        self.fis_graph_widget.setLabel("left", "Value")
+        self.fis_graph_widget.setLabel("bottom", "Input")
+        self.fis_graph_widget.setTitle("FIS Plot")
+        self.fis_graph_widget.showGrid(x=True, y=True)
+        self.fis_graph_widget.setBackground("w")
+
         self.addTab(self.fis_plot, "")
 
         self.mf_plot = QtWidgets.QWidget()
@@ -76,6 +98,14 @@ class CentralTabWidget(BaseTabView):
         self.plot_frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.plot_frame.setObjectName("plot_frame")
 
+        self.mf_graph_widget = pg.PlotWidget(parent=self.plot_frame)
+        self.mf_graph_widget.setGeometry(QtCore.QRect(5, 5, 521, 541))
+        self.mf_graph_widget.setLabel("left", "Membership Degree")
+        self.mf_graph_widget.setLabel("bottom", "Value")
+        self.mf_graph_widget.setTitle("Membership Functions")
+        self.mf_graph_widget.showGrid(x=True, y=True)
+        self.mf_graph_widget.setBackground("w")
+
         self.seperator_line = QtWidgets.QFrame(parent=self.mf_plot)
         self.seperator_line.setGeometry(QtCore.QRect(0, 20, 501, 31))
         self.seperator_line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
@@ -86,6 +116,9 @@ class CentralTabWidget(BaseTabView):
         self.system_name_label.setGeometry(QtCore.QRect(0, 10, 211, 16))
         self.system_name_label.setObjectName("system_name_label")
         self.addTab(self.mf_plot, "")
+
+        self._connect_view_model_signals()
+        self._setup_sample_data()
 
         self.rule_editor = QtWidgets.QWidget()
         self.rule_editor.setObjectName("rule_editor")
@@ -135,3 +168,106 @@ class CentralTabWidget(BaseTabView):
         self.table_widget.setColumnCount(3)
         self.rules = []
         self.clear_rules_clicked.emit()
+
+    def _connect_view_model_signals(self):
+        """Connect view model signals to UI update methods."""
+        self._view_model.membership_functions_data_ready.connect(
+            self._on_membership_functions_data_ready
+        )
+        self._view_model.fis_plot_data_ready.connect(self._on_fis_plot_data_ready)
+        self._view_model.inference_data_ready.connect(self._on_inference_data_ready)
+        self._view_model.system_name_changed.connect(self._on_system_name_changed)
+
+    def _setup_sample_data(self):
+        """Set up sample data for demonstration."""
+        self.fuzzy_service.add_membership_function(
+            "Input1", "low", "trojkatna", [0, 2, 4]
+        )
+        self.fuzzy_service.add_membership_function(
+            "Input1", "high", "trojkatna", [6, 8, 10]
+        )
+        self.fuzzy_service.add_membership_function(
+            "Output1", "low", "trojkatna", [0, 2, 4]
+        )
+        self.fuzzy_service.add_membership_function(
+            "Output1", "high", "trojkatna", [6, 8, 10]
+        )
+        self.fuzzy_service.add_rule([1, 1], [1, 1, 1, 1])
+        self._view_model._update_membership_functions_plot()
+
+    def _on_membership_functions_data_ready(
+        self, variable_name, x_data, y_data_list, colors
+    ):
+        """Handle membership functions plot data from view model."""
+        if self._plotting:
+            return
+        self._plotting = True
+        try:
+            self.mf_graph_widget.clear()
+
+            if not y_data_list:
+                return
+
+            import numpy as np
+
+            x = np.array(x_data)
+
+            for i, y_data in enumerate(y_data_list):
+                color = colors[i % len(colors)]
+                y = np.array(y_data)
+                self.mf_graph_widget.plot(x, y, pen=pg.mkPen(color, width=2))
+
+            self.mf_graph_widget.setXRange(x.min(), x.max())
+            self.mf_graph_widget.setYRange(0, 1.1)
+            self.mf_graph_widget.setTitle(f"Membership Functions: {variable_name}")
+        finally:
+            self._plotting = False
+
+    def _on_fis_plot_data_ready(self, x_data, y_data):
+        """Handle FIS plot data from view model."""
+        self.fis_graph_widget.clear()
+
+        if x_data and y_data:
+            import numpy as np
+
+            x = np.array(x_data)
+            y = np.array(y_data)
+            self.fis_graph_widget.plot(x, y, pen=pg.mkPen("b", width=2))
+
+    def _on_inference_data_ready(self, inputs, outputs):
+        """Handle inference results data from view model."""
+        if inputs and outputs:
+            self.fis_graph_widget.plot(
+                inputs, outputs, pen=pg.mkPen("r", width=2), symbol="o", symbolSize=8
+            )
+
+    def _on_system_name_changed(self, system_name):
+        """Handle system name changes from view model."""
+        self.system_name_label.setText(system_name)
+
+    def get_fuzzy_service(self):
+        """Get the fuzzy calculation service."""
+        return self.fuzzy_service
+
+    def connect_mf_editor(self, mf_editor):
+        """Connect the MF Editor to update the plot when properties change.
+
+        Args:
+            mf_editor: The MF Editor widget to connect
+        """
+        self._view_model.connect_mf_editor(mf_editor)
+
+    def refresh_ui(self) -> None:
+        """Refresh the UI elements."""
+        # Only refresh if we have a valid view model
+        if hasattr(self, "_view_model") and self._view_model:
+            self._view_model._update_membership_functions_plot()
+
+    def update_ui(self) -> None:
+        """Update UI elements."""
+        pass
+
+    def handle_global_update(self) -> None:
+        """Handle global update request."""
+        # Don't trigger global updates from global updates to avoid circular calls
+        pass

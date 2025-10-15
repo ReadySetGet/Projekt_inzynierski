@@ -91,13 +91,11 @@ class ThemeManager(QObject):
         """
         palette_path = self.palette_paths.get(theme_name)
         if not palette_path or not os.path.exists(palette_path):
-            print(f"[ThemeManager] Palette JSON file not found for theme: {theme_name}")
             return False
         with open(palette_path, "r", encoding="utf-8") as pf:
             palette = json.load(pf)
         self.current_theme = theme_name
         self.current_palette = palette
-        print(f"[ThemeManager] Theme '{theme_name}' palette loaded successfully.")
         self.theme_changed.emit()
         return True
 
@@ -126,7 +124,6 @@ class ThemeManager(QObject):
             if os.path.exists(rel_path):
                 qss_path = rel_path
         if not os.path.exists(qss_path):
-            print(f"[ThemeManager] QSS file not found: {qss_path}")
             return ""
         with open(qss_path, "r", encoding="utf-8") as f:
             qss = f.read()

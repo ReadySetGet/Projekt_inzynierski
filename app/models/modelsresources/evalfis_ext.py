@@ -247,9 +247,27 @@ def eval_rules_sugeno(fis, firing_strength, user_input):
                 mf = fis.Outputs[j].MembershipFunctions[mf_index]
 
                 if mf.Type == "constant":
-                    location = mf.Parameters[0]
+                    # Handle both list and single value parameters
+                    if hasattr(mf.Parameters, "__getitem__"):
+                        location = mf.Parameters[0]
+                    else:
+                        location = mf.Parameters
                 elif mf.Type == "linear":
-                    location = mf.Parameters[0] * np.array([user_input, 1])
+                    # For linear functions: location = p0*x1 + p1*x2 + ... + pn
+                    # where pn is the constant term
+                    if hasattr(mf.Parameters, "__len__") and len(mf.Parameters) > len(
+                        user_input
+                    ):
+                        # Parameters include coefficients for inputs + constant term
+                        location = (
+                            np.dot(mf.Parameters[:-1], user_input) + mf.Parameters[-1]
+                        )
+                    else:
+                        # Fallback: just use the first parameter
+                        if hasattr(mf.Parameters, "__getitem__"):
+                            location = mf.Parameters[0]
+                        else:
+                            location = mf.Parameters
 
                 # Store result in column of rule_output corresponding
                 # to the (rule, output) pair.

@@ -3,6 +3,7 @@
 import os
 from typing import Callable, Optional
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QTabWidget
 
 from app.app_context import AppContext
@@ -17,9 +18,16 @@ class BaseTabView(QTabWidget):
     - Sets up translation function (self.t) from AppContext.
     - Subclasses should call super().__init__(context, qss_filename) and use self.t
       for translations.
+
+    All subclasses should implement the abstract methods to ensure proper
+    MVVM architecture and global update functionality.
     """
 
     _context_provider: Optional[Callable[[], AppContext]] = None
+
+    # Global update signals
+    global_update_requested = pyqtSignal()
+    ui_refresh_needed = pyqtSignal()
 
     @classmethod
     def set_context_provider(cls, provider: Callable[[], AppContext]) -> None:
@@ -34,7 +42,7 @@ class BaseTabView(QTabWidget):
         self,
         context: AppContext | None = None,
         qss_filename: Optional[str] = None,
-        parent=None,
+        parent=QTabWidget | None,
     ) -> None:
         """Initialize the BaseTabView with an optional context and QSS filename.
 
@@ -83,3 +91,24 @@ class BaseTabView(QTabWidget):
                 self.setStyleSheet("")
         else:
             self.setStyleSheet("")
+
+    def request_global_update(self) -> None:
+        """Request a global update across all components."""
+        self.global_update_requested.emit()
+
+    def notify_ui_refresh_needed(self) -> None:
+        """Notify that UI needs to be refreshed."""
+        self.ui_refresh_needed.emit()
+
+    def refresh_ui(self) -> None:
+        """Refresh the UI. Override in subclasses."""
+        pass
+
+    def update_ui(self) -> None:
+        """Update UI elements. Override in subclasses."""
+        pass
+
+    def handle_global_update(self) -> None:
+        """Handle global update request."""
+        self.refresh_ui()
+        self.update_ui()

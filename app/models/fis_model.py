@@ -314,11 +314,26 @@ class FISModel:
         if not mf_changing_validity_check[0]:
             return -3
 
-        old_mf = io_variable.MembershipFunctions.pop(mf_idx)
-        new_mf = fl.fismf(
-            mf_changing_validity_check[1], mf_changing_validity_check[2], old_mf.Name
-        )
-        io_variable.MembershipFunctions.insert(mf_idx, new_mf)
+        old_mf = io_variable.MembershipFunctions[mf_idx]
+
+        # Try to modify the existing MF in place instead of creating a new one
+        try:
+            # Try to change the type and parameters of the existing MF
+            old_mf.Type = mf_changing_validity_check[1]
+            # Use default parameters for the new type
+            old_mf.Parameters = mf_changing_validity_check[2]
+        except Exception:
+            # Fallback to the old method
+            old_mf = io_variable.MembershipFunctions.pop(mf_idx)
+            new_mf = fl.fismf(
+                mf_changing_validity_check[1],
+                mf_changing_validity_check[2],  # Use default parameters for new type
+            )
+            try:
+                new_mf.Name = old_mf.Name
+            except Exception:
+                setattr(new_mf, "Name", old_mf.Name)
+            io_variable.MembershipFunctions.insert(mf_idx, new_mf)
         return 1
 
     def add_rule(self, is_mf: list[int] = None, rule_data: list[int] = None) -> int:

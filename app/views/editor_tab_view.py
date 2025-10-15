@@ -1,7 +1,6 @@
-from PyQt6 import QtWidgets
-
 from app.view_models.base_view_model import BaseViewModel
 from app.views.base_tab_view import BaseTabView
+from app.views.fis_properties_tab_view import FisPropertiesTabView
 from app.views.mf_editor_tab import MFPropertiesWidget
 from app.views.rules_editor_tab import RulesEditorTab
 
@@ -25,7 +24,9 @@ class EditorTabWidget(BaseTabView):
         self._retranslate_ui()
 
     def _setup_ui(self):
-        self.fis_properties_tab = QtWidgets.QWidget()
+        self.fis_properties_tab = FisPropertiesTabView(
+            context=self._view_model.context, parent=self
+        )
         self.fis_properties_tab.setObjectName("fis_properties_tab")
 
         self.addTab(self.fis_properties_tab, "fis_properties_tab")
