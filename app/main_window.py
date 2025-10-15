@@ -2,6 +2,7 @@ from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtWidgets import QMainWindow
 
 from app.app_context import AppContext
+from app.services.global_update_manager import GlobalUpdateManager
 from app.utils.config import AppConfig
 from app.utils.paths import local_path
 from app.utils.shortcut_manager import ShortcutManager
@@ -111,6 +112,9 @@ class MainWindow(QMainWindow):
         self.centralwidget = QtWidgets.QWidget(parent=self)
         self.centralwidget.setObjectName("centralwidget")
 
+        # Create global update manager
+        self.global_update_manager = GlobalUpdateManager(self)
+
         # Create view models first
         self.top_menu_view_model = TopMenuViewModel(self.context)
         self.browser_frame_view_model = BrowserFrameViewModel(self.context)
@@ -135,6 +139,25 @@ class MainWindow(QMainWindow):
             self.editor_tab_view_model, parent=self.centralwidget
         )
         self.editorTab.setGeometry(QtCore.QRect(820, 160, 281, 641))
+
+        if hasattr(self.editorTab, "mf_properties_tab"):
+            central_fuzzy_service = self.plotTabs.get_fuzzy_service()
+            if hasattr(self.editorTab.mf_properties_tab, "fuzzy_service"):
+                self.editorTab.mf_properties_tab.fuzzy_service = central_fuzzy_service
+                fis_model = central_fuzzy_service.get_fis_model()
+                self.editorTab.mf_properties_tab.view_model.model = fis_model
+                self.editorTab.mf_properties_tab._connect_fuzzy_service_signals()
+
+            self.plotTabs.connect_mf_editor(self.editorTab.mf_properties_tab)
+
+        # Register components with global update manager
+        self.global_update_manager.register_view_model(self.central_tab_view_model)
+        self.global_update_manager.register_view(self.plotTabs)
+        if hasattr(self.editorTab, "mf_properties_tab"):
+            self.global_update_manager.register_view_model(
+                self.editorTab.mf_properties_tab.view_model
+            )
+            self.global_update_manager.register_view(self.editorTab.mf_properties_tab)
 
         self.setCentralWidget(self.centralwidget)
 

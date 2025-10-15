@@ -43,17 +43,25 @@ class MFPropertiesWidget(BaseWidget):
         super().__init__(context=context, qss_filename=qss_filename, parent=parent)
         self.setObjectName("mf_properties_tab")
 
-        # Initialize view model with the fuzzy service model
+        self._updating_type = False
+        self._desired_types = {}
+
         self.view_model = MFEditorViewModel()
         self.view_model.setParent(self)
 
-        # Set the model if context has fuzzy service
-        if hasattr(self.context, "fuzzy_service"):
-            fis_model = self.context.fuzzy_service.get_fis_model()
-            self.view_model.model = fis_model
+        if hasattr(self, "context") and self.context:
+            self.fuzzy_service = self.context.fuzzy_service
+        else:
+            from app.services.fuzzy_calculation_service import FuzzyCalculationService
 
-        # Connect view model signals
+            self.fuzzy_service = FuzzyCalculationService("mamdani")
+
+        fis_model = self.fuzzy_service.get_fis_model()
+        self.view_model.model = fis_model
+
+        self.view_model.set_fuzzy_service(self.fuzzy_service)
         self._connect_view_model_signals()
+        self._connect_fuzzy_service_signals()
 
         self._setup_ui()
         self._retranslate_ui()
@@ -64,6 +72,35 @@ class MFPropertiesWidget(BaseWidget):
         self.view_model.mf_added.connect(self._on_mf_added)
         self.view_model.mf_deleted.connect(self._on_mf_deleted)
         self.view_model.variable_selected.connect(self._on_variable_selected_from_model)
+
+    def _connect_fuzzy_service_signals(self):
+        """Connect fuzzy service signals for real-time updates."""
+        if hasattr(self, "fuzzy_service"):
+            self.fuzzy_service.system_changed.connect(self._on_system_changed)
+
+    def get_fuzzy_service(self):
+        """Get the fuzzy calculation service."""
+        return self.fuzzy_service
+
+    def _on_system_changed(self):
+        """Handle system changes from fuzzy service."""
+        if hasattr(self, "fuzzy_service"):
+            fis_model = self.fuzzy_service.get_fis_model()
+            self.view_model.model = fis_model
+            self.view_model.refresh_data()
+
+    def refresh_ui(self) -> None:
+        """Refresh the UI elements."""
+        if hasattr(self, "view_model") and self.view_model:
+            self.view_model.refresh_data()
+
+    def update_ui(self) -> None:
+        """Update UI elements."""
+        pass
+
+    def handle_global_update(self) -> None:
+        """Handle global update request."""
+        pass
 
     def _setup_ui(self):
         """Set up all the GUI sub elements."""
@@ -77,7 +114,6 @@ class MFPropertiesWidget(BaseWidget):
         self.property_editor_label.setGeometry(QtCore.QRect(10, 0, 121, 31))
         self.property_editor_label.setObjectName("property_editor_label")
 
-        # Variable selection
         self.variable_label = QtWidgets.QLabel(parent=self.editor_frame)
         self.variable_label.setGeometry(QtCore.QRect(20, 30, 55, 16))
         self.variable_label.setObjectName("variable_label")
@@ -130,11 +166,15 @@ class MFPropertiesWidget(BaseWidget):
         self.remove_mf_button.setObjectName("remove_mf_button")
         self.remove_mf_button.clicked.connect(self._remove_mf)
 
-        # Initialize the count after all UI elements are created
+        self.mf_table.itemSelectionChanged.connect(self._on_mf_selected)
+
         self._set_number_of_mf(0)
 
-        # Connect table selection changes
         self.mf_table.itemSelectionChanged.connect(self._on_table_selection_changed)
+
+        self.mf_range_edit.editingFinished.connect(self._on_parameters_changed)
+
+        self.mf_table.itemChanged.connect(self._on_table_item_changed)
 
         self._retranslate_ui()
 
@@ -147,11 +187,9 @@ class MFPropertiesWidget(BaseWidget):
         self.remove_mf_button.setText(self.t("Remove MF"))
         self.add_mf_button.setText(self.t("Add MF"))
         self.number_of_mf_label.setText(self.t("Number of MF:"))
-        # Set default values
         self.mf_name_edit.setPlaceholderText(self.t("Enter MF name"))
         self.mf_range_edit.setText(self.view_model.default_parameters)
 
-        # Populate variable dropdown
         self._populate_variable_dropdown()
 
     def get_mf_name(self) -> str:
@@ -170,57 +208,76 @@ class MFPropertiesWidget(BaseWidget):
         """Remove the selected membership function using the view model."""
         current_row = self.mf_table.currentRow()
 
-        # Delegate all logic to view model
         success = self.view_model.delete_mf_from_selection(current_row)
 
         if success:
-            # Emit signal for UI updates
             self.remove_mf_clicked.emit()
+        else:
+            pass
 
     def _add_mf(self):
         """Add a new membership function using the view model."""
-        # Get values from input fields (no validation - that's view model's job)
         mf_name = self.mf_name_edit.text()
         mf_parameters = self.mf_range_edit.text()
 
-        # Delegate all logic to view model
         success = self.view_model.add_mf_from_input(mf_name, mf_parameters)
 
         if success:
-            # Clear input fields after successful addition
             self.mf_name_edit.clear()
             self.mf_range_edit.setText(self.view_model.default_parameters)
 
-            # Emit signal for UI updates
             self.add_mf_clicked.emit()
+        else:
+            pass
 
     def _update_table_from_model(self, mf_list):
         """Update the table based on view model data."""
+        current_selections = {}
+        if not self._updating_type:
+            for row in range(self.mf_table.rowCount()):
+                dropdown = self.mf_table.cellWidget(row, 1)
+                if dropdown and isinstance(dropdown, QtWidgets.QComboBox):
+                    current_selections[row] = dropdown.currentText()
+
         self.mf_table.setRowCount(len(mf_list))
 
         for row, mf_data in enumerate(mf_list):
-            # Set name
             self.mf_table.setItem(
                 row, 0, QtWidgets.QTableWidgetItem(mf_data["mf_name"])
             )
 
-            # Set type dropdown
             type_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
             type_dropdown.addItems(self.view_model.available_mf_types)
-            type_dropdown.setCurrentText(mf_data["mf_type"])
-            type_dropdown.currentIndexChanged.connect(self._shape_changed)
+
+            if row in self._desired_types:
+                type_dropdown.setCurrentText(self._desired_types[row])
+            elif row in current_selections and not self._updating_type:
+                type_dropdown.setCurrentText(current_selections[row])
+            else:
+                type_dropdown.setCurrentText(mf_data["mf_type"])
+
+            type_dropdown.currentIndexChanged.connect(
+                lambda index, r=row: self._on_mf_type_changed(
+                    r, type_dropdown.currentText()
+                )
+            )
             self.mf_table.setCellWidget(row, 1, type_dropdown)
 
-            # Set parameters
             params_str = (
                 str(mf_data["parameters"])
                 if isinstance(mf_data["parameters"], list)
                 else mf_data["parameters"]
             )
-            self.mf_table.setItem(row, 2, QtWidgets.QTableWidgetItem(params_str))
+            params_item = QtWidgets.QTableWidgetItem(params_str)
+            params_item.setFlags(
+                params_item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable
+            )
+            self.mf_table.setItem(row, 2, params_item)
 
-        # Update count
         self._set_number_of_mf(len(mf_list))
+
+        if not self._updating_type:
+            self._desired_types.clear()
 
     def _on_mf_added(self, variable_name, mf_name, mf_index):
         """Handle MF added signal from view model."""
@@ -234,32 +291,126 @@ class MFPropertiesWidget(BaseWidget):
         """Populate the variable dropdown with available variables."""
         self.variable_dropdown.clear()
 
-        # Get variables from view model (delegate all logic)
         variables = self.view_model.get_available_variables()
 
-        # Add variables to dropdown
         for var in variables:
             self.variable_dropdown.addItem(var["display"])
 
-        # If no variables, add a placeholder
         if self.variable_dropdown.count() == 0:
             self.variable_dropdown.addItem("No variables available")
         else:
-            # Select the first variable by default
             self.variable_dropdown.setCurrentIndex(0)
             first_var = variables[0]
             self.view_model.select_variable_from_display_text(first_var["display"])
 
     def _on_variable_selected(self, selected_text):
         """Handle variable selection from dropdown."""
-        # Delegate all logic to view model
         self.view_model.select_variable_from_display_text(selected_text)
 
     def _on_variable_selected_from_model(self, variable_name, variable_type):
         """Handle variable selected signal from view model."""
-        # Update UI to reflect selected variable
         pass
 
     def _on_table_selection_changed(self):
         """Handle table selection changes."""
         pass
+
+    def _on_mf_selected(self):
+        """Handle membership function selection from table."""
+        current_row = self.mf_table.currentRow()
+        if current_row >= 0:
+            mf_info = self.view_model.get_mf_info(
+                self.view_model.selected_variable, current_row
+            )
+            if mf_info:
+                params_str = str(mf_info["parameters"]).replace(" ", "")
+                self.mf_range_edit.setText(params_str)
+
+    def _on_mf_type_changed(self, row, new_type):
+        """Handle membership function type change."""
+        self._desired_types[row] = new_type
+
+        self._updating_type = True
+
+        try:
+            success = self.view_model.change_mf_type(
+                self.view_model.selected_variable, row, new_type
+            )
+
+            if success:
+                mf_info = self.view_model.get_mf_info(
+                    self.view_model.selected_variable, row
+                )
+                if mf_info:
+                    params_str = str(mf_info["parameters"]).replace(" ", "")
+                    self.mf_range_edit.setText(params_str)
+            else:
+                if row in self._desired_types:
+                    del self._desired_types[row]
+        finally:
+            self._updating_type = False
+
+    def _on_parameters_changed(self):
+        """Handle parameter field changes."""
+        current_row = self.mf_table.currentRow()
+        if current_row < 0:
+            return  # No row selected
+
+        params_text = self.mf_range_edit.text().strip()
+        if not params_text:
+            return  # Empty parameters
+
+        try:
+            params = self.view_model._parse_parameters(params_text)
+
+            success = self.view_model.update_mf_parameters(
+                self.view_model.selected_variable, current_row, params
+            )
+
+            if success:
+                # Update the table to reflect the changes
+                self.view_model.refresh_data()
+        except Exception:
+            pass
+
+    def _on_table_item_changed(self, item):
+        """Handle table item changes (for inline editing)."""
+        # Handle table item changes
+
+        # Only handle parameter column (column 2)
+        if item.column() != 2:
+            return
+
+        row = item.row()
+        params_text = item.text().strip()
+        # Handle inline parameter edit
+
+        if not params_text:
+            return
+
+        try:
+            params = self.view_model._parse_parameters(params_text)
+
+            success = self.view_model.update_mf_parameters(
+                self.view_model.selected_variable, row, params
+            )
+
+            if success:
+                # Update the parameter field to match
+                self.mf_range_edit.setText(params_text)
+        except Exception:
+            # Revert the item text on error
+            current_params = self._get_current_parameters_for_row(row)
+            item.setText(str(current_params))
+
+    def _get_current_parameters_for_row(self, row):
+        """Get the current parameters for a given row."""
+        try:
+            mf_info = self.view_model.get_mf_info(
+                self.view_model.selected_variable, row
+            )
+            if mf_info:
+                return mf_info.get("parameters", [])
+        except Exception:
+            pass
+        return []
