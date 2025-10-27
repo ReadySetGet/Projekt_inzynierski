@@ -2,7 +2,8 @@ from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtWidgets import QMainWindow
 
 from app.app_context import AppContext
-from app.services.global_update_manager import GlobalUpdateManager
+
+# CentralEventBus is now accessed through context.event_bus
 from app.utils.config import AppConfig
 from app.utils.paths import local_path
 from app.utils.shortcut_manager import ShortcutManager
@@ -10,6 +11,7 @@ from app.view_models.browser_frame_view_model import BrowserFrameViewModel
 from app.view_models.central_tab_view_model import CentralTabViewModel
 from app.view_models.editor_tab_view_model import EditorTabViewModel
 from app.view_models.top_menu_view_model import TopMenuViewModel
+from app.views.bar_menu_view import BarMenuWidget
 from app.views.browser_frame_view import BrowserFrameWidget
 from app.views.central_tab_view import CentralTabWidget
 from app.views.editor_tab_view import EditorTabWidget
@@ -40,22 +42,18 @@ class MainWindow(QMainWindow):
         # Initialize UI components if context is available
         if context:
             # Set up the main UI
+            self.setupViewModels()
             self.setupUi()
-
-            # Initialize the new view system (keeping for compatibility)
-            # view_model = MainViewModel(model)
-            # Note: We're not setting MainView as central widget since we
-            # have our own UI
 
             # Theme support
             self.context.theme_manager.theme_changed.connect(self.reload_stylesheet)
             self.reload_stylesheet()
 
+            # Translation support
+            self.context.translate_manager.language_changed.connect(self.retranslate_ui)
+            self.context.translate_manager.set_language("en")
             # Shortcut Manager integration
             self.shortcut_manager = ShortcutManager(self)
-            # register_default_shortcuts(
-            #    self.shortcut_manager, view_model, self._toggle_theme
-            # )
 
     def _toggle_theme(self):
         """Toggle between available themes (example logic)."""
@@ -104,68 +102,71 @@ class MainWindow(QMainWindow):
             return self.shortcut_manager.remove_shortcut(seq)
         return False
 
+    def setupViewModels(self):
+        """Setup the view models for the main window."""
+        self.central_tab_view_model = CentralTabViewModel()
+        self.editor_tab_view_model = EditorTabViewModel()
+        self.browser_frame_view_model = BrowserFrameViewModel()
+        self.top_menu_view_model = TopMenuViewModel()
+
     def setupUi(self):
         """Set up the UI for the main window."""
         self.setObjectName("MainWindow")
-        self.resize(1096, 830)
+        self.resize(1096, 780)
+        self.central_widget = QtWidgets.QWidget(parent=self)
+        self.central_widget.setObjectName("centralwidget")
 
-        self.centralwidget = QtWidgets.QWidget(parent=self)
-        self.centralwidget.setObjectName("centralwidget")
+        self.statusBar = QtWidgets.QStatusBar(parent=self)
+        self.statusBar.setObjectName("statusbar")
+        self.setStatusBar(self.statusBar)
+        self.statusBar.showMessage("Started application")
 
-        # Create global update manager
-        self.global_update_manager = GlobalUpdateManager(self)
+        self.plotTabs = CentralTabWidget(parent=self.central_widget, status_bar=self.statusBar)
+        self.plotTabs.setGeometry(QtCore.QRect(310, 160, 531, 601))
 
-        # Create view models first
-        self.top_menu_view_model = TopMenuViewModel(self.context)
-        self.browser_frame_view_model = BrowserFrameViewModel(self.context)
-        self.central_tab_view_model = CentralTabViewModel(self.context)
-        self.editor_tab_view_model = EditorTabViewModel(self.context)
-
-        # Create widgets with their respective view models
-        self.plotTabs = CentralTabWidget(
-            self.central_tab_view_model, parent=self.centralwidget
-        )
-        self.plotTabs.setGeometry(QtCore.QRect(310, 160, 531, 641))
-
-        self.browserFrame = BrowserFrameWidget(
-            self.browser_frame_view_model, parent=self.centralwidget
-        )
+        self.browserFrame = BrowserFrameWidget(parent=self.central_widget, status_bar=self.statusBar)
         self.browserFrame.setGeometry(QtCore.QRect(0, 160, 301, 641))
 
-        self.upMenuTab = TopMenu(self.top_menu_view_model, parent=self.centralwidget)
+        self.upMenuTab = TopMenu(parent=self.central_widget, status_bar=self.statusBar)
         self.upMenuTab.setGeometry(QtCore.QRect(0, 0, 1081, 161))
 
-        self.editorTab = EditorTabWidget(
-            self.editor_tab_view_model, parent=self.centralwidget
-        )
+        self.editorTab = EditorTabWidget(parent=self.central_widget, status_bar=self.statusBar)
         self.editorTab.setGeometry(QtCore.QRect(820, 160, 281, 641))
 
-        if hasattr(self.editorTab, "mf_properties_tab"):
-            central_fuzzy_service = self.plotTabs.get_fuzzy_service()
-            if hasattr(self.editorTab.mf_properties_tab, "fuzzy_service"):
-                self.editorTab.mf_properties_tab.fuzzy_service = central_fuzzy_service
-                fis_model = central_fuzzy_service.get_fis_model()
-                self.editorTab.mf_properties_tab.view_model.model = fis_model
-                self.editorTab.mf_properties_tab._connect_fuzzy_service_signals()
+        self.setCentralWidget(self.central_widget)
 
-            self.plotTabs.connect_mf_editor(self.editorTab.mf_properties_tab)
+        self.menuBar = BarMenuWidget(parent=self)
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1096, 26))
 
-        # Register components with global update manager
-        self.global_update_manager.register_view_model(self.central_tab_view_model)
-        self.global_update_manager.register_view(self.plotTabs)
-        if hasattr(self.editorTab, "mf_properties_tab"):
-            self.global_update_manager.register_view_model(
-                self.editorTab.mf_properties_tab.view_model
-            )
-            self.global_update_manager.register_view(self.editorTab.mf_properties_tab)
-
-        self.setCentralWidget(self.centralwidget)
-
-        self.retranslateUi()
-        self.plotTabs.setCurrentIndex(2)
+        """Sets up the default tabs of tab widgets."""
+        self.plotTabs.setCurrentIndex(0)
         self.upMenuTab.setCurrentIndex(0)
         self.editorTab.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(self)
+
+        # Connect view models to widgets
+        self._connect_view_models()
+
+    def retranslate_ui(self):
+        """Retranslate all UI elements when language changes."""
+        # Retranslate main window
+        if hasattr(self, "context") and self.context:
+            self.setWindowTitle(self.context.translate_manager.t("MainWindow"))
+        else:
+            _translate = QtCore.QCoreApplication.translate
+            self.setWindowTitle(_translate("MainWindow", "MainWindow"))
+
+        # Retranslate all child widgets that have _retranslate_ui method
+        self._retranslate_widget(self)
+
+    def _retranslate_widget(self, widget):
+        """Recursively retranslate all child widgets."""
+        if hasattr(widget, "_retranslate_ui"):
+            widget._retranslate_ui()
+
+        for child in widget.findChildren(QtWidgets.QWidget):
+            if hasattr(child, "_retranslate_ui"):
+                child._retranslate_ui()
 
     def retranslateUi(self):
         """Retranslate the UI text."""
@@ -181,3 +182,11 @@ class MainWindow(QMainWindow):
             qss_path = local_path(__file__, "stylesheet.qss")
             qss = self.context.theme_manager.load_stylesheet_with_theme(str(qss_path))
             self.setStyleSheet(qss)
+
+    def _connect_view_models(self) -> None:
+        """Connect view models to their respective widgets."""
+        # Properly connect view models to widgets using set_view_model method
+        self.plotTabs.set_view_model(self.central_tab_view_model)
+        self.browserFrame.set_view_model(self.browser_frame_view_model)
+        self.upMenuTab.set_view_model(self.top_menu_view_model)
+        self.editorTab.set_view_model(self.editor_tab_view_model)

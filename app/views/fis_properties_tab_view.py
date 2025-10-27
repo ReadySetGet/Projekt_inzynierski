@@ -3,38 +3,29 @@
 from PyQt6 import QtCore, QtWidgets
 
 from app.view_models.fis_properties_view_model import FisPropertiesViewModel
-from app.views.base_view import BaseView
+from app.views.base_widget_view import BaseWidgetView
 
 
-class FisPropertiesTabView(BaseView):
+class FisPropertiesTabView(BaseWidgetView):
     """FIS Properties tab view with Add Input/Output buttons."""
 
-    def __init__(self, context=None, qss_filename=None, parent=None):
+    def __init__(self, qss_filename=None, parent=None):
         """Initialize the FIS Properties tab view.
 
         Args:
-            context: The application context
             qss_filename: Optional QSS file for styling
             parent: The parent widget
         """
-        super().__init__(context=context, qss_filename=qss_filename, parent=parent)
+        super().__init__(qss_filename=qss_filename, parent=parent)
         self.setObjectName("fis_properties_tab")
 
         # Initialize view model
         self.view_model = FisPropertiesViewModel()
         self.view_model.setParent(self)
+        self.set_view_model(self.view_model)
 
-        # Set the model if context has fuzzy service
-        if hasattr(self.context, "fuzzy_service"):
-            fis_model = self.context.fuzzy_service.get_fis_model()
-            self.view_model.model = fis_model
-        else:
-            # Create a default fuzzy service if none exists
-            from app.services.fuzzy_calculation_service import FuzzyCalculationService
-
-            self.fuzzy_service = FuzzyCalculationService("mamdani")
-            fis_model = self.fuzzy_service.get_fis_model()
-            self.view_model.model = fis_model
+        # Initialize the system info from the fuzzy service
+        self.view_model._update_system_info()
 
         # Connect view model signals
         self._connect_view_model_signals()
@@ -131,14 +122,14 @@ class FisPropertiesTabView(BaseView):
 
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
-        self.title_label.setText(self.t("FIS Properties"))
-        self.system_name_label.setText(self.t("System Name:"))
-        self.system_type_label.setText(self.t("System Type:"))
-        self.inputs_label.setText(self.t("Input Variables:"))
-        self.outputs_label.setText(self.t("Output Variables:"))
-        self.add_input_button.setText(self.t("Add Input"))
-        self.add_output_button.setText(self.t("Add Output"))
-        self.variable_info_label.setText(self.t("Variable Info:"))
+        self.title_label.setText(self.t("FIS_PROPERTIES"))
+        self.system_name_label.setText(self.t("SYSTEM_NAME"))
+        self.system_type_label.setText(self.t("SYSTEM_TYPE"))
+        self.inputs_label.setText(self.t("INPUT_VARIABLES"))
+        self.outputs_label.setText(self.t("OUTPUT_VARIABLES"))
+        self.add_input_button.setText(self.t("ADD_INPUT"))
+        self.add_output_button.setText(self.t("ADD_OUTPUT"))
+        self.variable_info_label.setText(self.t("VARIABLE_INFO"))
 
     def _on_system_updated(self):
         """Handle system update from view model."""
@@ -198,20 +189,14 @@ class FisPropertiesTabView(BaseView):
         """Update the inputs list."""
         self.inputs_list.clear()
         for input_var in self.view_model.inputs:
-            item_text = (
-                f"{input_var['name']} (Range: {input_var['range']}, "
-                f"MFs: {input_var['mf_count']})"
-            )
+            item_text = f"{input_var['name']} (Range: {input_var['range']}, MFs: {input_var['mf_count']})"
             self.inputs_list.addItem(item_text)
 
     def _update_outputs_list(self):
         """Update the outputs list."""
         self.outputs_list.clear()
         for output_var in self.view_model.outputs:
-            item_text = (
-                f"{output_var['name']} (Range: {output_var['range']}, "
-                f"MFs: {output_var['mf_count']})"
-            )
+            item_text = f"{output_var['name']} (Range: {output_var['range']}, MFs: {output_var['mf_count']})"
             self.outputs_list.addItem(item_text)
 
     def _update_variable_info(self, variable_name, variable_type):

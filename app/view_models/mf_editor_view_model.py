@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from PyQt6.QtCore import pyqtSignal
 
@@ -16,18 +16,11 @@ class MFEditorViewModel(BaseViewModel):
 
     variable_selected = pyqtSignal(str, str)  # variable_name, variable_type
 
-    mf_parameters_changed = pyqtSignal(
-        str, int, list
-    )  # variable_name, mf_index, new_parameters
+    mf_parameters_changed = pyqtSignal(str, int, list)  # variable_name, mf_index, new_parameters
 
-    def __init__(self, model: Any = None) -> None:
-        """Initialize the MFEditorViewModel.
-
-        Args:
-            model (Any): The FIS model instance.
-        """
+    def __init__(self) -> None:
+        """Initialize the MFEditorViewModel."""
         super().__init__()
-        self._model = model
         self._fuzzy_service = None
         self._selected_variable = None
         self._selected_variable_type = None
@@ -35,17 +28,6 @@ class MFEditorViewModel(BaseViewModel):
         self._available_mf_types = ["Triangle", "Trapezoid", "Gauss", "Bell"]
         self._default_parameters = "[0, 0.5, 1]"
         self._updating = False
-
-    @property
-    def model(self) -> Any:
-        """Get the FIS model."""
-        return self._model
-
-    @model.setter
-    def model(self, value: Any) -> None:
-        """Set the FIS model and update data."""
-        self._model = value
-        self._update_mf_list()
 
     def set_fuzzy_service(self, fuzzy_service) -> None:
         """Set the fuzzy calculation service."""
@@ -170,21 +152,19 @@ class MFEditorViewModel(BaseViewModel):
             mf_parameters = self._default_parameters
         parameters = self._parse_parameters(mf_parameters)
 
-        success = self._fuzzy_service.add_membership_function(
-            variable_name, mf_name, model_type, parameters
-        )
+        success = self._fuzzy_service.add_membership_function(variable_name, mf_name, model_type, parameters)
 
         if success:
             fis = self._fuzzy_service.get_fis_model()._fis
-            search_list = (
-                fis.Inputs if self._selected_variable_type == "input" else fis.Outputs
-            )
+            search_list = fis.Inputs if self._selected_variable_type == "input" else fis.Outputs
 
             for var in search_list:
                 if var.Name == variable_name:
                     new_mf_index = len(var.MembershipFunctions) - 1
                     self.mf_added.emit(variable_name, mf_name, new_mf_index)
                     self._update_mf_list()
+                    # Notify other components of data change
+                    self.notify_data_changed.emit()
                     return True
 
         return False
@@ -194,13 +174,13 @@ class MFEditorViewModel(BaseViewModel):
         if not self._selected_variable_type:
             return False
 
-        success = self._fuzzy_service.delete_membership_function(
-            variable_name, mf_index
-        )
+        success = self._fuzzy_service.delete_membership_function(variable_name, mf_index)
 
         if success:
             self.mf_deleted.emit(variable_name, mf_index)
             self._update_mf_list()
+            # Notify other components of data change
+            self.notify_data_changed.emit()
             return True
 
         return False
@@ -242,25 +222,21 @@ class MFEditorViewModel(BaseViewModel):
 
         return False
 
-    def update_mf_parameters(
-        self, variable_name: str, mf_index: int, new_parameters: List[float]
-    ) -> bool:
+    def update_mf_parameters(self, variable_name: str, mf_index: int, new_parameters: List[float]) -> bool:
         """Update the parameters of a membership function."""
         if not self._model or not hasattr(self._model, "_fis"):
             return False
 
         fis = self._model._fis
-        search_list = (
-            fis.Inputs if self._selected_variable_type == "input" else fis.Outputs
-        )
+        search_list = fis.Inputs if self._selected_variable_type == "input" else fis.Outputs
 
         for var in search_list:
-            if var.Name == variable_name and 0 <= mf_index < len(
-                var.MembershipFunctions
-            ):
+            if var.Name == variable_name and 0 <= mf_index < len(var.MembershipFunctions):
                 var.MembershipFunctions[mf_index].Parameters = new_parameters
                 self.mf_parameters_changed.emit(variable_name, mf_index, new_parameters)
                 self._emit_system_changed()
+                # Notify other components of data change
+                self.notify_data_changed.emit()
                 return True
 
         return False
@@ -271,14 +247,10 @@ class MFEditorViewModel(BaseViewModel):
             return None
 
         fis = self._model._fis
-        search_list = (
-            fis.Inputs if self._selected_variable_type == "input" else fis.Outputs
-        )
+        search_list = fis.Inputs if self._selected_variable_type == "input" else fis.Outputs
 
         for var in search_list:
-            if var.Name == variable_name and 0 <= mf_index < len(
-                var.MembershipFunctions
-            ):
+            if var.Name == variable_name and 0 <= mf_index < len(var.MembershipFunctions):
                 mf = var.MembershipFunctions[mf_index]
                 library_to_ui_mapping = {
                     "trimf": "Triangle",
@@ -303,9 +275,7 @@ class MFEditorViewModel(BaseViewModel):
             return []
 
         fis = self._model._fis
-        search_list = (
-            fis.Inputs if self._selected_variable_type == "input" else fis.Outputs
-        )
+        search_list = fis.Inputs if self._selected_variable_type == "input" else fis.Outputs
 
         for var in search_list:
             if var.Name == variable_name:
@@ -328,7 +298,7 @@ class MFEditorViewModel(BaseViewModel):
         return len(mfs)
 
     def refresh_data(self) -> None:
-        """Refresh all data from the model."""
+        """Refresh all data from the model - only updates logic, no signal emission."""
         self._update_mf_list()
 
     def add_mf_from_input(self, mf_name: str, mf_parameters: str) -> bool:

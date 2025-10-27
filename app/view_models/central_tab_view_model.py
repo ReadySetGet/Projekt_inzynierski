@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import List
 
 from PyQt6.QtCore import pyqtSignal
 
@@ -33,14 +33,9 @@ class CentralTabViewModel(BaseViewModel):
     fis_plot_data_ready = pyqtSignal(list, list)
     inference_data_ready = pyqtSignal(list, list)
 
-    def __init__(self, model: Any = None) -> None:
-        """Initialize the CentralTabViewModel.
-
-        Args:
-            model (Any): The FIS model instance.
-        """
+    def __init__(self) -> None:
+        """Initialize the CentralTabViewModel."""
         super().__init__()
-        self._model = model
         self._current_tab = 0
         self._rules = []
         self._system_name = "Placeholder Name"
@@ -50,17 +45,6 @@ class CentralTabViewModel(BaseViewModel):
         self._selected_variable = None
         self._selected_variable_is_input = True
         self._updating = False
-
-    @property
-    def model(self) -> Any:
-        """Get the FIS model."""
-        return self._model
-
-    @model.setter
-    def model(self, value: Any) -> None:
-        """Set the FIS model and update data."""
-        self._model = value
-        self._update_data()
 
     @property
     def current_tab(self) -> int:
@@ -98,7 +82,7 @@ class CentralTabViewModel(BaseViewModel):
 
     def _update_data(self) -> None:
         """Update data from the model."""
-        if not self._model:
+        if not self.fuzzy_service:
             return
 
         self._update_rules()
@@ -106,35 +90,37 @@ class CentralTabViewModel(BaseViewModel):
 
     def _update_rules(self) -> None:
         """Update rules from the model."""
-        if not self._model or not hasattr(self._model, "_fis"):
+        if not self.fuzzy_service:
             self._rules = []
             return
 
-        fis = self._model._fis
+        # Use the service API to get rules
+        rules_data = self.fuzzy_service.get_rules()
         self._rules = []
 
-        for i, rule in enumerate(fis.Rules):
-            rule_data = {
+        for i, rule_data in enumerate(rules_data):
+            rule_dict = {
                 "index": i,
-                "name": rule.Name,
-                "antecedent": rule.Antecedent.copy(),
-                "consequent": rule.Consequent.copy(),
-                "weight": rule.Weight,
-                "connection": rule.Connection,
-                "is_mf": rule.IsMF.copy() if hasattr(rule, "IsMF") else [],
+                "name": rule_data.get("name", f"Rule {i+1}"),
+                "antecedent": rule_data.get("antecedent", []),
+                "consequent": rule_data.get("consequent", []),
+                "weight": rule_data.get("weight", 1.0),
+                "connection": rule_data.get("connection", 1),
+                "is_mf": rule_data.get("is_mf", []),
             }
-            self._rules.append(rule_data)
+            self._rules.append(rule_dict)
 
         self.rules_updated.emit(self._rules)
 
     def _update_system_name(self) -> None:
         """Update system name from the model."""
-        if not self._model or not hasattr(self._model, "_fis"):
+        if not self.fuzzy_service:
             return
 
-        fis = self._model._fis
-        if hasattr(fis, "Name") and fis.Name:
-            self.system_name = fis.Name
+        # Get system status to get the system name
+        system_status = self.fuzzy_service.get_system_status()
+        if system_status and "name" in system_status:
+            self.system_name = system_status["name"]
 
     def set_current_tab(self, tab_index: int) -> None:
         """Set the current tab."""
@@ -175,16 +161,8 @@ class CentralTabViewModel(BaseViewModel):
                 if i < len(self._model._fis.Inputs):
                     input_name = self._model._fis.Inputs[i].Name
                     if mf_idx <= len(self._model._fis.Inputs[i].MembershipFunctions):
-                        mf_name = (
-                            self._model._fis.Inputs[i]
-                            .MembershipFunctions[mf_idx - 1]
-                            .Name
-                        )
-                        is_not = (
-                            "not "
-                            if (i < len(rule["is_mf"]) and rule["is_mf"][i] != 1)
-                            else ""
-                        )
+                        mf_name = self._model._fis.Inputs[i].MembershipFunctions[mf_idx - 1].Name
+                        is_not = "not " if (i < len(rule["is_mf"]) and rule["is_mf"][i] != 1) else ""
                         antecedent_parts.append(f"{input_name} is {is_not}{mf_name}")
 
         # Build consequent text
@@ -195,19 +173,8 @@ class CentralTabViewModel(BaseViewModel):
                 if output_idx < len(self._model._fis.Outputs):
                     output_name = self._model._fis.Outputs[i].Name
                     if mf_idx <= len(self._model._fis.Outputs[i].MembershipFunctions):
-                        mf_name = (
-                            self._model._fis.Outputs[i]
-                            .MembershipFunctions[mf_idx - 1]
-                            .Name
-                        )
-                        is_not = (
-                            "not "
-                            if (
-                                output_idx < len(rule["is_mf"])
-                                and rule["is_mf"][output_idx] != 1
-                            )
-                            else ""
-                        )
+                        mf_name = self._model._fis.Outputs[i].MembershipFunctions[mf_idx - 1].Name
+                        is_not = "not " if (output_idx < len(rule["is_mf"]) and rule["is_mf"][output_idx] != 1) else ""
                         consequent_parts.append(f"{output_name} is {is_not}{mf_name}")
 
         # Combine parts
@@ -218,9 +185,10 @@ class CentralTabViewModel(BaseViewModel):
         return f"If {antecedent_text} then {consequent_text} (weight: {rule['weight']})"
 
     def refresh_data(self) -> None:
-        """Refresh all data from the model."""
+        """Refresh all data from the model - only updates logic, no signal emission."""
         self._update_data()
-        self.update_fis_plot()
+        # Note: update_fis_plot() emits signals, so we don't call it here
+        # The view should handle plot updates through other mechanisms
 
     def set_fuzzy_service(self, fuzzy_service) -> None:
         """Set the fuzzy calculation service."""
@@ -239,9 +207,7 @@ class CentralTabViewModel(BaseViewModel):
         self.mf_editor_connected.emit()
 
         if hasattr(mf_editor, "view_model"):
-            mf_editor.view_model.variable_selected.connect(
-                self._on_mf_editor_variable_selected
-            )
+            mf_editor.view_model.variable_selected.connect(self._on_mf_editor_variable_selected)
             mf_editor.view_model.mf_list_updated.connect(self._on_mf_list_updated)
             mf_editor.view_model.mf_added.connect(self._on_mf_added)
             mf_editor.view_model.mf_deleted.connect(self._on_mf_deleted)
@@ -262,15 +228,11 @@ class CentralTabViewModel(BaseViewModel):
         """Handle inference completion."""
         self.inference_data_ready.emit(inputs, outputs)
 
-    def _on_mf_editor_variable_selected(
-        self, variable_name: str, variable_type: str
-    ) -> None:
+    def _on_mf_editor_variable_selected(self, variable_name: str, variable_type: str) -> None:
         """Handle variable selection from MF Editor."""
         self._selected_variable = variable_name
         self._selected_variable_is_input = variable_type == "input"
-        self.selected_variable_changed.emit(
-            variable_name, self._selected_variable_is_input
-        )
+        self.selected_variable_changed.emit(variable_name, self._selected_variable_is_input)
         self._update_membership_functions_plot()
         self.notify_data_changed()
 
@@ -342,9 +304,7 @@ class CentralTabViewModel(BaseViewModel):
             elif mf["type"] == "trapmf":
                 params = mf["parameters"]
                 if len(params) >= 4:
-                    y = self._trapezoidal_mf(
-                        x_data, params[0], params[1], params[2], params[3]
-                    )
+                    y = self._trapezoidal_mf(x_data, params[0], params[1], params[2], params[3])
                 else:
                     y = np.zeros_like(x_data)
             elif mf["type"] == "gaussmf":
@@ -364,9 +324,7 @@ class CentralTabViewModel(BaseViewModel):
 
             y_data_list.append(y)
 
-        self.membership_functions_data_ready.emit(
-            selected_variable, x_data.tolist(), y_data_list, colors
-        )
+        self.membership_functions_data_ready.emit(selected_variable, x_data.tolist(), y_data_list, colors)
 
     def _triangular_mf(self, x, a, b, c):
         """Triangular membership function."""

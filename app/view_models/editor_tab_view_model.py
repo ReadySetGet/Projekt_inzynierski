@@ -1,5 +1,3 @@
-from typing import Any
-
 from PyQt6.QtCore import pyqtSignal
 
 from app.view_models.base_view_model import BaseViewModel
@@ -20,26 +18,10 @@ class EditorTabViewModel(BaseViewModel):
     # Signals for rule properties tab
     rule_properties_updated = pyqtSignal()
 
-    def __init__(self, model: Any = None) -> None:
-        """Initialize the EditorTabViewModel.
-
-        Args:
-            model (Any): The FIS model instance.
-        """
+    def __init__(self) -> None:
+        """Initialize the EditorTabViewModel."""
         super().__init__()
-        self._model = model
         self._current_tab = 0
-
-    @property
-    def model(self) -> Any:
-        """Get the FIS model."""
-        return self._model
-
-    @model.setter
-    def model(self, value: Any) -> None:
-        """Set the FIS model and update data."""
-        self._model = value
-        self._update_all_tabs()
 
     @property
     def current_tab(self) -> int:
@@ -59,7 +41,7 @@ class EditorTabViewModel(BaseViewModel):
 
     def _update_all_tabs(self) -> None:
         """Update all tab data from the model."""
-        if not self._model:
+        if not self.fuzzy_service:
             return
 
         self.fis_properties_updated.emit()
@@ -77,6 +59,10 @@ class EditorTabViewModel(BaseViewModel):
     def update_rule_properties_tab(self) -> None:
         """Update the rule properties tab."""
         self.rule_properties_updated.emit()
+
+    def refresh_data(self) -> None:
+        """Refresh all data from the model - only updates logic, no signal emission."""
+        self._update_all_tabs()
 
     def refresh_all_tabs(self) -> None:
         """Refresh all tabs with current model data."""

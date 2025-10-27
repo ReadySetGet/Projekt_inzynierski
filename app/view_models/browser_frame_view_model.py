@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import List
 
 from PyQt6.QtCore import pyqtSignal
 
@@ -16,27 +16,11 @@ class BrowserFrameViewModel(BaseViewModel):
     system_item_selected = pyqtSignal(str, dict)  # item_name, item_data
     design_item_selected = pyqtSignal(str, dict)  # item_name, item_data
 
-    def __init__(self, model: Any = None) -> None:
-        """Initialize the BrowserFrameViewModel.
-
-        Args:
-            model (Any): The FIS model instance for the browser.
-        """
+    def __init__(self) -> None:
+        """Initialize the BrowserFrameViewModel."""
         super().__init__()
-        self._model = model
         self._system_items = []
         self._design_items = []
-
-    @property
-    def model(self) -> Any:
-        """Get the FIS model."""
-        return self._model
-
-    @model.setter
-    def model(self, value: Any) -> None:
-        """Set the FIS model and update browser data."""
-        self._model = value
-        self._update_browser_data()
 
     @property
     def system_items(self) -> List[dict]:
@@ -50,7 +34,7 @@ class BrowserFrameViewModel(BaseViewModel):
 
     def _update_browser_data(self) -> None:
         """Update the browser data from the model."""
-        if not self._model:
+        if not self.fuzzy_service:
             return
 
         # Update system items (inputs, outputs, rules)
@@ -65,46 +49,47 @@ class BrowserFrameViewModel(BaseViewModel):
         """Get system items from the FIS model."""
         items = []
 
-        if not self._model or not hasattr(self._model, "_fis"):
+        if not self.fuzzy_service:
             return items
 
-        fis = self._model._fis
-
-        # Add inputs
-        for i, input_var in enumerate(fis.Inputs):
+        # Get input variables using service API
+        input_variables = self.fuzzy_service.get_input_variables()
+        for i, input_var in enumerate(input_variables):
             items.append(
                 {
                     "type": "input",
-                    "name": input_var.Name,
+                    "name": input_var.get("name", f"Input_{i}"),
                     "index": i,
-                    "range": input_var.Range,
-                    "mf_count": len(input_var.MembershipFunctions),
+                    "range": input_var.get("range", [0, 1]),
+                    "mf_count": len(input_var.get("membership_functions", [])),
                 }
             )
 
-        # Add outputs
-        for i, output_var in enumerate(fis.Outputs):
+        # Get output variables using service API
+        output_variables = self.fuzzy_service.get_output_variables()
+        for i, output_var in enumerate(output_variables):
             items.append(
                 {
                     "type": "output",
-                    "name": output_var.Name,
+                    "name": output_var.get("name", f"Output_{i}"),
                     "index": i,
-                    "range": output_var.Range,
-                    "mf_count": len(output_var.MembershipFunctions),
+                    "range": output_var.get("range", [0, 1]),
+                    "mf_count": len(output_var.get("membership_functions", [])),
                 }
             )
 
-        # Add rules
-        for i, rule in enumerate(fis.Rules):
+        # Get rules using service API
+        rules = self.fuzzy_service.get_rules()
+        for i, rule in enumerate(rules):
             items.append(
                 {
                     "type": "rule",
-                    "name": rule.Name,
+                    "name": rule.get("name", f"Rule_{i+1}"),
                     "index": i,
-                    "antecedent": rule.Antecedent,
-                    "consequent": rule.Consequent,
-                    "weight": rule.Weight,
-                    "connection": rule.Connection,
+                    "antecedent": rule.get("antecedent", []),
+                    "consequent": rule.get("consequent", []),
+                    "weight": rule.get("weight", 1.0),
+                    "connection": rule.get("connection", 1),
                 }
             )
 
@@ -114,36 +99,40 @@ class BrowserFrameViewModel(BaseViewModel):
         """Get design items from the FIS model."""
         items = []
 
-        if not self._model or not hasattr(self._model, "_fis"):
+        if not self.fuzzy_service:
             return items
 
-        fis = self._model._fis
-
-        # Add membership functions for inputs
-        for input_var in fis.Inputs:
-            for i, mf in enumerate(input_var.MembershipFunctions):
+        # Get membership functions for input variables using service API
+        input_variables = self.fuzzy_service.get_input_variables()
+        for input_var in input_variables:
+            var_name = input_var.get("name", "")
+            mfs = self.fuzzy_service.get_membership_functions(var_name, "input")
+            for i, mf in enumerate(mfs):
                 items.append(
                     {
                         "type": "input_mf",
-                        "variable_name": input_var.Name,
-                        "name": mf.Name,
+                        "variable_name": var_name,
+                        "name": mf.get("name", f"MF_{i}"),
                         "index": i,
-                        "mf_type": mf.Type,
-                        "parameters": mf.Parameters,
+                        "mf_type": mf.get("type", "triangular"),
+                        "parameters": mf.get("parameters", []),
                     }
                 )
 
-        # Add membership functions for outputs
-        for output_var in fis.Outputs:
-            for i, mf in enumerate(output_var.MembershipFunctions):
+        # Get membership functions for output variables using service API
+        output_variables = self.fuzzy_service.get_output_variables()
+        for output_var in output_variables:
+            var_name = output_var.get("name", "")
+            mfs = self.fuzzy_service.get_membership_functions(var_name, "output")
+            for i, mf in enumerate(mfs):
                 items.append(
                     {
                         "type": "output_mf",
-                        "variable_name": output_var.Name,
-                        "name": mf.Name,
+                        "variable_name": var_name,
+                        "name": mf.get("name", f"MF_{i}"),
                         "index": i,
-                        "mf_type": mf.Type,
-                        "parameters": mf.Parameters,
+                        "mf_type": mf.get("type", "triangular"),
+                        "parameters": mf.get("parameters", []),
                     }
                 )
 
@@ -156,6 +145,10 @@ class BrowserFrameViewModel(BaseViewModel):
     def select_design_item(self, item_name: str, item_data: dict) -> None:
         """Handle design item selection."""
         self.design_item_selected.emit(item_name, item_data)
+
+    def refresh_data(self) -> None:
+        """Refresh all data from the model - only updates logic, no signal emission."""
+        self._update_browser_data()
 
     def refresh_browser(self) -> None:
         """Refresh the browser data."""

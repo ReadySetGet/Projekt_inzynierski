@@ -1,41 +1,33 @@
-"""Base class for all tab views with MVVM architecture."""
+"""Base class for all frame views with MVVM architecture."""
 
 import os
 from typing import Optional
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QTabWidget
+from PyQt6.QtWidgets import QMenuBar
 
 from app.utils.paths import local_path
 
 
-class BaseTabView(QTabWidget):
-    """Base class for all tab views with MVVM architecture.
+class BaseBarMenuView(QMenuBar):
+    """Base class for all frame views with MVVM architecture.
 
     - Expects a view model to be set after initialization.
     - Applies local stylesheet if exists and updates on theme change.
     - Subclasses should set a view model and connect to its signals.
-
-    All subclasses should implement the abstract methods to ensure proper
-    MVVM architecture and global update functionality.
     """
-
-    # Global update signals
-    global_update_requested = pyqtSignal()
-    ui_refresh_needed = pyqtSignal()
 
     def __init__(
         self,
         qss_filename: Optional[str] = None,
-        parent: QTabWidget | None = None,
+        parent: QMenuBar | None = None,
     ) -> None:
-        """Initialize the BaseTabView with an optional QSS filename.
+        """Initialize the BaseFrameView with an optional QSS filename.
 
         Args:
             qss_filename (Optional[str]): The QSS file to use for styling.
-            parent (Optional[QTabWidget]): The parent widget, if any.
+            parent (Optional[QMenuBar]): The parent widget, if any.
         """
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.qss_filename = qss_filename
         self.view_model = None
 
@@ -49,8 +41,6 @@ class BaseTabView(QTabWidget):
         if self.view_model:
             # Connect to view model signals
             self.view_model.theme_changed.connect(self.reload_stylesheet)
-            self.view_model.data_changed.connect(self.refresh_ui)
-            self.view_model.notify_data_changed.connect(self.update_ui)
             # Connect to language change signal
             self.view_model.translate_manager.language_changed.connect(self._on_language_changed)
             # Initial stylesheet load
@@ -80,22 +70,6 @@ class BaseTabView(QTabWidget):
         if self.view_model:
             return self.view_model.t(key)
         return key
-
-    def request_global_update(self) -> None:
-        """Request a global update across all components."""
-        self.global_update_requested.emit()
-
-    def notify_ui_refresh_needed(self) -> None:
-        """Notify that UI needs to be refreshed."""
-        self.ui_refresh_needed.emit()
-
-    def refresh_ui(self) -> None:
-        """Refresh the UI. Override in subclasses."""
-        pass
-
-    def update_ui(self) -> None:
-        """Update UI elements. Override in subclasses."""
-        pass
 
     def handle_global_update(self) -> None:
         """Handle global update request."""
