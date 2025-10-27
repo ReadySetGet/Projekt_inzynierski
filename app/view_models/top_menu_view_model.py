@@ -1,4 +1,4 @@
-from typing import Any
+# No imports needed
 
 from PyQt6.QtCore import pyqtSignal
 
@@ -17,28 +17,10 @@ class TopMenuViewModel(BaseViewModel):
     add_output_clicked = pyqtSignal()
     delete_output_clicked = pyqtSignal()
 
-    # Signals for system updates
-    system_updated = pyqtSignal()
-
-    def __init__(self, model: Any = None) -> None:
-        """Initialize the TopMenuViewModel.
-
-        Args:
-            model (Any): The FIS model instance.
-        """
+    def __init__(self) -> None:
+        """Initialize the TopMenuViewModel."""
         super().__init__()
-        self._model = model
         self._current_tab = 0
-
-    @property
-    def model(self) -> Any:
-        """Get the FIS model."""
-        return self._model
-
-    @model.setter
-    def model(self, value: Any) -> None:
-        """Set the FIS model."""
-        self._model = value
 
     @property
     def current_tab(self) -> int:
@@ -58,60 +40,55 @@ class TopMenuViewModel(BaseViewModel):
 
     def add_input(self) -> None:
         """Handle add input button click."""
-        if self._model:
-            self._model.add_input()
-            self.system_updated.emit()
-        self.add_input_clicked.emit()
+        # Add a new input variable with default name and range
+        input_count = self.fuzzy_service.get_input_count()
+        success = self.fuzzy_service.add_input_variable(f"input{input_count}", 0.0, 100.0)
+        if success:
+            self.notify_data_changed.emit()
 
     def delete_input(self) -> None:
         """Handle delete input button click."""
-        if self._model and hasattr(self._model, "_fis"):
-            fis = self._model._fis
-            if fis.Inputs:  # Only delete if there are inputs
-                # Delete the last input (or could be more sophisticated)
-                result = self._model.delete_input(len(fis.Inputs) - 1)
-                if result == 1:  # Success
-                    self.system_updated.emit()
-        self.delete_input_clicked.emit()
+        input_count = self.fuzzy_service.get_input_count()
+        if input_count > 0:
+            # Delete the last input variable
+            success = self.fuzzy_service.delete_input_variable(input_count - 1)
+            if success:
+                self.notify_data_changed.emit()
 
     def add_output(self) -> None:
         """Handle add output button click."""
-        if self._model:
-            self._model.add_output()
-            self.system_updated.emit()
-        self.add_output_clicked.emit()
+        # Add a new output variable with default name and range
+        output_count = self.fuzzy_service.get_output_count()
+        success = self.fuzzy_service.add_output_variable(f"output{output_count}", 0.0, 100.0)
+        if success:
+            self.notify_data_changed.emit()
 
     def delete_output(self) -> None:
         """Handle delete output button click."""
-        if self._model and hasattr(self._model, "_fis"):
-            fis = self._model._fis
-            if fis.Outputs:  # Only delete if there are outputs
-                # Delete the last output (or could be more sophisticated)
-                result = self._model.delete_output(len(fis.Outputs) - 1)
-                if result == 1:  # Success
-                    self.system_updated.emit()
-        self.delete_output_clicked.emit()
+        output_count = self.fuzzy_service.get_output_count()
+        if output_count > 0:
+            # Delete the last output variable
+            success = self.fuzzy_service.delete_output_variable(output_count - 1)
+            if success:
+                self.notify_data_changed.emit()
 
     def can_delete_input(self) -> bool:
         """Check if input can be deleted."""
-        if not self._model or not hasattr(self._model, "_fis"):
-            return False
-        return len(self._model._fis.Inputs) > 0
+        return self.fuzzy_service.get_input_count() > 0
 
     def can_delete_output(self) -> bool:
         """Check if output can be deleted."""
-        if not self._model or not hasattr(self._model, "_fis"):
-            return False
-        return len(self._model._fis.Outputs) > 0
+        return self.fuzzy_service.get_output_count() > 0
 
     def get_input_count(self) -> int:
         """Get the number of inputs."""
-        if not self._model or not hasattr(self._model, "_fis"):
-            return 0
-        return len(self._model._fis.Inputs)
+        return self.fuzzy_service.get_input_count()
 
     def get_output_count(self) -> int:
         """Get the number of outputs."""
-        if not self._model or not hasattr(self._model, "_fis"):
-            return 0
-        return len(self._model._fis.Outputs)
+        return self.fuzzy_service.get_output_count()
+
+    def refresh_data(self) -> None:
+        """Refresh all data from the model - only updates logic, no signal emission."""
+        # TopMenuViewModel doesn't need to refresh data as it's mostly action-based
+        pass

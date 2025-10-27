@@ -8,47 +8,71 @@
 
 from PyQt6 import QtCore, QtWidgets
 
+from app.views.bar_menu_view import BarMenuWidget
 from app.views.browser_frame_view import BrowserFrameWidget
 from app.views.central_tab_view import CentralTabWidget
 from app.views.editor_tab_view import EditorTabWidget
 from app.views.top_menu_view import TopMenu
 
 
+def retranslateUi(MainWindow):
+    """Retranslate UI elements for localization.
+
+    Args:
+        MainWindow: The main window widget to retranslate.
+    """
+    _translate = QtCore.QCoreApplication.translate
+    MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+
+
 class UiMainWindow(object):
     """UI Main Window class generated from Qt Designer."""
 
-    def setupUi(self, MainWindow):
-        """Set up the UI for the main window."""
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1096, 830)
+    def __init__(self):
+        """Initialize the UI Main Window."""
+        self.editorTab = None
+        self.upMenuTab = None
+        self.browserFrame = None
+        self.plotTabs = None
+        self.statusBar = None
+        self.menuBar = None
 
+    def setupUi(self, MainWindow):
+        """Sets up the main window of application. All of the specific widgets are initiated via seperate classes."""
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(1096, 780)
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
-        self.plotTabs = CentralTabWidget(parent=self.centralwidget)
-        self.plotTabs.setGeometry(QtCore.QRect(310, 160, 531, 641))
+        self.statusBar = QtWidgets.QStatusBar(parent=MainWindow)
+        self.statusBar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusBar)
+        self.statusBar.showMessage("Started application")
 
-        self.browserFrame = BrowserFrameWidget(parent=self.centralwidget)
+        self.plotTabs = CentralTabWidget(parent=self.centralwidget, status_bar=self.statusBar)
+        self.plotTabs.setGeometry(QtCore.QRect(310, 160, 531, 601))
+
+        self.browserFrame = BrowserFrameWidget(parent=self.centralwidget, status_bar=self.statusBar)
         self.browserFrame.setGeometry(QtCore.QRect(0, 160, 301, 641))
 
-        self.upMenuTab = TopMenu(parent=self.centralwidget)
+        self.upMenuTab = TopMenu(parent=self.centralwidget, status_bar=self.statusBar)
         self.upMenuTab.setGeometry(QtCore.QRect(0, 0, 1081, 161))
 
-        self.editorTab = EditorTabWidget(parent=self.centralwidget)
+        self.editorTab = EditorTabWidget(parent=self.centralwidget, status_bar=self.statusBar)
         self.editorTab.setGeometry(QtCore.QRect(820, 160, 281, 641))
 
         MainWindow.setCentralWidget(self.centralwidget)
 
-        self.retranslateUi(MainWindow)
-        self.plotTabs.setCurrentIndex(2)
+        self.menuBar = BarMenuWidget(parent=MainWindow)
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1096, 26))
+
+        retranslateUi(MainWindow)
+
+        """Sets up the default tabs of tab widgets."""
+        self.plotTabs.setCurrentIndex(0)
         self.upMenuTab.setCurrentIndex(0)
         self.editorTab.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    def retranslateUi(self, MainWindow):
-        """Retranslate the UI text."""
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
 
 
 # if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from PyQt6.QtCore import pyqtSignal
 
@@ -22,29 +22,13 @@ class FisPropertiesViewModel(BaseViewModel):
     # Signals for variable selection
     variable_selected = pyqtSignal(str, str)  # variable_name, variable_type
 
-    def __init__(self, model: Any = None) -> None:
-        """Initialize the FisPropertiesViewModel.
-
-        Args:
-            model (Any): The FIS model instance.
-        """
+    def __init__(self) -> None:
+        """Initialize the FisPropertiesViewModel."""
         super().__init__()
-        self._model = model
         self._system_name = "fis"
         self._system_type = "mamfis"  # mamfis or sugfis
         self._selected_variable = None
         self._selected_variable_type = None
-
-    @property
-    def model(self) -> Any:
-        """Get the FIS model."""
-        return self._model
-
-    @model.setter
-    def model(self, value: Any) -> None:
-        """Set the FIS model and update data."""
-        self._model = value
-        self._update_system_info()
 
     @property
     def system_name(self) -> str:
@@ -73,11 +57,12 @@ class FisPropertiesViewModel(BaseViewModel):
     @property
     def inputs(self) -> List[Dict]:
         """Get the input variables."""
-        if not self._model or not hasattr(self._model, "_fis"):
+        fis_model = self.fuzzy_service.get_fis_model()
+        if not fis_model or not hasattr(fis_model, "_fis"):
             return []
 
         inputs = []
-        for i, input_var in enumerate(self._model._fis.Inputs):
+        for i, input_var in enumerate(fis_model._fis.Inputs):
             inputs.append(
                 {
                     "index": i,
@@ -91,11 +76,12 @@ class FisPropertiesViewModel(BaseViewModel):
     @property
     def outputs(self) -> List[Dict]:
         """Get the output variables."""
-        if not self._model or not hasattr(self._model, "_fis"):
+        fis_model = self.fuzzy_service.get_fis_model()
+        if not fis_model or not hasattr(fis_model, "_fis"):
             return []
 
         outputs = []
-        for i, output_var in enumerate(self._model._fis.Outputs):
+        for i, output_var in enumerate(fis_model._fis.Outputs):
             outputs.append(
                 {
                     "index": i,
@@ -117,11 +103,12 @@ class FisPropertiesViewModel(BaseViewModel):
         return self._selected_variable_type
 
     def _update_system_info(self) -> None:
-        """Update system information from the model."""
-        if not self._model or not hasattr(self._model, "_fis"):
+        """Update system information from the fuzzy service."""
+        fis_model = self.fuzzy_service.get_fis_model()
+        if not fis_model or not hasattr(fis_model, "_fis"):
             return
 
-        fis = self._model._fis
+        fis = fis_model._fis
 
         # Update system name
         if hasattr(fis, "Name") and fis.Name:
@@ -138,43 +125,55 @@ class FisPropertiesViewModel(BaseViewModel):
 
     def add_input(self) -> None:
         """Add a new input variable."""
-        if self._model:
-            self._model.add_input()
+        fis_model = self.fuzzy_service.get_fis_model()
+        if fis_model:
+            fis_model.add_input()
             self._update_system_info()
 
             # Get the newly added input
-            if self._model._fis.Inputs:
-                new_input = self._model._fis.Inputs[-1]
-                self.input_added.emit(new_input.Name, len(self._model._fis.Inputs) - 1)
+            if fis_model._fis.Inputs:
+                new_input = fis_model._fis.Inputs[-1]
+                self.input_added.emit(new_input.Name, len(fis_model._fis.Inputs) - 1)
+
+            # Notify other components of data change
+            self.notify_data_changed.emit()
 
     def delete_input(self, input_index: int) -> None:
         """Delete an input variable."""
-        if self._model and 0 <= input_index < len(self._model._fis.Inputs):
-            result = self._model.delete_input(input_index)
+        fis_model = self.fuzzy_service.get_fis_model()
+        if fis_model and 0 <= input_index < len(fis_model._fis.Inputs):
+            result = fis_model.delete_input(input_index)
             if result == 1:  # Success
                 self.input_deleted.emit(input_index)
                 self._update_system_info()
+                # Notify other components of data change
+                self.notify_data_changed.emit()
 
     def add_output(self) -> None:
         """Add a new output variable."""
-        if self._model:
-            self._model.add_output()
+        fis_model = self.fuzzy_service.get_fis_model()
+        if fis_model:
+            fis_model.add_output()
             self._update_system_info()
 
             # Get the newly added output
-            if self._model._fis.Outputs:
-                new_output = self._model._fis.Outputs[-1]
-                self.output_added.emit(
-                    new_output.Name, len(self._model._fis.Outputs) - 1
-                )
+            if fis_model._fis.Outputs:
+                new_output = fis_model._fis.Outputs[-1]
+                self.output_added.emit(new_output.Name, len(fis_model._fis.Outputs) - 1)
+
+            # Notify other components of data change
+            self.notify_data_changed.emit()
 
     def delete_output(self, output_index: int) -> None:
         """Delete an output variable."""
-        if self._model and 0 <= output_index < len(self._model._fis.Outputs):
-            result = self._model.delete_output(output_index)
+        fis_model = self.fuzzy_service.get_fis_model()
+        if fis_model and 0 <= output_index < len(fis_model._fis.Outputs):
+            result = fis_model.delete_output(output_index)
             if result == 1:  # Success
                 self.output_deleted.emit(output_index)
                 self._update_system_info()
+                # Notify other components of data change
+                self.notify_data_changed.emit()
 
     def select_variable(self, variable_name: str, variable_type: str) -> None:
         """Select a variable."""
@@ -182,14 +181,13 @@ class FisPropertiesViewModel(BaseViewModel):
         self._selected_variable_type = variable_type
         self.variable_selected.emit(variable_name, variable_type)
 
-    def get_variable_info(
-        self, variable_name: str, variable_type: str
-    ) -> Optional[Dict]:
+    def get_variable_info(self, variable_name: str, variable_type: str) -> Optional[Dict]:
         """Get information about a specific variable."""
-        if not self._model or not hasattr(self._model, "_fis"):
+        fis_model = self.fuzzy_service.get_fis_model()
+        if not fis_model or not hasattr(fis_model, "_fis"):
             return None
 
-        fis = self._model._fis
+        fis = fis_model._fis
         search_list = fis.Inputs if variable_type == "input" else fis.Outputs
 
         for var in search_list:
@@ -205,14 +203,13 @@ class FisPropertiesViewModel(BaseViewModel):
                 }
         return None
 
-    def update_variable_range(
-        self, variable_name: str, variable_type: str, new_range: List[float]
-    ) -> bool:
+    def update_variable_range(self, variable_name: str, variable_type: str, new_range: List[float]) -> bool:
         """Update the range of a variable."""
-        if not self._model or not hasattr(self._model, "_fis"):
+        fis_model = self.fuzzy_service.get_fis_model()
+        if not fis_model or not hasattr(fis_model, "_fis"):
             return False
 
-        fis = self._model._fis
+        fis = fis_model._fis
         search_list = fis.Inputs if variable_type == "input" else fis.Outputs
 
         for var in search_list:

@@ -2,10 +2,13 @@ import json
 import os
 from typing import Dict
 
+from PyQt6.QtCore import QObject, pyqtSignal
 
-class TranslateManager:
+
+class TranslateManager(QObject):
     """Manager for loading and providing translations from JSON files."""
 
+    language_changed = pyqtSignal()
     translations: Dict[str, str]
 
     def __init__(self, locales_path: str, default_language: str = "en") -> None:
@@ -15,6 +18,7 @@ class TranslateManager:
             locales_path (str): Path to the locales directory.
             default_language (str): The default language code.
         """
+        super().__init__()
         self.locales_path = locales_path
         self.current_language = default_language
         self.translations = {}
@@ -52,7 +56,19 @@ class TranslateManager:
         with open(json_file, "r", encoding="utf-8") as f:
             self.translations = json.load(f)
         self.current_language = language_code
+        self.language_changed.emit()
         return True
+
+    def set_language(self, language_code: str) -> bool:
+        """Set the current language and emit language_changed signal.
+
+        Args:
+            language_code (str): The language code to set.
+
+        Returns:
+            bool: True if the language was changed successfully, False otherwise.
+        """
+        return self.load_language(language_code)
 
     def t(self, key: str) -> str:
         """Translate a key to the current language.

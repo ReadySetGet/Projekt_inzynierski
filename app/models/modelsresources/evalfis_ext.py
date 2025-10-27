@@ -255,13 +255,9 @@ def eval_rules_sugeno(fis, firing_strength, user_input):
                 elif mf.Type == "linear":
                     # For linear functions: location = p0*x1 + p1*x2 + ... + pn
                     # where pn is the constant term
-                    if hasattr(mf.Parameters, "__len__") and len(mf.Parameters) > len(
-                        user_input
-                    ):
+                    if hasattr(mf.Parameters, "__len__") and len(mf.Parameters) > len(user_input):
                         # Parameters include coefficients for inputs + constant term
-                        location = (
-                            np.dot(mf.Parameters[:-1], user_input) + mf.Parameters[-1]
-                        )
+                        location = np.dot(mf.Parameters[:-1], user_input) + mf.Parameters[-1]
                     else:
                         # Fallback: just use the first parameter
                         if hasattr(mf.Parameters, "__getitem__"):
@@ -321,9 +317,7 @@ def aggregate_fis_output(fis_aggmethod, rule_output):
     for i in range(len(mult_singletons) - 1):
         if mult_singletons[i, 0] == mult_singletons[i + 1, 0]:
             if fis_aggmethod == "sum":
-                mult_singletons[i + 1, 1] = (
-                    mult_singletons[i, 1] + mult_singletons[i + 1, 1]
-                )
+                mult_singletons[i + 1, 1] = mult_singletons[i, 1] + mult_singletons[i + 1, 1]
 
             mult_singletons[i, 1] = 0
 

@@ -1,5 +1,6 @@
 from typing import Optional
 
+from app.services.central_event_bus import CentralEventBus
 from app.services.fuzzy_calculation_service import FuzzyCalculationService
 from app.services.theme_manager import ThemeManager
 from app.services.translate_manager import TranslateManager
@@ -36,16 +37,15 @@ class AppContext:
         self.config = AppConfig
 
         # Initialize translation manager
-        self.translate_manager = TranslateManager(
-            str(LOCALES_DIR), default_language="en"
-        )
-        self.translate = self.translate_manager.t
-
+        self.translate_manager = TranslateManager(str(LOCALES_DIR), default_language="en")
         # Theme manager (not global)
         self.theme_manager = ThemeManager(str(THEMES_DIR))
 
         # Fuzzy calculation service
         self.fuzzy_service = FuzzyCalculationService()
+
+        # Central event bus for global updates (singleton)
+        self.event_bus = CentralEventBus()
 
         self._initialized = True
 

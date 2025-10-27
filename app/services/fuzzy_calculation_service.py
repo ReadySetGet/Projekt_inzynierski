@@ -2,20 +2,15 @@
 
 from typing import Any, Dict, List, Tuple
 
-import fuzzylab as fl
-from PyQt6.QtCore import QObject, pyqtSignal
+from app.services.fis_state_manager import FISStateManager
+from app.services.fuzzy.fuzzy_inference_engine import FuzzyInferenceEngine
+from app.services.fuzzy.membership_function_manager import MembershipFunctionManager
+from app.services.fuzzy.rule_manager import RuleManager
+from app.services.fuzzy.variable_manager import VariableManager
 
-from app.models.fis_model import FISModel
-from app.models.modelsresources.evalfis_ext import evalfis
 
-
-class FuzzyCalculationService(QObject):
+class FuzzyCalculationService:
     """Service for managing fuzzy inference systems and calculations."""
-
-    # Signals for system updates
-    system_changed = pyqtSignal()
-    inference_completed = pyqtSignal(list, list)  # inputs, outputs
-    error_occurred = pyqtSignal(str, str)  # error_type, error_message
 
     def __init__(self, fis_type: str = "mamdani") -> None:
         """Initialize the FuzzyCalculationService.
@@ -23,687 +18,237 @@ class FuzzyCalculationService(QObject):
         Args:
             fis_type: Type of FIS to create ("mamdani" or "sugeno")
         """
-        super().__init__()
-        self._fis_model = FISModel()
-        self._last_inference_results = []
-        self._last_inference_inputs = []
-        self._inference_state = "idle"  # idle, calculating, error
+        # Initialize the state manager
+        self._state_manager = FISStateManager(fis_type)
 
-        # Create the specified FIS type
-        if fis_type.lower() == "sugeno":
-            self.create_sugeno_fis("default_sugeno_fis")
-        else:
-            # Default to Mamdani (already created by FISModel())
-            self._add_default_variables()
+        # Initialize managers
+        self._variable_manager = VariableManager(self._state_manager.fis_model)
+        self._mf_manager = MembershipFunctionManager(self._state_manager.fis_model)
+        self._rule_manager = RuleManager(self._state_manager.fis_model)
+        self._inference_engine = FuzzyInferenceEngine(self._state_manager.fis_model)
 
+    # FIS Model Access
     @property
-    def fis_model(self) -> FISModel:
+    def fis_model(self):
         """Get the FIS model."""
-        return self._fis_model
+        return self._state_manager.fis_model
 
-    def get_fis_model(self) -> FISModel:
+    def get_fis_model(self):
         """Get the FIS model instance."""
-        return self._fis_model
+        return self._state_manager.fis_model
 
+    # System Status
     def get_system_status(self) -> Dict[str, Any]:
         """Get the current system status."""
-        return {
-            "inputs_count": len(self._fis_model._fis.Inputs),
-            "outputs_count": len(self._fis_model._fis.Outputs),
-            "rules_count": len(self._fis_model._fis.Rules),
-            "inference_state": self._inference_state,
-            "last_inference_inputs": self._last_inference_inputs.copy(),
-            "last_inference_results": self._last_inference_results.copy(),
-        }
+        return self._state_manager.get_system_status()
 
+    def get_inference_state(self) -> str:
+        """Get the current inference state."""
+        return self._state_manager.inference_state
+
+    def set_inference_state(self, state: str) -> None:
+        """Set the inference state."""
+        self._state_manager.set_inference_state(state)
+
+    # Variable Management
     def get_input_variables(self) -> List[Dict[str, Any]]:
         """Get list of input variables."""
-        variables = []
-        for i, input_var in enumerate(self._fis_model._fis.Inputs):
-            variables.append(
-                {
-                    "index": i,
-                    "name": input_var.Name,
-                    "range": input_var.Range,
-                    "mf_count": len(input_var.MembershipFunctions),
-                }
-            )
-        return variables
+        return self._variable_manager.get_input_variables()
 
     def get_output_variables(self) -> List[Dict[str, Any]]:
         """Get list of output variables."""
-        variables = []
-        for i, output_var in enumerate(self._fis_model._fis.Outputs):
-            variables.append(
-                {
-                    "index": i,
-                    "name": output_var.Name,
-                    "range": output_var.Range,
-                    "mf_count": len(output_var.MembershipFunctions),
-                }
-            )
-        return variables
-
-    def get_membership_functions(
-        self, variable_name: str, is_input: bool
-    ) -> List[Dict[str, Any]]:
-        """Get detailed information about membership functions for a variable.
-
-        Args:
-            variable_name: Name of the variable
-            is_input: True if it's an input variable, False if output
-
-        Returns:
-            List of dictionaries containing MF information
-        """
-        try:
-            fis = self._fis_model._fis
-            if is_input:
-                var = next(var for var in fis.Inputs if var.Name == variable_name)
-            else:
-                var = next(var for var in fis.Outputs if var.Name == variable_name)
-
-            mfs = []
-            for i, mf in enumerate(var.MembershipFunctions):
-                mfs.append(
-                    {
-                        "index": i,
-                        "name": mf.Name,
-                        "type": mf.Type,
-                        "parameters": (
-                            mf.Parameters
-                            if hasattr(mf.Parameters, "__iter__")
-                            else [mf.Parameters]
-                        ),
-                    }
-                )
-            return mfs
-        except Exception as e:
-            self.error_occurred.emit("get_mf_error", str(e))
-            return []
-
-    def get_inference_results(self) -> Dict[str, Any]:
-        """Get the last inference results with detailed information.
-
-        Returns:
-            Dictionary containing inference results and metadata
-        """
-        return {
-            "inputs": self._last_inference_inputs.copy(),
-            "outputs": self._last_inference_results.copy(),
-            "state": self._inference_state,
-            "fis_type": self.get_fis_type(),
-            "timestamp": getattr(self, "_last_inference_time", None),
-        }
+        return self._variable_manager.get_output_variables()
 
     def add_input_variable(self, name: str, range_min: float, range_max: float) -> bool:
         """Add a new input variable."""
-        try:
-            # Use the FISModel's add_input method which creates default variables
-            self._fis_model.add_input()
-            # Then rename the last added input
-            if len(self._fis_model._fis.Inputs) > 0:
-                last_input = self._fis_model._fis.Inputs[-1]
-                last_input.Name = name
-                last_input.Range = [range_min, range_max]
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("add_input_error", str(e))
-            return False
+        return self._variable_manager.add_input_variable(name, range_min, range_max)
 
-    def add_output_variable(
-        self, name: str, range_min: float, range_max: float
-    ) -> bool:
+    def add_output_variable(self, name: str, range_min: float, range_max: float) -> bool:
         """Add a new output variable."""
-        try:
-            # Use the FISModel's add_output method which creates default variables
-            self._fis_model.add_output()
-            # Then rename the last added output
-            if len(self._fis_model._fis.Outputs) > 0:
-                last_output = self._fis_model._fis.Outputs[-1]
-                last_output.Name = name
-                last_output.Range = [range_min, range_max]
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("add_output_error", str(e))
-            return False
+        return self._variable_manager.add_output_variable(name, range_min, range_max)
 
     def delete_input_variable(self, index: int) -> bool:
         """Delete an input variable by index."""
-        try:
-            self._fis_model.delete_input(index)
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("delete_input_error", str(e))
-            return False
+        return self._variable_manager.delete_input_variable(index)
 
     def delete_output_variable(self, index: int) -> bool:
         """Delete an output variable by index."""
-        try:
-            self._fis_model.delete_output(index)
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("delete_output_error", str(e))
-            return False
+        return self._variable_manager.delete_output_variable(index)
 
-    def update_input_variable_range(
-        self, index: int, range_min: float, range_max: float
-    ) -> bool:
-        """Update the range of an input variable.
+    def update_input_variable_range(self, index: int, range_min: float, range_max: float) -> bool:
+        """Update the range of an input variable."""
+        return self._variable_manager.update_input_variable_range(index, range_min, range_max)
 
-        Args:
-            index: Index of the input variable
-            range_min: New minimum value of the range
-            range_max: New maximum value of the range
+    def update_output_variable_range(self, index: int, range_min: float, range_max: float) -> bool:
+        """Update the range of an output variable."""
+        return self._variable_manager.update_output_variable_range(index, range_min, range_max)
 
-        Returns:
-            bool: True if updated successfully, False otherwise
-        """
-        try:
-            if index >= len(self._fis_model._fis.Inputs):
-                self.error_occurred.emit("update_input_error", "Invalid input index")
-                return False
+    def update_variable_name(self, variable_name: str, new_name: str, variable_type: str) -> bool:
+        """Update the name of a variable."""
+        return self._variable_manager.update_variable_name(variable_name, new_name, variable_type)
 
-            self._fis_model._fis.Inputs[index].Range = [range_min, range_max]
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("update_input_error", str(e))
-            return False
-
-    def update_output_variable_range(
-        self, index: int, range_min: float, range_max: float
-    ) -> bool:
-        """Update the range of an output variable.
-
-        Args:
-            index: Index of the output variable
-            range_min: New minimum value of the range
-            range_max: New maximum value of the range
-
-        Returns:
-            bool: True if updated successfully, False otherwise
-        """
-        try:
-            if index >= len(self._fis_model._fis.Outputs):
-                self.error_occurred.emit("update_output_error", "Invalid output index")
-                return False
-
-            self._fis_model._fis.Outputs[index].Range = [range_min, range_max]
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("update_output_error", str(e))
-            return False
-
-    def update_variable_name(
-        self, variable_name: str, new_name: str, is_input: bool
-    ) -> bool:
-        """Update the name of a variable.
-
-        Args:
-            variable_name: Current name of the variable
-            new_name: New name for the variable
-            is_input: True if it's an input variable, False if output
-
-        Returns:
-            bool: True if updated successfully, False otherwise
-        """
-        try:
-            if is_input:
-                variables = self._fis_model._fis.Inputs
-            else:
-                variables = self._fis_model._fis.Outputs
-
-            for var in variables:
-                if var.Name == variable_name:
-                    var.Name = new_name
-                    self.system_changed.emit()
-                    return True
-
-            self.error_occurred.emit("update_name_error", "Variable not found")
-            return False
-        except Exception as e:
-            self.error_occurred.emit("update_name_error", str(e))
-            return False
+    # Membership Function Management
+    def get_membership_functions(self, variable_name: str, variable_type: str) -> List[Dict[str, Any]]:
+        """Get membership functions for a specific variable."""
+        return self._mf_manager.get_membership_functions(variable_name, variable_type)
 
     def add_membership_function(
-        self, variable_name: str, mf_name: str, mf_type: str, parameters: List[float]
+        self,
+        variable_name: str,
+        mf_name: str,
+        mf_type: str,
+        parameters: List[float],
+        variable_type: str,
     ) -> bool:
-        """Add a membership function to a variable."""
-        try:
-            # Determine if it's an input or output variable
-            fis = self._fis_model._fis
-            is_input = any(var.Name == variable_name for var in fis.Inputs)
-            io_type = "input" if is_input else "output"
+        """Add a new membership function to a variable."""
+        return self._mf_manager.add_membership_function(variable_name, mf_name, mf_type, parameters, variable_type)
 
-            # Use the FISModel's add_mf method which handles type validation
-            result = self._fis_model.add_mf(variable_name, io_type, mf_type)
-
-            if result == 1:  # Success
-                # Update the membership function name and parameters
-                if is_input:
-                    var = next(var for var in fis.Inputs if var.Name == variable_name)
-                else:
-                    var = next(var for var in fis.Outputs if var.Name == variable_name)
-
-                # Get the last added membership function
-                if var.MembershipFunctions:
-                    last_mf = var.MembershipFunctions[-1]
-                    last_mf.Name = mf_name
-                    # Update parameters if provided
-                    if parameters:
-                        last_mf.Parameters = parameters
-
-                self.system_changed.emit()
-                return True
-            else:
-                self.error_occurred.emit("add_mf_error", f"Failed to add MF: {result}")
-                return False
-        except Exception as e:
-            self.error_occurred.emit("add_mf_error", str(e))
-            return False
-
-    def delete_membership_function(self, variable_name: str, mf_index: int) -> bool:
+    def delete_membership_function(self, variable_name: str, mf_index: int, variable_type: str) -> bool:
         """Delete a membership function from a variable."""
-        try:
-            # Determine if it's an input or output variable
-            fis = self._fis_model._fis
-            is_input = any(var.Name == variable_name for var in fis.Inputs)
-            io_type = "input" if is_input else "output"
-
-            # Check current MF count before deletion
-            if is_input:
-                next(var for var in fis.Inputs if var.Name == variable_name)
-            else:
-                next(var for var in fis.Outputs if var.Name == variable_name)
-
-            result = self._fis_model.delete_mf(variable_name, io_type, mf_index)
-
-            if result == 1:  # Success
-                # Check MF count after deletion
-                if is_input:
-                    next(var for var in fis.Inputs if var.Name == variable_name)
-                else:
-                    next(var for var in fis.Outputs if var.Name == variable_name)
-
-                self.system_changed.emit()
-                return True
-            else:
-                return False
-        except Exception as e:
-            self.error_occurred.emit("delete_mf_error", str(e))
-            return False
+        return self._mf_manager.delete_membership_function(variable_name, mf_index, variable_type)
 
     def change_membership_function_type(
-        self, variable_name: str, input_or_output: str, mf_index: int, new_type: str
+        self,
+        variable_name: str,
+        mf_index: int,
+        new_type: str,
+        variable_type: str,
     ) -> bool:
         """Change the type of a membership function."""
-        try:
-            result = self._fis_model.change_mf_type(
-                variable_name, input_or_output, mf_index, new_type
-            )
-
-            if result == 1:  # Success
-                self.system_changed.emit()
-                return True
-            else:
-                return False
-        except Exception as e:
-            self.error_occurred.emit("change_mf_type_error", str(e))
-            return False
+        return self._mf_manager.change_membership_function_type(variable_name, mf_index, new_type, variable_type)
 
     def update_membership_function_parameters(
-        self, variable_name: str, mf_index: int, new_parameters: List[float]
+        self,
+        variable_name: str,
+        mf_index: int,
+        new_parameters: List[float],
+        variable_type: str,
     ) -> bool:
-        """Update the parameters of a membership function.
-
-        Args:
-            variable_name: Name of the variable containing the membership function
-            mf_index: Index of the membership function
-            new_parameters: New parameters for the membership function
-
-        Returns:
-            bool: True if updated successfully, False otherwise
-        """
-        try:
-            # Find the variable
-            fis = self._fis_model._fis
-            is_input = any(var.Name == variable_name for var in fis.Inputs)
-
-            if is_input:
-                var = next(var for var in fis.Inputs if var.Name == variable_name)
-            else:
-                var = next(var for var in fis.Outputs if var.Name == variable_name)
-
-            if mf_index >= len(var.MembershipFunctions):
-                self.error_occurred.emit("update_mf_params_error", "Invalid MF index")
-                return False
-
-            # Update the parameters
-            var.MembershipFunctions[mf_index].Parameters = new_parameters
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("update_mf_params_error", str(e))
-            return False
+        """Update the parameters of a membership function."""
+        return self._mf_manager.update_membership_function_parameters(
+            variable_name, mf_index, new_parameters, variable_type
+        )
 
     def update_membership_function_name(
-        self, variable_name: str, mf_index: int, new_name: str
+        self,
+        variable_name: str,
+        mf_index: int,
+        new_name: str,
+        variable_type: str,
     ) -> bool:
-        """Update the name of a membership function.
+        """Update the name of a membership function."""
+        return self._mf_manager.update_membership_function_name(variable_name, mf_index, new_name, variable_type)
 
-        Args:
-            variable_name: Name of the variable containing the membership function
-            mf_index: Index of the membership function
-            new_name: New name for the membership function
-
-        Returns:
-            bool: True if updated successfully, False otherwise
-        """
-        try:
-            # Find the variable
-            fis = self._fis_model._fis
-            is_input = any(var.Name == variable_name for var in fis.Inputs)
-
-            if is_input:
-                var = next(var for var in fis.Inputs if var.Name == variable_name)
-            else:
-                var = next(var for var in fis.Outputs if var.Name == variable_name)
-
-            if mf_index >= len(var.MembershipFunctions):
-                self.error_occurred.emit("update_mf_name_error", "Invalid MF index")
-                return False
-
-            # Update the name
-            var.MembershipFunctions[mf_index].Name = new_name
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("update_mf_name_error", str(e))
-            return False
+    # Rule Management
+    def get_rules(self) -> List[Dict[str, Any]]:
+        """Get all rules."""
+        return self._rule_manager.get_rules()
 
     def add_rule(
         self,
+        rule_name: str = "Rule",
+        antecedent: List[int] = None,
+        consequent: List[int] = None,
+        weight: float = 1.0,
+        connection: int = 1,
         is_mf: List[int] = None,
-        rule_data: List[int] = None,
     ) -> bool:
-        """Add a fuzzy rule.
-
-        Args:
-            is_mf: List of variable to mf mapping behaviours when inferring
-                   (1 - use IS, else - use IS NOT). If None, IS values are used.
-            rule_data: List in form of [imf1, imf2, ..., omf1, omf2, ..., w, c]
-                      where imf* are input mf indices, omf* are output mf indices,
-                      w is weight, c is connection (1=AND, else=OR). If None,
-                      default values are used.
-        """
-        try:
-            result = self._fis_model.add_rule(is_mf, rule_data)
-            if result == 1:  # Success
-                self.system_changed.emit()
-                return True
-            else:
-                self.error_occurred.emit(
-                    "add_rule_error", f"Failed to add rule: {result}"
-                )
-                return False
-        except Exception as e:
-            self.error_occurred.emit("add_rule_error", str(e))
-            return False
+        """Add a new rule."""
+        if antecedent is None:
+            antecedent = [0] * len(self.get_input_variables())
+        if consequent is None:
+            consequent = [0] * len(self.get_output_variables())
+        return self._rule_manager.add_rule(rule_name, antecedent, consequent, weight, connection, is_mf)
 
     def delete_rule(self, rule_index: int) -> bool:
-        """Delete a fuzzy rule."""
-        try:
-            self._fis_model.delete_rule(rule_index)
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("delete_rule_error", str(e))
-            return False
+        """Delete a rule by index."""
+        return self._rule_manager.delete_rule(rule_index)
 
     def update_rule(
         self,
         rule_index: int,
-        new_rule_is_mf: List[int],
-        new_rule_data: List[int],
+        new_antecedent: List[int],
+        new_consequent: List[int],
+        new_weight: float,
+        new_connection: int,
+        new_is_mf: List[int],
     ) -> bool:
-        """Update a fuzzy rule.
-
-        Args:
-            rule_index: Index of the rule to update
-            new_rule_is_mf: List of variable to mf mapping behaviours when inferring
-                           (1 - use IS, else - use IS NOT)
-            new_rule_data: List in form of [imf1, imf2, ..., omf1, omf2, ..., w, c]
-                          where imf* are input mf indices, omf* are output mf indices,
-                          w is weight, c is connection (1=AND, else=OR)
-        """
-        try:
-            result = self._fis_model.update_rule(
-                rule_index, new_rule_is_mf, new_rule_data
-            )
-            if result == 1:  # Success
-                self.system_changed.emit()
-                return True
-            else:
-                self.error_occurred.emit(
-                    "update_rule_error", f"Failed to update rule: {result}"
-                )
-                return False
-        except Exception as e:
-            self.error_occurred.emit("update_rule_error", str(e))
-            return False
-
-    def clear_all_rules(self) -> bool:
-        """Clear all fuzzy rules."""
-        try:
-            self._fis_model.clear_all_rules()
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("clear_rules_error", str(e))
-            return False
-
-    def set_inference_state(self, state: str) -> None:
-        """Set the inference state."""
-        self._inference_state = state
-
-    def get_inference_state(self) -> str:
-        """Get the current inference state."""
-        return self._inference_state
-
-    def _is_system_ready_for_inference(self) -> bool:
-        """Check if the system is ready for inference."""
-        return (
-            len(self._fis_model._fis.Inputs) > 0
-            and len(self._fis_model._fis.Outputs) > 0
-            and len(self._fis_model._fis.Rules) > 0
+        """Update a rule."""
+        return self._rule_manager.update_rule(
+            rule_index,
+            new_antecedent,
+            new_consequent,
+            new_weight,
+            new_connection,
+            new_is_mf,
         )
 
-    def perform_inference(
-        self, input_values: List[float]
-    ) -> Tuple[bool, List[float], Dict[str, Any]]:
-        """Perform fuzzy inference with given input values."""
-        try:
-            self.set_inference_state("calculating")
+    def clear_all_rules(self) -> bool:
+        """Clear all rules."""
+        return self._rule_manager.clear_all_rules()
 
-            if len(input_values) != len(self._fis_model._fis.Inputs):
-                error_msg = (
-                    f"Expected {len(self._fis_model._fis.Inputs)} input values, "
-                    f"got {len(input_values)}"
-                )
-                self.error_occurred.emit("inference_error", error_msg)
-                self.set_inference_state("error")
-                return False, [], {"error": error_msg}
+    def get_rule_text(self, rule_index: int) -> str:
+        """Get the text representation of a rule."""
+        return self._rule_manager.get_rule_text(rule_index)
 
-            if not self._is_system_ready_for_inference():
-                error_msg = (
-                    "System not ready for inference - missing variables or "
-                    "membership functions"
-                )
-                self.error_occurred.emit("inference_error", error_msg)
-                self.set_inference_state("error")
-                return False, [], {"error": error_msg}
+    # Inference Operations
+    def perform_inference(self, inputs: List[float]) -> Tuple[List[float], bool]:
+        """Perform fuzzy inference with given inputs."""
+        outputs, success = self._inference_engine.perform_inference(inputs)
+        if success:
+            self._state_manager.update_inference_results(inputs, outputs)
+        return outputs, success
 
-            # Use extended evalfis function from evalfis_ext
-            output_values = evalfis(self._fis_model._fis, input_values)
+    def get_inference_results(self) -> Dict[str, Any]:
+        """Get the last inference results."""
+        return {
+            "inputs": self._state_manager.last_inference_inputs,
+            "outputs": self._state_manager.last_inference_results,
+            "success": len(self._state_manager.last_inference_results) > 0,
+        }
 
-            # Convert numpy types to Python types for signal emission
-            if hasattr(output_values, "tolist"):
-                output_values = output_values.tolist()
-            elif hasattr(output_values, "item"):
-                output_values = output_values.item()
+    def get_inference_statistics(self) -> Dict[str, Any]:
+        """Get statistics about the inference system."""
+        return self._inference_engine.get_inference_statistics()
 
-            # Ensure output_values is a list for signal emission
-            if not isinstance(output_values, list):
-                output_values = [output_values]
+    def validate_inputs(self, inputs: List[float]) -> Tuple[bool, str]:
+        """Validate input values for inference."""
+        return self._inference_engine.validate_inputs(inputs)
 
-            self._last_inference_results = output_values
-            self._last_inference_inputs = input_values.copy()
-            self._last_inference_time = __import__("time").time()
-            self.set_inference_state("idle")
-            self.inference_completed.emit(input_values, output_values)
-
-            return True, output_values, {"success": True}
-
-        except Exception as e:
-            error_msg = f"Inference failed: {str(e)}"
-            self.error_occurred.emit("inference_error", error_msg)
-            self.set_inference_state("error")
-            return False, [], {"error": error_msg}
-
+    # FIS Type Management
     def get_fis_type(self) -> str:
         """Get the current FIS type."""
-        return self._fis_model._fis.Type
+        return self._state_manager.fis_type
 
     def create_mamdani_fis(self, name: str = "mamdani_fis") -> bool:
-        """Create a new Mamdani type fuzzy inference system.
-
-        Args:
-            name: Name for the new FIS system
-
-        Returns:
-            bool: True if created successfully, False otherwise
-        """
-        try:
-            new_fis = fl.mamfis(name)
-            self._fis_model = FISModel(new_fis)
-            self._add_default_variables()
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("create_fis_error", str(e))
-            return False
+        """Create a new Mamdani FIS system."""
+        return self._state_manager.create_mamdani_fis(name)
 
     def create_sugeno_fis(self, name: str = "sugeno_fis") -> bool:
-        """Create a new Sugeno type fuzzy inference system.
-
-        Args:
-            name: Name for the new FIS system
-
-        Returns:
-            bool: True if created successfully, False otherwise
-        """
-        try:
-            new_fis = fl.sugfis(name)
-            self._fis_model = FISModel(new_fis)
-            self._add_default_variables()
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("create_fis_error", str(e))
-            return False
+        """Create a new Sugeno FIS system."""
+        return self._state_manager.create_sugeno_fis(name)
 
     def switch_to_mamdani(self) -> bool:
-        """Switch the current FIS to Mamdani type.
-
-        Returns:
-            bool: True if switched successfully, False otherwise
-        """
-        if self.get_fis_type() == "mamdani":
-            return True  # Already Mamdani type
-
-        try:
-            # Save current variables and rules
-            current_inputs = self.get_input_variables()
-            current_outputs = self.get_output_variables()
-            # Create new Mamdani FIS
-            new_fis = fl.mamfis("mamdani_fis")
-            self._fis_model = FISModel(new_fis)
-
-            # Restore variables
-            for input_var in current_inputs:
-                self.add_input_variable(
-                    input_var["name"],
-                    input_var["range"][0],
-                    input_var["range"][1],
-                )
-
-            for output_var in current_outputs:
-                self.add_output_variable(
-                    output_var["name"],
-                    output_var["range"][0],
-                    output_var["range"][1],
-                )
-
-            # Note: Rules will need to be recreated as they may have different
-            # structures between Mamdani and Sugeno systems
-
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("switch_fis_error", str(e))
-            return False
+        """Switch to Mamdani FIS system."""
+        return self._state_manager.switch_to_mamdani()
 
     def switch_to_sugeno(self) -> bool:
-        """Switch the current FIS to Sugeno type.
+        """Switch to Sugeno FIS system."""
+        return self._state_manager.switch_to_sugeno()
 
-        Returns:
-            bool: True if switched successfully, False otherwise
-        """
-        if self.get_fis_type() == "sugeno":
-            return True  # Already Sugeno type
+    # Legacy compatibility methods
+    def get_input_count(self) -> int:
+        """Get the number of input variables."""
+        return len(self.get_input_variables())
 
-        try:
-            # Save current variables and rules
-            current_inputs = self.get_input_variables()
-            current_outputs = self.get_output_variables()
-            # Create new Sugeno FIS
-            new_fis = fl.sugfis("sugeno_fis")
-            self._fis_model = FISModel(new_fis)
+    def get_output_count(self) -> int:
+        """Get the number of output variables."""
+        return len(self.get_output_variables())
 
-            # Restore variables
-            for input_var in current_inputs:
-                self.add_input_variable(
-                    input_var["name"],
-                    input_var["range"][0],
-                    input_var["range"][1],
-                )
+    def get_rule_count(self) -> int:
+        """Get the number of rules."""
+        return self._rule_manager.get_rule_count()
 
-            for output_var in current_outputs:
-                self.add_output_variable(
-                    output_var["name"],
-                    output_var["range"][0],
-                    output_var["range"][1],
-                )
-
-            # Note: Rules will need to be recreated as they may have different
-            # structures between Mamdani and Sugeno systems
-
-            self.system_changed.emit()
-            return True
-        except Exception as e:
-            self.error_occurred.emit("switch_fis_error", str(e))
-            return False
-
-    def _add_default_variables(self) -> None:
-        """Add default input and output variables to make the system usable."""
-        # Add a default input variable
-        self.add_input_variable("Input1", 0, 10)
-
-        # Add a default output variable
-        self.add_output_variable("Output1", 0, 10)
+    def is_system_ready(self) -> bool:
+        """Check if the system is ready for inference."""
+        return self._state_manager.get_system_status()["is_ready"]

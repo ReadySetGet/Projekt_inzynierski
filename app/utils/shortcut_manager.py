@@ -21,9 +21,7 @@ class ShortcutManager:
         self._shortcuts: Dict[str, QShortcut] = {}
         self._actions: Dict[str, Callable] = {}
 
-    def register_shortcut(
-        self, key_sequence: str, action: Callable, description: Optional[str] = None
-    ) -> bool:
+    def register_shortcut(self, key_sequence: str, action: Callable, description: Optional[str] = None) -> bool:
         """Register a new shortcut.
 
         Args:
@@ -52,10 +50,7 @@ class ShortcutManager:
         Returns:
             bool: True if successful, False if conflict or not found.
         """
-        if (
-            old_key_sequence not in self._shortcuts
-            or new_key_sequence in self._shortcuts
-        ):
+        if old_key_sequence not in self._shortcuts or new_key_sequence in self._shortcuts:
             return False
         action = self._actions[old_key_sequence]
         self.remove_shortcut(old_key_sequence)
@@ -103,9 +98,7 @@ class ShortcutManager:
             self.remove_shortcut(key)
 
 
-def register_default_shortcuts(
-    shortcut_manager: "ShortcutManager", view_model, toggle_theme_callback
-) -> None:
+def register_default_shortcuts(shortcut_manager: "ShortcutManager", view_model, toggle_theme_callback) -> None:
     """Register default keyboard shortcuts for navigation and theme switching.
 
     Args:
@@ -113,14 +106,10 @@ def register_default_shortcuts(
         view_model: The view model for the main view (must have set_current_view).
         toggle_theme_callback (Callable): Callback to toggle the theme.
     """
-    shortcut_manager.register_shortcut(
-        "Ctrl+H", lambda: view_model.set_current_view("home"), description="Go to Home"
-    )
+    shortcut_manager.register_shortcut("Ctrl+H", lambda: view_model.set_current_view("home"), description="Go to Home")
     shortcut_manager.register_shortcut(
         "Ctrl+S",
         lambda: view_model.set_current_view("settings"),
         description="Go to Settings",
     )
-    shortcut_manager.register_shortcut(
-        "Ctrl+T", toggle_theme_callback, description="Toggle Theme"
-    )
+    shortcut_manager.register_shortcut("Ctrl+T", toggle_theme_callback, description="Toggle Theme")

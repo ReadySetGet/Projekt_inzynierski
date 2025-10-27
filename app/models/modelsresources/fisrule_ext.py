@@ -27,9 +27,7 @@ class FisRuleEx(fl.fisrule):
     Name: str
     """Name of the rule."""
 
-    def __init__(
-        self, is_mf: list[int], rule_name: str, rule_def: list[list[int]], *varargin
-    ):
+    def __init__(self, is_mf: list[int], rule_name: str, rule_def: list[list[int]], *varargin):
         """Initialize the extension class instance.
 
         Extends 'fisrule''s '__init__()' method.

@@ -1,15 +1,16 @@
 """Create a tab GUI object to insert into editor tab on the right of main window.
 
 Classes:
-    TopMenu: button area element inheriting from QTabWidget.
+    RulesEditorTab: button area element inheriting from QTabWidget.
 """
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-from app.views.base_view import BaseView
+from app.view_models.rules_editor_view_model import RulesEditorViewModel
+from app.views.base_widget_view import BaseWidgetView
 
 
-class RulesEditorTab(BaseView):
+class RulesEditorTab(BaseWidgetView):
     """Class inheriting from QWidget.
 
     Allows user interaction via QPushButton, QLineEdit and QComboBox GUI elements.
@@ -41,13 +42,52 @@ class RulesEditorTab(BaseView):
         """
         super().__init__(parent=parent)
         self.setObjectName("rules_properties_tab")
+
+        # Initialize view model
+        self.view_model = RulesEditorViewModel()
+        self.view_model.setParent(self)
+        self.set_view_model(self.view_model)
+
+        # Connect view model signals
+        self._connect_view_model_signals()
+
         self._setup_ui()
         self._retranslate_ui()
 
+    def _connect_view_model_signals(self):
+        """Connect view model signals to view methods."""
+        self.view_model.rules_updated.connect(self._update_rules_list)
+        self.view_model.input_mf_options_updated.connect(self._update_input_mf_dropdowns)
+        self.view_model.output_mf_options_updated.connect(self._update_output_mf_dropdowns)
+        self.view_model.data_changed.connect(self._on_data_changed)
+
+    def _on_data_changed(self):
+        """Handle data changed signal from view model."""
+        # Refresh the UI when data changes
+        self.refresh_ui()
+
+    def refresh_ui(self) -> None:
+        """Refresh the UI elements."""
+        if hasattr(self, "view_model") and self.view_model:
+            self.view_model.refresh_data()
+
+    def update_ui(self) -> None:
+        """Update UI elements."""
+        pass
+
+    def handle_global_update(self) -> None:
+        """Handle global update request."""
+        pass
+
     def _setup_ui(self):
         """Set up all the GUI sub elements."""
-        input_mf_list = ["Placeholder Input MF"]
-        output_mf_list = ["Placeholder Output MF"]
+        # Get real data from view model instead of hardcoded placeholders
+        input_mf_list = (
+            self.view_model.input_mf_options if self.view_model.input_mf_options else ["No input MFs available"]
+        )
+        output_mf_list = (
+            self.view_model.output_mf_options if self.view_model.output_mf_options else ["No output MFs available"]
+        )
 
         self.rule_name_label = QtWidgets.QLabel(parent=self)
         self.rule_name_label.setGeometry(QtCore.QRect(10, 50, 55, 16))
@@ -102,9 +142,7 @@ class RulesEditorTab(BaseView):
         self.first_input_is_isnt_dropdown.addItems(["Is", "Isn't"])
         self.first_input_is_isnt_dropdown.setGeometry(QtCore.QRect(70, 230, 71, 31))
         self.first_input_is_isnt_dropdown.setObjectName("first_input_is_isnt_dropdown")
-        self.first_input_is_isnt_dropdown.currentTextChanged.connect(
-            self.is_dropdown_changed
-        )
+        self.first_input_is_isnt_dropdown.currentTextChanged.connect(self.is_dropdown_changed)
 
         self.first_input_mf_dropdown = QtWidgets.QComboBox(parent=self)
         self.first_input_mf_dropdown.addItems(input_mf_list)
@@ -126,9 +164,7 @@ class RulesEditorTab(BaseView):
         self.final_input_is_isnt_dropdown.addItems(["Is", "Isn't"])
         self.final_input_is_isnt_dropdown.setGeometry(QtCore.QRect(70, 270, 71, 31))
         self.final_input_is_isnt_dropdown.setObjectName("final_input_is_isnt_dropdown")
-        self.final_input_is_isnt_dropdown.currentTextChanged.connect(
-            self.is_dropdown_changed
-        )
+        self.final_input_is_isnt_dropdown.currentTextChanged.connect(self.is_dropdown_changed)
 
         self.final_input_rule_label = QtWidgets.QLabel(parent=self)
         self.final_input_rule_label.setGeometry(QtCore.QRect(10, 280, 51, 16))
@@ -156,9 +192,7 @@ class RulesEditorTab(BaseView):
         self.output_is_isnt_dropdown.addItems(["Is", "Isn't"])
         self.output_is_isnt_dropdown.setGeometry(QtCore.QRect(70, 460, 71, 31))
         self.output_is_isnt_dropdown.setObjectName("output_is_isnt_dropdown")
-        self.output_is_isnt_dropdown.currentTextChanged.connect(
-            self._is_dropdown_changed_func
-        )
+        self.output_is_isnt_dropdown.currentTextChanged.connect(self._is_dropdown_changed_func)
 
         self.output_mf_dropdown = QtWidgets.QComboBox(parent=self)
         self.output_mf_dropdown.addItems(output_mf_list)
@@ -166,22 +200,43 @@ class RulesEditorTab(BaseView):
         self.output_mf_dropdown.setObjectName("output_mf_dropdown")
         self.output_mf_dropdown.currentTextChanged.connect(self._mf_changed_func)
 
+    def _update_rules_list(self, rules_list):
+        """Update the rules list from view model."""
+        # This method will be implemented when rules list UI is added
+        pass
+
+    def _update_input_mf_dropdowns(self, input_mf_options):
+        """Update input MF dropdowns with new options."""
+        if hasattr(self, "first_input_mf_dropdown"):
+            self.first_input_mf_dropdown.clear()
+            self.first_input_mf_dropdown.addItems(input_mf_options)
+
+        if hasattr(self, "final_input_mf_dropdown"):
+            self.final_input_mf_dropdown.clear()
+            self.final_input_mf_dropdown.addItems(input_mf_options)
+
+    def _update_output_mf_dropdowns(self, output_mf_options):
+        """Update output MF dropdowns with new options."""
+        if hasattr(self, "output_mf_dropdown"):
+            self.output_mf_dropdown.clear()
+            self.output_mf_dropdown.addItems(output_mf_options)
+
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
-        self.rule_name_label.setText(self.t("Name"))
-        self.rule_weight_edit.setText(self.t("1"))
-        self.rule_weight_label.setText(self.t("Weight"))
-        self.rule_name_edit.setText(self.t("Placeholder"))
-        self.rule_editor_label.setText(self.t("Rule Editor"))
-        self.if_label.setText(self.t("If"))
-        self.then_label.setText(self.t("Then"))
-        self.first_input_rule_label.setText(self.t("Rule 1"))
-        self.and_or_label.setText(self.t("and/or"))
-        self.final_input_rule_label.setText(self.t("Rule 2"))
-        self.connection_label.setText(self.t("Connection"))
-        self.and_radio_button.setText(self.t("And"))
-        self.or_radio_button.setText(self.t("Or"))
-        self.output_rule_label.setText(self.t("Rule 1"))
+        self.rule_name_label.setText(self.t("NAME"))
+        self.rule_weight_edit.setText(self.t("ONE"))
+        self.rule_weight_label.setText(self.t("WEIGHT"))
+        self.rule_name_edit.setText(self.t("PLACEHOLDER"))
+        self.rule_editor_label.setText(self.t("RULE_EDITOR"))
+        self.if_label.setText(self.t("IF"))
+        self.then_label.setText(self.t("THEN"))
+        self.first_input_rule_label.setText(self.t("RULE_1"))
+        self.and_or_label.setText(self.t("AND_OR"))
+        self.final_input_rule_label.setText(self.t("RULE_2"))
+        self.connection_label.setText(self.t("CONNECTION"))
+        self.and_radio_button.setText(self.t("AND"))
+        self.or_radio_button.setText(self.t("OR"))
+        self.output_rule_label.setText(self.t("RULE_1"))
 
     def _is_dropdown_changed_func(self):
         """Emit the signal that chosen condition logic was changed to the backend."""

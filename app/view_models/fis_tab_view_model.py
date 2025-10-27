@@ -1,0 +1,166 @@
+"""View model for the FIS plot tab.
+
+This view model manages the data and state for the FIS visualization,
+handling input/output variables, membership functions, and system information.
+"""
+
+from typing import Dict, List, Tuple
+
+from PyQt6.QtCore import pyqtSignal
+
+from app.view_models.base_view_model import BaseViewModel
+
+
+class FisTabViewModel(BaseViewModel):
+    """View model for the FIS plot tab."""
+
+    # Signals for FIS plot updates
+    fis_data_updated = pyqtSignal(dict)  # Emits complete FIS data
+
+    def __init__(self) -> None:
+        """Initialize the FisTabViewModel."""
+        super().__init__()
+        self._inputs = self.fuzzy_service.get_input_variables()
+        self._outputs = self.fuzzy_service.get_output_variables()
+        self._system_info = self.fuzzy_service.get_system_status()
+
+    @property
+    def inputs(self) -> List[Dict]:
+        """Get the inputs list."""
+        return self._inputs
+
+    @property
+    def outputs(self) -> List[Dict]:
+        """Get the outputs list."""
+        return self._outputs
+
+    def refresh_data(self) -> None:
+        """Refresh all data from the fuzzy service."""
+        self._update_fis_data()
+
+    def _update_fis_data(self) -> None:
+        """Update FIS data from the fuzzy service."""
+        # Get system information
+        system_status = self.fuzzy_service.get_system_status()
+        self._system_info = {
+            "name": "FIS System",  # Default name since no name method exists
+            "type": system_status.get("fis_type", "mamdani"),
+            "has_inputs": system_status.get("has_inputs", False),
+            "has_outputs": system_status.get("has_outputs", False),
+            "has_rules": system_status.get("has_rules", False),
+            "is_ready": system_status.get("is_ready", False),
+            "inference_state": system_status.get("inference_state", "idle"),
+        }
+
+        # Get input variables
+        self._inputs = self._get_variables_data("input")
+
+        # Get output variables
+        self._outputs = self._get_variables_data("output")
+
+        # Emit complete data
+        fis_data = {
+            "system_info": self._system_info,
+            "inputs": self._inputs,
+            "outputs": self._outputs,
+        }
+        self.fis_data_updated.emit(fis_data)
+
+    def _get_variables_data(self, variable_type: str) -> List[Dict]:
+        """Get data for input or output variables."""
+        variables = []
+
+        if variable_type == "input":
+            var_list = self.fuzzy_service.get_input_variables()
+        else:
+            var_list = self.fuzzy_service.get_output_variables()
+
+        for var in var_list:
+            var_data = {
+                "name": var.get("name", ""),
+                "range": var.get("range", [0, 100]),
+                "membership_functions": self._get_membership_functions_data(var.get("name", ""), variable_type),
+            }
+            variables.append(var_data)
+
+        return variables
+
+    def _get_membership_functions_data(self, variable_name: str, variable_type: str) -> List[Dict]:
+        """Get membership functions data for a specific variable."""
+        mfs = self.fuzzy_service.get_membership_functions(variable_name, variable_type)
+
+        mf_data = []
+        for mf in mfs:
+            mf_info = {
+                "name": mf.get("name", ""),
+                "type": mf.get("type", ""),
+                "parameters": mf.get("parameters", []),
+                "range": mf.get("range", [0, 100]),
+                "plot_data": self._generate_plot_data(mf),
+            }
+            mf_data.append(mf_info)
+
+        return mf_data
+
+    def _generate_plot_data(self, mf: Dict) -> Tuple[List[float], List[float]]:
+        """Generate x, y data for plotting membership function."""
+        mf_type = mf.get("type", "")
+        parameters = mf.get("parameters", [])
+        mf_range = mf.get("range", [0, 100])
+
+        # Generate x values
+        x_min, x_max = mf_range
+        x = [x_min + i * (x_max - x_min) / 100 for i in range(101)]
+
+        # Generate y values based on membership function type
+        y = self._calculate_membership_values(x, mf_type, parameters)
+
+        return x, y
+
+    def _calculate_membership_values(self, x: List[float], mf_type: str, parameters: List[float]) -> List[float]:
+        """Calculate membership values for given x values."""
+        import numpy as np
+
+        x = np.array(x)
+        y = np.zeros_like(x)
+
+        if mf_type == "trimf" and len(parameters) >= 3:
+            # Triangular membership function
+            a, b, c = parameters[0], parameters[1], parameters[2]
+            y[(x >= a) & (x <= b)] = (x[(x >= a) & (x <= b)] - a) / (b - a)
+            y[(x > b) & (x <= c)] = (c - x[(x > b) & (x <= c)]) / (c - b)
+
+        elif mf_type == "trapmf" and len(parameters) >= 4:
+            # Trapezoidal membership function
+            a, b, c, d = parameters[0], parameters[1], parameters[2], parameters[3]
+            y[(x >= a) & (x < b)] = (x[(x >= a) & (x < b)] - a) / (b - a)
+            y[(x >= b) & (x <= c)] = 1.0
+            y[(x > c) & (x <= d)] = (d - x[(x > c) & (x <= d)]) / (d - c)
+
+        elif mf_type == "gaussmf" and len(parameters) >= 2:
+            # Gaussian membership function
+            sigma, c = parameters[0], parameters[1]
+            y = np.exp(-((x - c) ** 2) / (2 * sigma**2))
+
+        elif mf_type == "gbellmf" and len(parameters) >= 3:
+            # Generalized bell membership function
+            a, b, c = parameters[0], parameters[1], parameters[2]
+            y = 1 / (1 + ((x - c) / a) ** (2 * b))
+
+        elif mf_type == "sigmf" and len(parameters) >= 2:
+            # Sigmoidal membership function
+            a, c = parameters[0], parameters[1]
+            y = 1 / (1 + np.exp(-a * (x - c)))
+
+        return y.tolist()
+
+    def get_system_display_name(self) -> str:
+        """Get the display name for the system."""
+        system_type = self._system_info.get("type", "Mamdani")
+        return f"{system_type} Type 1"
+
+    def get_variable_display_name(self, var_data: Dict) -> str:
+        """Get display name for a variable."""
+        name = var_data.get("name", "Unknown")
+        mf_count = len(var_data.get("membership_functions", []))
+        return f"{name} ({mf_count} MFs)"

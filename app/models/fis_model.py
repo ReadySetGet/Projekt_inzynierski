@@ -137,9 +137,7 @@ class FISModel:
                 self._fis.Rules[rule_idx].numInputs -= 1
             else:
                 nr_of_none_variables = self._fis.Rules[rule_idx].Antecedent.count(0)
-                nr_of_not_none_variables = (
-                    len(self._fis.Rules[rule_idx].Antecedent) - nr_of_none_variables
-                )
+                nr_of_not_none_variables = len(self._fis.Rules[rule_idx].Antecedent) - nr_of_none_variables
                 if nr_of_not_none_variables > 1:
                     self._fis.Rules[rule_idx].Antecedent.pop(input_idx)
                     self._fis.Rules[rule_idx].numInputs -= 1
@@ -180,9 +178,7 @@ class FISModel:
                 self._fis.Rules[rule_idx].Consequent.pop(output_idx)
             else:
                 nr_of_none_variables = self._fis.Rules[rule_idx].Consequent.count(0)
-                nr_of_not_none_variables = (
-                    len(self._fis.Rules[rule_idx].Consequent) - nr_of_none_variables
-                )
+                nr_of_not_none_variables = len(self._fis.Rules[rule_idx].Consequent) - nr_of_none_variables
                 if nr_of_not_none_variables > 1:
                     self._fis.Rules[rule_idx].Consequent.pop(output_idx)
                 else:
@@ -193,9 +189,7 @@ class FISModel:
 
         return 1
 
-    def add_mf(
-        self, io_variable_name: str, input_or_output: str, mf_type: str = "trojkatna"
-    ) -> int:
+    def add_mf(self, io_variable_name: str, input_or_output: str, mf_type: str = "trojkatna") -> int:
         """Add a membership function to a variable.
 
         Args:
@@ -217,9 +211,7 @@ class FISModel:
         next_mf_number = self._find_available_element_number("mf", io_variable)
         mf_name = "mf" + str(next_mf_number)
 
-        mf_adding_validity_check = self._check_if_new_mf_type_is_valid(
-            input_or_output, mf_type
-        )
+        mf_adding_validity_check = self._check_if_new_mf_type_is_valid(input_or_output, mf_type)
         if not mf_adding_validity_check[0]:
             return -2
 
@@ -232,9 +224,7 @@ class FISModel:
 
         return 1
 
-    def delete_mf(
-        self, io_variable_name: str, input_or_output: str, mf_idx: int
-    ) -> int:
+    def delete_mf(self, io_variable_name: str, input_or_output: str, mf_idx: int) -> int:
         """Delete a membership function from a variable.
 
         Args:
@@ -248,9 +238,7 @@ class FISModel:
             -1 - mf with the given index does not exist
             -2 - no io variable with a given name found
         """
-        [io_variable, io_variable_idx] = self._find_variable(
-            io_variable_name, input_or_output
-        )
+        [io_variable, io_variable_idx] = self._find_variable(io_variable_name, input_or_output)
         if io_variable is None:
             return -2
 
@@ -282,9 +270,7 @@ class FISModel:
 
         return 1
 
-    def change_mf_type(
-        self, io_variable_name: str, input_or_output: str, mf_idx: int, new_mf_type: str
-    ) -> int:
+    def change_mf_type(self, io_variable_name: str, input_or_output: str, mf_idx: int, new_mf_type: str) -> int:
         """Change the type of the given membership function.
 
         Args:
@@ -308,9 +294,7 @@ class FISModel:
         if mf_idx >= len(io_variable.MembershipFunctions):
             return -1
 
-        mf_changing_validity_check = self._check_if_new_mf_type_is_valid(
-            input_or_output, new_mf_type
-        )
+        mf_changing_validity_check = self._check_if_new_mf_type_is_valid(input_or_output, new_mf_type)
         if not mf_changing_validity_check[0]:
             return -3
 
@@ -391,8 +375,7 @@ class FISModel:
 
         if is_mf is None:
             is_mf_list = [
-                DEFAULT_VARIABLE_TO_MF_MAPPING_BEHAVIOUR
-                for _ in range(len(self._fis.Inputs + self._fis.Outputs))
+                DEFAULT_VARIABLE_TO_MF_MAPPING_BEHAVIOUR for _ in range(len(self._fis.Inputs + self._fis.Outputs))
             ]
         else:
             if not self._check_if_is_behaviour_list_is_valid(is_mf):
@@ -400,9 +383,7 @@ class FISModel:
             is_mf_list = is_mf
 
         new_rule_name = "rule" + str(self._find_available_element_number("rule"))
-        self._fis.Rules.append(
-            FisRuleEx(is_mf_list, new_rule_name, rule, len(self._fis.Inputs))
-        )
+        self._fis.Rules.append(FisRuleEx(is_mf_list, new_rule_name, rule, len(self._fis.Inputs)))
         return 1
 
     def delete_rule(self, rule_idx: int) -> int:
@@ -423,9 +404,7 @@ class FISModel:
         """Delete all rules."""
         self._fis.Rules.clear()
 
-    def update_rule(
-        self, rule_idx: int, new_rule_is_mf: list[int], new_rule_data: list[int]
-    ) -> int:
+    def update_rule(self, rule_idx: int, new_rule_is_mf: list[int], new_rule_data: list[int]) -> int:
         """Update a given rule.
 
         Args:
@@ -467,15 +446,11 @@ class FISModel:
         self._fis.Rules.pop(rule_idx)
 
         new_rule_name = "rule" + str(self._find_available_element_number("rule"))
-        new_rule = FisRuleEx(
-            new_rule_is_mf, new_rule_name, [new_rule_data], len(self._fis.Inputs)
-        )
+        new_rule = FisRuleEx(new_rule_is_mf, new_rule_name, [new_rule_data], len(self._fis.Inputs))
         self._fis.Rules.insert(rule_idx, new_rule)
         return 1
 
-    def _find_variable(
-        self, io_variable_name: str, input_or_output: str
-    ) -> [fl.fisvar, int]:
+    def _find_variable(self, io_variable_name: str, input_or_output: str) -> [fl.fisvar, int]:
         io_variable = None
         found_idx = -1
         search_list = []
@@ -492,9 +467,7 @@ class FISModel:
 
         return io_variable, found_idx
 
-    def _find_available_element_number(
-        self, element_type: str, io_variable: fl.fisvar = None
-    ) -> int:
+    def _find_available_element_number(self, element_type: str, io_variable: fl.fisvar = None) -> int:
         search_list = []
         if element_type == "input":
             search_list = self._fis.Inputs
@@ -523,9 +496,7 @@ class FISModel:
 
         return True
 
-    def _check_if_new_mf_type_is_valid(
-        self, input_or_output: str, mf_type: str
-    ) -> [bool, str, list | int]:
+    def _check_if_new_mf_type_is_valid(self, input_or_output: str, mf_type: str) -> [bool, str, list | int]:
         if type(self._fis) is fl.mamfis:
             if mf_type not in MF_TYPE_TO_FUNCTION_NAME.keys():
                 return [False, "", -1]

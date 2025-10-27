@@ -47,9 +47,7 @@ class ThemeManager(QObject):
                 palette_files[theme_name] = os.path.join(self.themes_path, file)
         return palette_files
 
-    def _flatten_dict(
-        self, d: dict[str, Any], parent_key: str = "", sep: str = "."
-    ) -> dict[str, str]:
+    def _flatten_dict(self, d: dict[str, Any], parent_key: str = "", sep: str = ".") -> dict[str, str]:
         """Flatten a nested dictionary for placeholder replacement.
 
         Args:
