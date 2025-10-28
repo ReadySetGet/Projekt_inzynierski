@@ -11,6 +11,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt6 import QtCore, QtWidgets
 
+from app.view_models.central_tab_view_model import CentralTabViewModel
 from app.views.base_tab_view import BaseTabView
 from app.views.bell_plot import BellPlot
 from app.views.fis_tab_view import FisTabView
@@ -101,8 +102,17 @@ class CentralTabWidget(BaseTabView):
         pg.setConfigOption("background", "w")
         self.setObjectName("centralTab")
         self.status_bar = status_bar
+
+        # Initialize view model
+        self.view_model = CentralTabViewModel()
+        self.view_model.setParent(self)
+
+        # Store MF plots
+        self.mf_plots = []
+
         self._setup_ui()
         self._retranslate_ui()
+        self._connect_view_model_signals()
 
     def _setup_ui(self):
         self.fis_plot = FisTabView()
@@ -127,41 +137,8 @@ class CentralTabWidget(BaseTabView):
         self.mf_plot_graph = pg.PlotWidget()
         self.mf_plot_graph.setXRange(0, 100)
 
-        # Creating plots
-        self.triangle = TrianglePlot(
-            plot_widget=self.mf_plot_graph,
-            x_data=self.tri_x,
-            y_data=self.tri_y,
-            color="b",
-            central_x=50,
-        )
-
-        self.trapezoid = TrapezoidPlot(
-            plot_widget=self.mf_plot_graph,
-            x_data=self.trap_x,
-            y_data=self.trap_y,
-            color="r",
-            central_x=50,
-        )
-
-        self.gauss = GaussPlot(
-            plot_widget=self.mf_plot_graph,
-            x_data=self.gauss_x,
-            y_data=self.gauss_y,
-            sigma_data=self.sigma,
-            mu_data=self.mu,
-            color="#22B14C",
-        )
-
-        self.bell = BellPlot(
-            plot_widget=self.mf_plot_graph,
-            x_data=self.bell_x,
-            y_data=self.bell_y,
-            a_data=self.a,
-            b_data=self.b,
-            c_data=self.c,
-            color="#B14D04",
-        )
+        # Plots will be created dynamically based on selected variable's MFs
+        # Placeholder plots removed - will be loaded from fuzzy service
 
         self.mf_plot_graph.setTitle("Membership Function Plot", color="black")
         self.mf_plot_graph.setLabel("left", "Degree of Membership", color="black")
@@ -381,9 +358,409 @@ class CentralTabWidget(BaseTabView):
 
     def _connect_view_model_signals(self):
         """Connect view model signals to widget slots."""
-        # This method will be implemented when view model is connected
-        # For now, it's a placeholder to prevent AttributeError
-        pass
+        # Connect to data changed signal for refreshing MF plots
+        if hasattr(self.view_model, "data_changed"):
+            self.view_model.data_changed.connect(self._on_data_changed)
+
+        # Initial load of MF plots
+        self._load_mf_plots()
+
+    def _on_data_changed(self):
+        """Handle data changed signal from view model."""
+        self._load_mf_plots()
+
+    def _load_mf_plots(self):
+        """Load and display membership function plots for the selected input or output variable."""
+        # Clear existing plots
+        self._clear_mf_plots()
+
+        # Get fuzzy service
+        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        if not fuzzy_service:
+            return
+
+        # Check for selected input or output
+        selected_input_name = fuzzy_service.get_selected_input_name()
+        selected_output_name = fuzzy_service.get_selected_output_name()
+
+        variable_name = None
+        variable_type = None
+        variable_data = None
+
+        if selected_input_name:
+            # Input is selected
+            variable_name = selected_input_name
+            variable_type = "input"
+            variable_data = fuzzy_service.get_selected_input_data()
+        elif selected_output_name:
+            # Output is selected
+            variable_name = selected_output_name
+            variable_type = "output"
+            variable_data = fuzzy_service.get_selected_output_data()
+        else:
+            # No selection - don't force a selection, just return
+            return
+
+        if not variable_data:
+            return
+
+        # Get MFs for this variable
+        mfs = variable_data.get("membership_functions", [])
+        var_range = variable_data.get("range", [0, 100])
+
+        # Update plot range
+        self.mf_plot_graph.setXRange(var_range[0], var_range[1])
+
+        # Update plot labels
+        var_type_label = "Input" if variable_type == "input" else "Output"
+        self.mf_plot_graph.setLabel("bottom", f"{var_type_label} variable: {variable_name}", color="black")
+
+        # Define colors for different MFs
+        colors = [
+            "b",
+            "r",
+            "#22B14C",
+            "#B14D04",
+            "#FF00FF",
+            "#00FFFF",
+            "#FFFF00",
+            "#FF8800",
+        ]
+
+        # Create a plot for each MF
+        for i, mf in enumerate(mfs):
+            mf_type = mf.get("type", "trimf")
+            mf_name = mf.get("name", f"MF{i}")
+            mf_params = mf.get("parameters", [])
+            color = colors[i % len(colors)]
+
+            # Create plot based on MF type
+            plot_obj = self._create_mf_plot(mf_type, mf_name, mf_params, var_range, color, i)
+            if plot_obj:
+                self.mf_plots.append(
+                    {
+                        "plot": plot_obj,
+                        "mf_index": i,
+                        "mf_name": mf_name,
+                        "variable_name": variable_name,
+                        "variable_type": variable_type,
+                        "var_range": var_range,
+                    }
+                )
+
+    def _create_mf_plot(self, mf_type, mf_name, mf_params, var_range, color, mf_index):
+        """Create a membership function plot based on its type.
+
+        Args:
+            mf_type: Type of MF (trimf, trapmf, gaussmf, gbellmf)
+            mf_name: Name of the MF
+            mf_params: Parameters of the MF
+            var_range: Range of the variable [min, max]
+            color: Color for the plot
+            mf_index: Index of the MF
+
+        Returns:
+            Plot object or None if type not supported
+        """
+        try:
+            if mf_type == "trimf" and len(mf_params) >= 3:
+                # Triangle MF: [a, b, c]
+                a, b, c = mf_params[0], mf_params[1], mf_params[2]
+                x_data = [var_range[0], a, b, c, var_range[1]]
+                y_data = [0.0, 0, 1, 0, 0]
+                central_x = b
+
+                plot = TrianglePlot(
+                    plot_widget=self.mf_plot_graph,
+                    x_data=x_data,
+                    y_data=y_data,
+                    color=color,
+                    central_x=central_x,
+                )
+                # Connect anchor changes to update fuzzy service
+                self._connect_plot_to_fuzzy_service(plot, mf_index, "trimf")
+                return plot
+
+            elif mf_type == "trapmf" and len(mf_params) >= 4:
+                # Trapezoid MF: [a, b, c, d]
+                a, b, c, d = mf_params[0], mf_params[1], mf_params[2], mf_params[3]
+                x_data = [var_range[0], a, b, c, d, var_range[1]]
+                y_data = [0.0, 0, 1, 1, 0, 0]
+                central_x = (b + c) / 2
+
+                plot = TrapezoidPlot(
+                    plot_widget=self.mf_plot_graph,
+                    x_data=x_data,
+                    y_data=y_data,
+                    color=color,
+                    central_x=central_x,
+                )
+                self._connect_plot_to_fuzzy_service(plot, mf_index, "trapmf")
+                return plot
+
+            elif mf_type == "gaussmf" and len(mf_params) >= 2:
+                # Gaussian MF: [sigma, mu]
+                sigma, mu = mf_params[0], mf_params[1]
+                x_data = np.linspace(var_range[0], var_range[1], 400)
+                y_data = np.exp(-(1 / 2) * ((x_data - mu) / sigma) ** 2)
+
+                plot = GaussPlot(
+                    plot_widget=self.mf_plot_graph,
+                    x_data=x_data,
+                    y_data=y_data,
+                    sigma_data=sigma,
+                    mu_data=mu,
+                    color=color,
+                )
+                self._connect_plot_to_fuzzy_service(plot, mf_index, "gaussmf")
+                return plot
+
+            elif mf_type == "gbellmf" and len(mf_params) >= 3:
+                # Bell MF: [a, b, c]
+                a, b, c = mf_params[0], mf_params[1], mf_params[2]
+                x_data = np.linspace(var_range[0], var_range[1], 200)
+                y_data = 1 / (1 + np.abs((x_data - c) / a) ** (2 * b))
+
+                plot = BellPlot(
+                    plot_widget=self.mf_plot_graph,
+                    x_data=x_data,
+                    y_data=y_data,
+                    a_data=a,
+                    b_data=b,
+                    c_data=c,
+                    color=color,
+                )
+                self._connect_plot_to_fuzzy_service(plot, mf_index, "gbellmf")
+                return plot
+
+        except Exception as e:
+            print(f"Error creating MF plot: {e}")
+            return None
+
+        return None
+
+    def _connect_plot_to_fuzzy_service(self, plot, mf_index, mf_type):
+        """Connect plot anchor changes to update fuzzy service.
+
+        Args:
+            plot: The plot object
+            mf_index: Index of the MF
+            mf_type: Type of the MF
+        """
+        # Connect anchor signals to update handler
+        if mf_type == "trimf":
+            if hasattr(plot, "triangle_left_anchor"):
+                plot.triangle_left_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_triangle_anchor_changed(plot, mf_index)
+                )
+            if hasattr(plot, "triangle_central_anchor"):
+                plot.triangle_central_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_triangle_anchor_changed(plot, mf_index)
+                )
+            if hasattr(plot, "triangle_right_anchor"):
+                plot.triangle_right_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_triangle_anchor_changed(plot, mf_index)
+                )
+            # Connect position anchor (moves entire plot)
+            if hasattr(plot, "position_anchor"):
+                plot.position_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_triangle_anchor_changed(plot, mf_index)
+                )
+        elif mf_type == "trapmf":
+            if hasattr(plot, "trapezoid_left_anchor"):
+                plot.trapezoid_left_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+                )
+            if hasattr(plot, "trapezoid_left_top_anchor"):
+                plot.trapezoid_left_top_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+                )
+            if hasattr(plot, "trapezoid_right_top_anchor"):
+                plot.trapezoid_right_top_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+                )
+            if hasattr(plot, "trapezoid_right_anchor"):
+                plot.trapezoid_right_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+                )
+            # Connect position anchor (moves entire plot)
+            if hasattr(plot, "position_anchor"):
+                plot.position_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+                )
+        elif mf_type == "gaussmf":
+            if hasattr(plot, "mu_anchor"):
+                plot.mu_anchor.sigPositionChangeFinished.connect(lambda: self._on_gauss_anchor_changed(plot, mf_index))
+            if hasattr(plot, "sigma_anchor"):
+                plot.sigma_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_gauss_anchor_changed(plot, mf_index)
+                )
+            # Connect position anchor (moves entire plot)
+            if hasattr(plot, "position_anchor"):
+                plot.position_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_gauss_anchor_changed(plot, mf_index)
+                )
+        elif mf_type == "gbellmf":
+            if hasattr(plot, "c_anchor"):
+                plot.c_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
+            if hasattr(plot, "a_anchor"):
+                plot.a_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
+            if hasattr(plot, "b_anchor"):
+                plot.b_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
+            # Connect position anchor (moves entire plot)
+            if hasattr(plot, "position_anchor"):
+                plot.position_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_bell_anchor_changed(plot, mf_index)
+                )
+
+    def _on_triangle_anchor_changed(self, plot, mf_index):
+        """Handle triangle anchor position changes and update fuzzy service."""
+        # Extract parameters from plot data: [a, b, c]
+        # tri_x format: [range_min, a, b, c, range_max]
+        if hasattr(plot, "tri_x") and len(plot.tri_x) >= 5:
+            # Get the variable range for this MF
+            var_range = self._get_variable_range_for_mf(mf_index)
+            if not var_range:
+                return
+
+            # Clamp values within range
+            a = max(var_range[0], min(var_range[1], round(plot.tri_x[1], 2)))
+            b = max(var_range[0], min(var_range[1], round(plot.tri_x[2], 2)))
+            c = max(var_range[0], min(var_range[1], round(plot.tri_x[3], 2)))
+
+            # Ensure proper ordering: a <= b <= c
+            a = min(a, b)
+            c = max(b, c)
+
+            new_params = [a, b, c]
+            self._update_mf_parameters(mf_index, new_params)
+
+    def _on_trapezoid_anchor_changed(self, plot, mf_index):
+        """Handle trapezoid anchor position changes and update fuzzy service."""
+        # Extract parameters from plot data: [a, b, c, d]
+        # trap_x format: [range_min, a, b, c, d, range_max]
+        if hasattr(plot, "trap_x") and len(plot.trap_x) >= 6:
+            # Get the variable range for this MF
+            var_range = self._get_variable_range_for_mf(mf_index)
+            if not var_range:
+                return
+
+            # Clamp values within range
+            a = max(var_range[0], min(var_range[1], round(plot.trap_x[1], 2)))
+            b = max(var_range[0], min(var_range[1], round(plot.trap_x[2], 2)))
+            c = max(var_range[0], min(var_range[1], round(plot.trap_x[3], 2)))
+            d = max(var_range[0], min(var_range[1], round(plot.trap_x[4], 2)))
+
+            # Ensure proper ordering: a <= b <= c <= d
+            a = min(a, b)
+            b = min(b, c)
+            c = max(b, c)
+            d = max(c, d)
+
+            new_params = [a, b, c, d]
+            self._update_mf_parameters(mf_index, new_params)
+
+    def _on_gauss_anchor_changed(self, plot, mf_index):
+        """Handle Gaussian anchor position changes and update fuzzy service."""
+        # Extract parameters: [sigma, mu]
+        if hasattr(plot, "sigma_data") and hasattr(plot, "mu_data"):
+            # Get the variable range for this MF
+            var_range = self._get_variable_range_for_mf(mf_index)
+            if not var_range:
+                return
+
+            # Clamp mu within range (sigma can be any positive value)
+            sigma = max(0.01, round(plot.sigma_data, 2))  # Ensure sigma is positive
+            mu = max(var_range[0], min(var_range[1], round(plot.mu_data, 2)))
+
+            new_params = [sigma, mu]
+            self._update_mf_parameters(mf_index, new_params)
+
+    def _on_bell_anchor_changed(self, plot, mf_index):
+        """Handle Bell anchor position changes and update fuzzy service."""
+        # Extract parameters: [a, b, c]
+        if hasattr(plot, "a_data") and hasattr(plot, "b_data") and hasattr(plot, "c_data"):
+            # Get the variable range for this MF
+            var_range = self._get_variable_range_for_mf(mf_index)
+            if not var_range:
+                return
+
+            # Clamp c (center) within range, a and b are shape parameters (positive)
+            a = max(0.01, round(plot.a_data, 2))  # Ensure a is positive
+            b = max(0.01, round(plot.b_data, 2))  # Ensure b is positive
+            c = max(var_range[0], min(var_range[1], round(plot.c_data, 2)))
+
+            new_params = [a, b, c]
+            self._update_mf_parameters(mf_index, new_params)
+
+    def _get_variable_range_for_mf(self, mf_index):
+        """Get the variable range for a specific MF by its index.
+
+        Args:
+            mf_index: Index of the MF
+
+        Returns:
+            List [min, max] or None if not found
+        """
+        for mf_plot_info in self.mf_plots:
+            if mf_plot_info.get("mf_index") == mf_index:
+                return mf_plot_info.get("var_range")
+        return None
+
+    def _update_mf_parameters(self, mf_index, new_params):
+        """Update MF parameters in fuzzy service.
+
+        Args:
+            mf_index: Index of the MF to update
+            new_params: New parameters for the MF
+        """
+        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        if not fuzzy_service:
+            return
+
+        # Determine which variable (input or output) is selected
+        selected_input_name = fuzzy_service.get_selected_input_name()
+        selected_output_name = fuzzy_service.get_selected_output_name()
+
+        variable_name = None
+        variable_type = None
+
+        if selected_input_name:
+            variable_name = selected_input_name
+            variable_type = "input"
+        elif selected_output_name:
+            variable_name = selected_output_name
+            variable_type = "output"
+        else:
+            return
+
+        # Update the parameters
+        success = fuzzy_service.update_membership_function_parameters(
+            variable_name, mf_index, new_params, variable_type
+        )
+
+        if success:
+            # Optionally show status message
+            if hasattr(self, "status_bar") and self.status_bar:
+                self.status_bar.showMessage(f"Updated MF parameters: {new_params}")
+
+            # Trigger refresh of other views
+            if hasattr(self.view_model, "notify_data_changed"):
+                self.view_model.notify_data_changed.emit()
+
+    def _clear_mf_plots(self):
+        """Clear all existing MF plots from the graph."""
+        # Remove all plots from the graph
+        for mf_plot_info in self.mf_plots:
+            plot_obj = mf_plot_info.get("plot")
+            if plot_obj:
+                # Remove all items from the plot widget using clear() method
+                if hasattr(plot_obj, "plot_widget"):
+                    # Clear all items from the plot widget
+                    plot_obj.plot_widget.clear()
+
+        # Clear the list
+        self.mf_plots = []
 
     def _setup_sample_data(self):
         """Set up sample data for the widget."""

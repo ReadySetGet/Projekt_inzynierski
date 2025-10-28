@@ -67,3 +67,30 @@ class EditorTabViewModel(BaseViewModel):
     def refresh_all_tabs(self) -> None:
         """Refresh all tabs with current model data."""
         self._update_all_tabs()
+
+    def get_selected_variable_info(self) -> dict:
+        """Get information about the currently selected variable from fuzzy service.
+
+        Returns:
+            Dictionary with variable information or None if no variable selected
+        """
+        if not self.fuzzy_service:
+            return None
+
+        selected_input = self.fuzzy_service.get_selected_input_name()
+        selected_output = self.fuzzy_service.get_selected_output_name()
+
+        if selected_input:
+            return {
+                "name": selected_input,
+                "type": "input",
+                "data": self.fuzzy_service.get_selected_input_data(),
+            }
+        elif selected_output:
+            return {
+                "name": selected_output,
+                "type": "output",
+                "data": self.fuzzy_service.get_selected_output_data(),
+            }
+
+        return None

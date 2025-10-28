@@ -230,16 +230,30 @@ class MFPropertiesWidget(BaseWidgetView):
             type_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
             type_dropdown.addItems(self.view_model.available_mf_types)
 
+            # Block signals while setting initial value to avoid triggering change handler
+            type_dropdown.blockSignals(True)
             if row in self._desired_types:
                 type_dropdown.setCurrentText(self._desired_types[row])
             elif row in current_selections and not self._updating_type:
                 type_dropdown.setCurrentText(current_selections[row])
             else:
                 type_dropdown.setCurrentText(mf_data["mf_type"])
+            type_dropdown.blockSignals(False)
 
-            type_dropdown.currentIndexChanged.connect(
-                lambda index, r=row: self._on_mf_type_changed(r, type_dropdown.currentText())
-            )
+            # Connect signal after setting initial value
+            def make_type_change_handler(row_num, dropdown_ref):
+                def handler(index):
+                    print(f"DEBUG: Signal fired! index={index}, row={row_num}")
+                    new_text = dropdown_ref.currentText()
+                    print(f"DEBUG: Current text: {new_text}")
+                    self._on_mf_type_changed(row_num, new_text)
+
+                return handler
+
+            handler = make_type_change_handler(row, type_dropdown)
+            type_dropdown.currentIndexChanged.connect(handler)
+            print(f"DEBUG: Connected handler for row {row}, current text: {type_dropdown.currentText()}")
+
             self.mf_table.setCellWidget(row, 1, type_dropdown)
 
             params_str = (
@@ -289,6 +303,9 @@ class MFPropertiesWidget(BaseWidgetView):
 
     def _on_mf_type_changed(self, row, new_type):
         """Handle membership function type change."""
+        print(f"DEBUG: _on_mf_type_changed called - row={row}, new_type={new_type}")
+        print(f"DEBUG: selected_variable={self.view_model.selected_variable}")
+
         self._desired_types[row] = new_type
 
         self._updating_type = True
@@ -296,12 +313,16 @@ class MFPropertiesWidget(BaseWidgetView):
         try:
             success = self.view_model.change_mf_type(self.view_model.selected_variable, row, new_type)
 
+            print(f"DEBUG: change_mf_type returned success={success}")
+
             if success:
                 mf_info = self.view_model.get_mf_info(self.view_model.selected_variable, row)
                 if mf_info:
                     params_str = str(mf_info["parameters"]).replace(" ", "")
                     self.mf_range_edit.setText(params_str)
+                    print(f"DEBUG: Updated params to {params_str}")
             else:
+                print("DEBUG: change_mf_type failed!")
                 if row in self._desired_types:
                     del self._desired_types[row]
         finally:

@@ -42,7 +42,7 @@ class TopMenuViewModel(BaseViewModel):
         """Handle add input button click."""
         # Add a new input variable with default name and range
         input_count = self.fuzzy_service.get_input_count()
-        success = self.fuzzy_service.add_input_variable(f"input{input_count}", 0.0, 100.0)
+        success = self.fuzzy_service.add_input_variable(f"input{input_count + 1}", 0.0, 100.0)
         if success:
             self.notify_data_changed.emit()
 

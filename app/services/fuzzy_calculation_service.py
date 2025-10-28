@@ -87,6 +87,35 @@ class FuzzyCalculationService:
         """Update the name of a variable."""
         return self._variable_manager.update_variable_name(variable_name, new_name, variable_type)
 
+    def update_variable_range(self, variable_name: str, new_range: List[float], variable_type: str) -> bool:
+        """Update the range of a variable.
+
+        Args:
+            variable_name: Name of the variable to update
+            new_range: New range as [min, max]
+            variable_type: Type of variable ("input" or "output")
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if len(new_range) != 2:
+            return False
+
+        range_min, range_max = new_range[0], new_range[1]
+
+        if variable_type == "input":
+            # Find the input variable by name and get its index
+            for i, input_var in enumerate(self._state_manager.fis_model._fis.Inputs):
+                if input_var.Name == variable_name:
+                    return self._variable_manager.update_input_variable_range(i, range_min, range_max)
+        else:
+            # Find the output variable by name and get its index
+            for i, output_var in enumerate(self._state_manager.fis_model._fis.Outputs):
+                if output_var.Name == variable_name:
+                    return self._variable_manager.update_output_variable_range(i, range_min, range_max)
+
+        return False
+
     # Membership Function Management
     def get_membership_functions(self, variable_name: str, variable_type: str) -> List[Dict[str, Any]]:
         """Get membership functions for a specific variable."""
@@ -252,3 +281,80 @@ class FuzzyCalculationService:
     def is_system_ready(self) -> bool:
         """Check if the system is ready for inference."""
         return self._state_manager.get_system_status()["is_ready"]
+
+    # Selection Management
+    def set_selected_input(self, input_name: str) -> None:
+        """Set the selected input variable.
+
+        Args:
+            input_name: Name of the input variable to select
+        """
+        self._state_manager.set_selected_input(input_name)
+
+    def set_selected_output(self, output_name: str) -> None:
+        """Set the selected output variable.
+
+        Args:
+            output_name: Name of the output variable to select
+        """
+        self._state_manager.set_selected_output(output_name)
+
+    def clear_selection(self) -> None:
+        """Clear all variable selections."""
+        self._state_manager.clear_selection()
+
+    def get_selected_input_name(self) -> str:
+        """Get the currently selected input name.
+
+        Returns:
+            Name of the selected input variable or None
+        """
+        return self._state_manager.selected_input_name
+
+    def get_selected_output_name(self) -> str:
+        """Get the currently selected output name.
+
+        Returns:
+            Name of the selected output variable or None
+        """
+        return self._state_manager.selected_output_name
+
+    def get_selected_variable_info(self) -> Dict[str, Any]:
+        """Get information about the currently selected variable.
+
+        Returns:
+            Dictionary containing selection information
+        """
+        return self._state_manager.get_selected_variable_info()
+
+    def get_selected_input_data(self) -> Dict[str, Any]:
+        """Get data for the currently selected input variable.
+
+        Returns:
+            Dictionary containing input variable data or None if no input selected
+        """
+        selected_input = self.get_selected_input_name()
+        if not selected_input:
+            return None
+
+        inputs = self.get_input_variables()
+        for input_var in inputs:
+            if input_var.get("name") == selected_input:
+                return input_var
+        return None
+
+    def get_selected_output_data(self) -> Dict[str, Any]:
+        """Get data for the currently selected output variable.
+
+        Returns:
+            Dictionary containing output variable data or None if no output selected
+        """
+        selected_output = self.get_selected_output_name()
+        if not selected_output:
+            return None
+
+        outputs = self.get_output_variables()
+        for output_var in outputs:
+            if output_var.get("name") == selected_output:
+                return output_var
+        return None
