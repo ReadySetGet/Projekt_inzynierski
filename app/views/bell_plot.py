@@ -85,24 +85,18 @@ class BellPlot:
         self.plot_widget.addItem(self.position_anchor)
 
     def _interaction_left_a(self):
-        """Change the width of the plot when interacting with left A anchor.
-
-        User cannot drag the left interaction point past the right one or past 0.
-        """
+        """Change the width of the plot when interacting with left A anchor."""
         new_pos = self.left_a_anchor.pos()
         new_a = abs(new_pos.x() - self.c)
-        if self.c - 2.5 > new_pos.x() > 0:
+        if new_a > 0.1:
             self.a = new_a
         self._update_plot()
 
     def _interaction_right_a(self):
-        """Change the width of the plot when interacting with right A anchor.
-
-        User cannot drag the right interaction point past the left one or past 100.
-        """
+        """Change the width of the plot when interacting with right A anchor."""
         new_pos = self.right_a_anchor.pos()
         new_a = abs(new_pos.x() - self.c)
-        if self.c + 2.5 < new_pos.x() < 100:
+        if new_a > 0.1:
             self.a = new_a
         self._update_plot()
 
@@ -117,13 +111,12 @@ class BellPlot:
         new_x = new_pos.x()
 
         try:
-            if (
-                self.left_a_anchor.pos().x() < self.left_b_anchor.pos().x() < self.c - 2.5
-                and self.right_a_anchor.pos().x() > self.right_b_anchor.pos().x() > self.c + 2.5
-            ):
-                new_b = np.log(1 / self.b_height - 1) / (2 * np.log(abs((new_x - self.c) / self.a)))
-                self.b = max(0.1, new_b)
-        except (ZeroDivisionError, ValueError):
+            distance_from_center = abs(new_x - self.c)
+            if distance_from_center > 0.1 and distance_from_center < abs(self.a) * 0.95:
+                new_b = np.log(1 / self.b_height - 1) / (2 * np.log(distance_from_center / abs(self.a)))
+                if not np.isnan(new_b) and not np.isinf(new_b):
+                    self.b = max(0.1, min(10.0, abs(new_b)))
+        except (ZeroDivisionError, ValueError, RuntimeWarning):
             pass
 
         self._update_plot()
