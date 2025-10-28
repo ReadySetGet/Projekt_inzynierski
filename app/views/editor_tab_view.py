@@ -122,13 +122,8 @@ class EditorTabWidget(BaseTabView):
         )
         self.mf_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectItems)
 
-        self.shape_select_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
-        self.shape_select_dropdown.addItems(["Gauss", "Trapezoid", "Triangle", "Bell"])
-        self.shape_select_dropdown.setObjectName("shape_select_dropdown")
-
         self.mf_table.setHorizontalHeaderLabels(["Name", "Type", "Parameters"])
         self.mf_table.setRowCount(0)
-        self.shape_select_dropdown.currentTextChanged.connect(self.shape_changed)
         self.mf_name_edit.editingFinished.connect(self._on_variable_name_changed)
         self.mf_range_edit.editingFinished.connect(self._on_variable_range_changed)
         self.mf_table.itemChanged.connect(self._on_mf_table_item_changed)
@@ -334,10 +329,6 @@ class EditorTabWidget(BaseTabView):
         """Update the MF range in the table."""
         self.mf_table.item(self.row, 2).setText(self.mf_range_edit.text())
         self.status_bar.showMessage("Last action: Edited MF range")
-
-    def shape_changed(self):
-        """Handle membership function shape change."""
-        self.status_bar.showMessage("Last action: Edited MF shape")
 
     def defuzzification_changed(self):
         """Handle defuzzification method change."""

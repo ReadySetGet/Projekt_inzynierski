@@ -16,8 +16,6 @@ from app.views.base_tab_view import BaseTabView
 from app.views.bell_plot import BellPlot
 from app.views.fis_tab_view import FisTabView
 from app.views.gauss_plot import GaussPlot
-from app.views.in_output import InOutput
-from app.views.rule import Rule
 from app.views.rule_interference_view import RuleInterferenceTabWidget
 from app.views.trapezoid_plot import TrapezoidPlot
 from app.views.triangle_plot import TrianglePlot
@@ -50,46 +48,6 @@ class CentralTabWidget(BaseTabView):
     addRuleClicked = QtCore.pyqtSignal()
     deleteRuleClicked = QtCore.pyqtSignal()
     _symbols = {"is": "==", "is not": "~=", "then": "=>", "and": "&", "or": "|"}
-    tri_x = [-100.0, 25, 50, 75, 200]
-    tri_y = [0.0, 0, 1, 0, 0]
-    trap_x = [-100.0, 10, 25, 75, 90, 200]
-    trap_y = [0.0, 0, 1, 1, 0, 0]
-
-    """Placeholder data for rule generation"""
-    inputs = []
-    input_1 = InOutput("wysokie", ["wysokie", "przeciętne", "niskie"])
-    input_2 = InOutput("drzewa", ["obiekt", "drzewo"])
-    inputs.append(input_1)
-    inputs.append(input_2)
-
-    outputs = []
-    output = InOutput(
-        "wysokie drzewa",
-        [
-            "niski obiekt",
-            "średni obiekt",
-            "wysoki obiekt",
-            "niskie drzewo",
-            "średnie drzewo",
-            "wysokie drzewo",
-        ],
-    )
-    outputs.append(output)
-
-    rules = []
-
-    mu = 50
-    sigma = 16.67
-    gauss_x = np.linspace(-100, 200, 400)
-    gauss_y = np.exp(-(1 / 2) * ((gauss_x - mu) / sigma) ** 2)
-
-    a = 20.0
-    b = 2.0
-    c = 50.0
-    bell_x = np.linspace(-100, 200, 200)
-    bell_y = 1 / (1 + np.abs((bell_x - c) / a) ** (2 * b))
-
-    variable = "Name"
 
     def __init__(self, parent=None, status_bar=None):
         """Initialize the central tab widget.
@@ -141,8 +99,7 @@ class CentralTabWidget(BaseTabView):
 
         self.mf_plot_graph.setTitle("Membership Function Plot", color="black")
         self.mf_plot_graph.setLabel("left", "Degree of Membership", color="black")
-        self.mf_plot_graph.setLabel("bottom", f"Input variable: {self.variable}", color="black")
-        """Adding plot widget to the layout to display it."""
+        self.mf_plot_graph.setLabel("bottom", "Variable", color="black")
         frame_layout.addWidget(self.mf_plot_graph)
 
         self.seperator_line = QtWidgets.QFrame(parent=self.mf_plot)
@@ -218,136 +175,173 @@ class CentralTabWidget(BaseTabView):
     def _retranslate_ui(self):
         self.setWhatsThis(self.t("<html><head/><body><p><br/></p><p><br/></p></body></html>"))
         self.setTabText(self.indexOf(self.fis_plot), self.t("FIS_PLOT"))
-        self.system_name_label.setText(self.t("SYSTEM_PLACEHOLDER_NAME"))
+        self._update_system_name()
         self.add_all_rules_button.setText(self.t("ADD_ALL_POSSIBLE_RULES"))
         self.setTabText(self.indexOf(self.mf_plot), self.t("MF_EDITOR"))
         self.clear_rules_button.setText(self.t("CLEAR_RULES"))
         self.add_rule_button.setText(self.t("PLUS"))
         self.delete_rule_button.setText(self.t("X"))
-        self.system_label_2.setText(self.t("SYSTEM_PLACEHOLDER_NAME"))
+        self._update_system_name()
         self.setTabText(self.indexOf(self.rule_editor), self.t("RULE_EDITOR"))
         self.setTabText(
             self.indexOf(self.rule_interference),
             self.t("RULE_INTERFERENCE"),
         )
 
+    def _update_system_name(self):
+        """Update system name labels from fuzzy service."""
+        if self.view_model and self.view_model.fuzzy_service:
+            system_name = self.view_model.fuzzy_service.get_system_name()
+            system_text = f"{self.t('SYSTEM')}: {system_name}"
+        else:
+            system_text = self.t("SYSTEM_PLACEHOLDER_NAME")
+
+        self.system_name_label.setText(system_text)
+        self.system_label_2.setText(system_text)
+
     # Placeholder bo nie mam danych z back endu jak to generować
     def generateRules(self):
         """Generate all possible rules based on inputs and outputs."""
-        in_numb = len(self.inputs)
-        out_numb = len(self.outputs)
+        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        if not fuzzy_service:
+            self.status_bar.showMessage("Error: Fuzzy service not available.")
+            return
 
-        for i in range(in_numb - 1):
-            input1 = self.inputs[i]
-            input2 = self.inputs[i + 1]
-            for j in range(out_numb):
-                output = self.outputs[j]
-                input1_mfs = input1.GetMfs()
-                input2_mfs = input2.GetMfs()
-                output_mfs = output.GetMfs()
-                output_index = 0
-
-                for k in range(len(input1_mfs)):
-                    for g in range(len(input2_mfs)):
-                        new_rule = Rule(
-                            input1.GetName(),
-                            input1_mfs[k],
-                            "1",
-                            input2.GetName(),
-                            input2_mfs[g],
-                            "2",
-                            output.GetName(),
-                            output_mfs[output_index],
-                            "3",
-                            "is",
-                            "and",
-                            "1",
-                            f"Rule {len(self.rules) + 1}",
-                        )
-                        self.rules.append(new_rule)
-                        output_index += 1
-        self.fillTable()
-        self.status_bar.showMessage("Last action: added all possible rule combinations.")
+        success = fuzzy_service.add_all_possible_rules()
+        if success:
+            self.fillTable()
+            self.status_bar.showMessage("Last action: added all possible rule combinations.")
+            if hasattr(self.view_model, "notify_data_changed"):
+                self.view_model.notify_data_changed.emit()
+        else:
+            self.status_bar.showMessage("Error: Failed to generate rules.")
 
     def fillTable(self):
         """Fill the rules table with rules.
 
         Displays as many rows as there are rules in the program.
         """
-        rule_numb = len(self.rules)
+        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        if not fuzzy_service:
+            self.table_widget.setRowCount(0)
+            return
+
+        rule_count = fuzzy_service.get_rule_count()
         display_type = self.rule_style_dropdown.currentText()
-        self.table_widget.setRowCount(rule_numb)
-        for i in range(rule_numb):
+        self.table_widget.setRowCount(rule_count)
+
+        for i in range(rule_count):
+            rule_text = fuzzy_service.get_rule_text(i)
+
+            if not rule_text:
+                rule_text = f"Rule {i+1} (no text available)"
+
             if display_type == "Symbolic":
-                symbolic_rule = self.rules[i].getRule()
                 pattern = r"\b({})\b".format("|".join(sorted(re.escape(k) for k in self._symbols)))
-                symbolic_rule = re.sub(pattern, lambda m: self._symbols.get(m.group(0)), symbolic_rule)
+                symbolic_rule = re.sub(pattern, lambda m: self._symbols.get(m.group(0)), rule_text)
                 symbolic_rule = re.sub(r"(=>)(.*)", _regex_func, symbolic_rule)
+                if not symbolic_rule or symbolic_rule == rule_text:
+                    symbolic_rule = rule_text
                 self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(symbolic_rule))
             elif display_type == "Indexed":
-                rule = self.rules[i]
-                indexed_rule = (
-                    f"{rule.getInputMfNumbers()}, {rule.getOutputMfNumbers()}, "
-                    f" ({rule.getWeight()}) : {rule.getConnector()}"
-                )
-                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(indexed_rule))
+                rules_data = fuzzy_service.get_rules()
+                if i < len(rules_data):
+                    rule_data = rules_data[i]
+                    antecedent = rule_data.get("antecedent", [])
+                    consequent = rule_data.get("consequent", [])
+                    weight = rule_data.get("weight", 1.0)
+                    connection = rule_data.get("connection", 1)
+                    indexed_rule = f"{antecedent}, {consequent}, ({weight}) : {connection}"
+                    self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(indexed_rule))
+                else:
+                    self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(""))
             else:
-                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(self.rules[i].getRule()))
-            self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(self.rules[i].getWeight()))
-            self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(self.rules[i].getName()))
+                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(rule_text))
+
+            rules_data = fuzzy_service.get_rules()
+            if i < len(rules_data):
+                rule_data = rules_data[i]
+                weight_str = str(rule_data.get("weight", 1.0))
+                name_str = rule_data.get("name", f"Rule{i+1}")
+                self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(weight_str))
+                self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(name_str))
 
     def clearTable(self):
         """Clear the rule table and delete rules present in the system.
 
         Sets one empty row as default for aesthetic purposes.
         """
+        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        if fuzzy_service:
+            fuzzy_service.clear_all_rules()
+            if hasattr(self.view_model, "notify_data_changed"):
+                self.view_model.notify_data_changed.emit()
+
         self.table_widget.clear()
         self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
         self.table_widget.setRowCount(1)
         self.table_widget.setColumnCount(3)
-        self.rules = []
         self.status_bar.showMessage("Last action: cleared all rules.")
 
     def add_rule(self):
         """Adds a new rule to the table and data of the application."""
-        self.addRuleClicked.emit()
-        input1 = self.inputs[0]
-        input2 = self.inputs[1]
-        output = self.outputs[0]
-        input1_mfs = input1.GetMfs()
-        input2_mfs = input2.GetMfs()
-        output_mfs = output.GetMfs()
-        new_rule = Rule(
-            input1.GetName(),
-            input1_mfs[0],
-            0,  # mf1_numb
-            input2.GetName(),
-            input2_mfs[0],
-            0,  # mf2_numb
-            output.GetName(),
-            output_mfs[0],
-            0,  # mf3_numb
-            "is not",
-            "and",
-            "1",
-            f"Rule {len(self.rules) + 1}",
+        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        if not fuzzy_service:
+            self.status_bar.showMessage("Error: Fuzzy service not available.")
+            return
+
+        input_vars = fuzzy_service.get_input_variables()
+        output_vars = fuzzy_service.get_output_variables()
+
+        if not input_vars or not output_vars:
+            self.status_bar.showMessage("Error: Need at least one input and one output to add a rule.")
+            return
+
+        antecedent = [1] * len(input_vars)
+        consequent = [1] * len(output_vars)
+        rule_count = fuzzy_service.get_rule_count()
+        rule_name = f"Rule{rule_count + 1}"
+
+        success = fuzzy_service.add_rule(
+            rule_name=rule_name,
+            antecedent=antecedent,
+            consequent=consequent,
+            weight=1.0,
+            connection=1,
         )
-        self.rules.append(new_rule)
-        self.fillTable()
-        self.status_bar.showMessage("Last action: added new rule.")
+
+        if success:
+            self.fillTable()
+            self.status_bar.showMessage("Last action: added new rule.")
+            if hasattr(self.view_model, "notify_data_changed"):
+                self.view_model.notify_data_changed.emit()
+            self.addRuleClicked.emit()
+        else:
+            self.status_bar.showMessage("Error: Failed to add rule.")
 
     def remove_rule(self):
         """Removes selected rule from the table and data of the application."""
-        row = self.table_widget.currentRow()
+        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        if not fuzzy_service:
+            self.status_bar.showMessage("Error: Fuzzy service not available.")
+            return
 
-        if row < 0 or row >= len(self.rules):
+        row = self.table_widget.currentRow()
+        rule_count = fuzzy_service.get_rule_count()
+
+        if row < 0 or row >= rule_count:
             self.status_bar.showMessage("No rule selected to remove.")
             return
 
-        del self.rules[row]
-        self.fillTable()
-        self.deleteRuleClicked.emit()
-        self.status_bar.showMessage("Last action: removed a rule.")
+        success = fuzzy_service.delete_rule(row)
+        if success:
+            self.fillTable()
+            self.status_bar.showMessage("Last action: removed a rule.")
+            if hasattr(self.view_model, "notify_data_changed"):
+                self.view_model.notify_data_changed.emit()
+            self.deleteRuleClicked.emit()
+        else:
+            self.status_bar.showMessage("Error: Failed to remove rule.")
 
     def _update_rule_style(self):
         self.table_widget.clear()

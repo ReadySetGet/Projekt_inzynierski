@@ -305,3 +305,13 @@ class RulesEditorViewModel(BaseViewModel):
     def refresh_data(self) -> None:
         """Refresh all data from the model - only updates logic, no signal emission."""
         self.update_data()
+
+    def add_all_possible_rules(self) -> bool:
+        """Add all possible rules."""
+        if self.fuzzy_service:
+            result = self.fuzzy_service.add_all_possible_rules()
+            if result:
+                self._update_rules()
+                self.notify_data_changed.emit()
+            return result
+        return False

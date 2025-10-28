@@ -96,5 +96,17 @@
   "CONVERT": "Konwertuj",
   "SAVE": "Zapisz",
   "MAMDANI": "Mamdani",
-  "SUGENO": "Sugeno"
+  "SUGENO": "Sugeno",
+  "RULES_LIST": "Lista reguł",
+  "DISPLAY_MODE": "Tryb wyświetlania",
+  "ADD_ALL_RULES": "Dodaj wszystkie reguły",
+  "ADD_RULE": "Dodaj regułę",
+  "DELETE_RULE": "Usuń regułę",
+  "SUCCESS": "Sukces",
+  "ALL_RULES_ADDED": "Wszystkie możliwe reguły zostały dodane pomyślnie.",
+  "CONFIRM": "Potwierdź",
+  "CLEAR_ALL_RULES_CONFIRM": "Czy na pewno chcesz wyczyścić wszystkie reguły?",
+  "NO_RULE_SELECTED": "Nie wybrano reguły. Proszę wybrać regułę do usunięcia.",
+  "DELETE_RULE_CONFIRM": "Czy na pewno chcesz usunąć tę regułę?",
+  "WARNING": "Ostrzeżenie"
 }

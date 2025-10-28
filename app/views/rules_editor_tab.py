@@ -4,7 +4,7 @@ Classes:
     RulesEditorTab: button area element inheriting from QTabWidget.
 """
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtWidgets
 
 from app.view_models.rules_editor_view_model import RulesEditorViewModel
 from app.views.base_widget_view import BaseWidgetView
@@ -19,19 +19,7 @@ class RulesEditorTab(BaseWidgetView):
     Methods:
         __init__(parent): create an instance of RulesEditorTab and bind it to the
             parent window.
-
-    Attributes:
-        is_or_radio_changed: pyqtSignal which gets emitted to backend whenever one
-            of the is or radio buttons gets clicked.
-        is_dropdown_changed: pyqtSignal which gets emitted to backend whenever is
-            or isn't condition gets changed.
-        mf_changed: pyqtSignal which gets emitted to backend whenever a chosen mf
-            gets changed.
     """
-
-    is_or_radio_changed = QtCore.pyqtSignal()
-    is_dropdown_changed = QtCore.pyqtSignal()
-    mf_changed = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         """Initialize a new class instance.
@@ -47,10 +35,13 @@ class RulesEditorTab(BaseWidgetView):
         self.view_model.setParent(self)
         self.set_view_model(self.view_model)
 
-        self._connect_view_model_signals()
+        self._updating_rule = False
+        self._current_rule_index = -1
 
         self._setup_ui()
         self._retranslate_ui()
+        self._connect_view_model_signals()
+        self._connect_ui_signals()
 
     def _connect_view_model_signals(self):
         """Connect view model signals to view methods."""
@@ -58,6 +49,23 @@ class RulesEditorTab(BaseWidgetView):
         self.view_model.input_mf_options_updated.connect(self._update_input_mf_dropdowns)
         self.view_model.output_mf_options_updated.connect(self._update_output_mf_dropdowns)
         self.view_model.data_changed.connect(self._on_data_changed)
+
+    def _connect_ui_signals(self):
+        """Connect UI element signals."""
+        self.add_all_rules_button.clicked.connect(self._on_add_all_rules_clicked)
+        self.clear_rules_button.clicked.connect(self._on_clear_rules_clicked)
+        self.add_rule_button.clicked.connect(self._on_add_rule_clicked)
+        self.delete_rule_button.clicked.connect(self._on_delete_rule_clicked)
+
+        self.rules_list.itemSelectionChanged.connect(self._on_rule_selected)
+
+        self.rule_name_edit.editingFinished.connect(self._on_rule_name_changed)
+        self.rule_weight_edit.editingFinished.connect(self._on_rule_weight_changed)
+
+        self.and_radio_button.toggled.connect(self._on_connection_changed)
+        self.or_radio_button.toggled.connect(self._on_connection_changed)
+
+        self.display_mode_combo.currentTextChanged.connect(self._on_display_mode_changed)
 
     def _on_data_changed(self):
         """Handle data changed signal from view model."""
@@ -78,170 +86,377 @@ class RulesEditorTab(BaseWidgetView):
 
     def _setup_ui(self):
         """Set up all the GUI sub elements."""
-        input_mf_list = (
-            self.view_model.input_mf_options if self.view_model.input_mf_options else ["No input MFs available"]
-        )
-        output_mf_list = (
-            self.view_model.output_mf_options if self.view_model.output_mf_options else ["No output MFs available"]
-        )
+        main_layout = QtWidgets.QVBoxLayout(self)
 
-        self.rule_name_label = QtWidgets.QLabel(parent=self)
-        self.rule_name_label.setGeometry(QtCore.QRect(10, 50, 55, 16))
-        self.rule_name_label.setObjectName("rule_name_label")
+        title_label = QtWidgets.QLabel(self.t("RULE_EDITOR"), parent=self)
+        title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        main_layout.addWidget(title_label)
 
-        self.rule_weight_edit = QtWidgets.QLineEdit(parent=self)
-        self.rule_weight_edit.setGeometry(QtCore.QRect(100, 90, 161, 31))
-        self.rule_weight_edit.setObjectName("rule_weight_edit")
+        rules_group = QtWidgets.QGroupBox(self.t("RULES_LIST"), parent=self)
+        rules_layout = QtWidgets.QVBoxLayout(rules_group)
 
-        self.rule_weight_label = QtWidgets.QLabel(parent=self)
-        self.rule_weight_label.setGeometry(QtCore.QRect(10, 100, 55, 18))
-        self.rule_weight_label.setObjectName("rule_weight_label")
+        display_mode_layout = QtWidgets.QHBoxLayout()
+        display_mode_label = QtWidgets.QLabel(self.t("DISPLAY_MODE") + ":", parent=self)
+        display_mode_layout.addWidget(display_mode_label)
 
+        self.display_mode_combo = QtWidgets.QComboBox(parent=self)
+        self.display_mode_combo.addItems(["Symbolic", "Indexed", "Verbose"])
+        display_mode_layout.addWidget(self.display_mode_combo)
+        display_mode_layout.addStretch()
+        rules_layout.addLayout(display_mode_layout)
+
+        self.rules_list = QtWidgets.QListWidget(parent=self)
+        self.rules_list.setMaximumHeight(150)
+        rules_layout.addWidget(self.rules_list)
+
+        rules_buttons_layout = QtWidgets.QHBoxLayout()
+        self.add_all_rules_button = QtWidgets.QPushButton(self.t("ADD_ALL_RULES"), parent=self)
+        self.clear_rules_button = QtWidgets.QPushButton(self.t("CLEAR_RULES"), parent=self)
+        rules_buttons_layout.addWidget(self.add_all_rules_button)
+        rules_buttons_layout.addWidget(self.clear_rules_button)
+        rules_layout.addLayout(rules_buttons_layout)
+
+        main_layout.addWidget(rules_group)
+
+        rule_editor_group = QtWidgets.QGroupBox(self.t("RULE_EDITOR"), parent=self)
+        editor_layout = QtWidgets.QVBoxLayout(rule_editor_group)
+
+        name_layout = QtWidgets.QHBoxLayout()
+        name_layout.addWidget(QtWidgets.QLabel(self.t("NAME") + ":", parent=self))
         self.rule_name_edit = QtWidgets.QLineEdit(parent=self)
-        self.rule_name_edit.setGeometry(QtCore.QRect(100, 40, 161, 31))
-        self.rule_name_edit.setObjectName("rule_name_edit")
+        name_layout.addWidget(self.rule_name_edit)
+        editor_layout.addLayout(name_layout)
 
-        self.rule_editor_label = QtWidgets.QLabel(parent=self)
-        self.rule_editor_label.setGeometry(QtCore.QRect(0, 0, 121, 31))
-        self.rule_editor_label.setObjectName("rule_editor_label")
+        weight_layout = QtWidgets.QHBoxLayout()
+        weight_layout.addWidget(QtWidgets.QLabel(self.t("WEIGHT") + ":", parent=self))
+        self.rule_weight_edit = QtWidgets.QLineEdit(parent=self)
+        self.rule_weight_edit.setText("1.0")
+        weight_layout.addWidget(self.rule_weight_edit)
+        editor_layout.addLayout(weight_layout)
 
-        self.if_label = QtWidgets.QLabel(parent=self)
-        self.if_label.setGeometry(QtCore.QRect(10, 180, 51, 21))
-        self.if_label.setObjectName("if_label")
+        connection_layout = QtWidgets.QHBoxLayout()
+        connection_layout.addWidget(QtWidgets.QLabel(self.t("CONNECTION") + ":", parent=self))
+        self.and_radio_button = QtWidgets.QRadioButton(self.t("AND"), parent=self)
+        self.and_radio_button.setChecked(True)
+        self.or_radio_button = QtWidgets.QRadioButton(self.t("OR"), parent=self)
+        connection_layout.addWidget(self.and_radio_button)
+        connection_layout.addWidget(self.or_radio_button)
+        connection_layout.addStretch()
+        editor_layout.addLayout(connection_layout)
 
-        self.if_line = QtWidgets.QFrame(parent=self)
-        self.if_line.setGeometry(QtCore.QRect(10, 200, 241, 20))
-        self.if_line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        self.if_line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
-        self.if_line.setObjectName("if_line")
+        if_label = QtWidgets.QLabel(self.t("IF"), parent=self)
+        if_label.setStyleSheet("font-weight: bold;")
+        editor_layout.addWidget(if_label)
 
-        self.then_line = QtWidgets.QFrame(parent=self)
-        self.then_line.setGeometry(QtCore.QRect(10, 440, 241, 20))
-        self.then_line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        self.then_line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
-        self.then_line.setObjectName("then_line")
+        self.antecedent_layout = QtWidgets.QVBoxLayout()
+        editor_layout.addLayout(self.antecedent_layout)
 
-        self.then_label = QtWidgets.QLabel(parent=self)
-        self.then_label.setGeometry(QtCore.QRect(10, 420, 51, 21))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.then_label.setFont(font)
-        self.then_label.setObjectName("then_label")
+        then_label = QtWidgets.QLabel(self.t("THEN"), parent=self)
+        then_label.setStyleSheet("font-weight: bold;")
+        editor_layout.addWidget(then_label)
 
-        self.first_input_rule_label = QtWidgets.QLabel(parent=self)
-        self.first_input_rule_label.setGeometry(QtCore.QRect(10, 240, 51, 16))
-        self.first_input_rule_label.setObjectName("first_input_rule_label")
+        self.consequent_layout = QtWidgets.QVBoxLayout()
+        editor_layout.addLayout(self.consequent_layout)
 
-        self.first_input_is_isnt_dropdown = QtWidgets.QComboBox(parent=self)
-        self.first_input_is_isnt_dropdown.addItems(["Is", "Isn't"])
-        self.first_input_is_isnt_dropdown.setGeometry(QtCore.QRect(70, 230, 71, 31))
-        self.first_input_is_isnt_dropdown.setObjectName("first_input_is_isnt_dropdown")
-        self.first_input_is_isnt_dropdown.currentTextChanged.connect(self.is_dropdown_changed)
+        rule_buttons_layout = QtWidgets.QHBoxLayout()
+        self.add_rule_button = QtWidgets.QPushButton(self.t("ADD_RULE"), parent=self)
+        self.delete_rule_button = QtWidgets.QPushButton(self.t("DELETE_RULE"), parent=self)
+        rule_buttons_layout.addWidget(self.add_rule_button)
+        rule_buttons_layout.addWidget(self.delete_rule_button)
+        editor_layout.addLayout(rule_buttons_layout)
 
-        self.first_input_mf_dropdown = QtWidgets.QComboBox(parent=self)
-        self.first_input_mf_dropdown.addItems(input_mf_list)
-        self.first_input_mf_dropdown.setGeometry(QtCore.QRect(150, 230, 61, 31))
-        self.first_input_mf_dropdown.setObjectName("first_input_mf_dropdown")
-        self.first_input_mf_dropdown.currentTextChanged.connect(self.mf_changed)
+        main_layout.addWidget(rule_editor_group)
+        main_layout.addStretch()
 
-        self.and_or_label = QtWidgets.QLabel(parent=self)
-        self.and_or_label.setGeometry(QtCore.QRect(220, 240, 55, 16))
-        self.and_or_label.setObjectName("and_or_label")
+        self._build_rule_editor_dropdowns()
 
-        self.final_input_mf_dropdown = QtWidgets.QComboBox(parent=self)
-        self.final_input_mf_dropdown.addItems(input_mf_list)
-        self.final_input_mf_dropdown.setGeometry(QtCore.QRect(150, 270, 61, 31))
-        self.final_input_mf_dropdown.setObjectName("final_input_mf_dropdown")
-        self.final_input_mf_dropdown.currentTextChanged.connect(self.mf_changed)
+    def _build_rule_editor_dropdowns(self):
+        """Build dropdowns for antecedent and consequent based on current variables."""
+        if not self.view_model or not self.view_model.fuzzy_service:
+            return
 
-        self.final_input_is_isnt_dropdown = QtWidgets.QComboBox(parent=self)
-        self.final_input_is_isnt_dropdown.addItems(["Is", "Isn't"])
-        self.final_input_is_isnt_dropdown.setGeometry(QtCore.QRect(70, 270, 71, 31))
-        self.final_input_is_isnt_dropdown.setObjectName("final_input_is_isnt_dropdown")
-        self.final_input_is_isnt_dropdown.currentTextChanged.connect(self.is_dropdown_changed)
+        while self.antecedent_layout.count():
+            item = self.antecedent_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
 
-        self.final_input_rule_label = QtWidgets.QLabel(parent=self)
-        self.final_input_rule_label.setGeometry(QtCore.QRect(10, 280, 51, 16))
-        self.final_input_rule_label.setObjectName("final_input_rule_label")
+        while self.consequent_layout.count():
+            item = self.consequent_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
 
-        self.connection_label = QtWidgets.QLabel(parent=self)
-        self.connection_label.setGeometry(QtCore.QRect(10, 150, 91, 16))
-        self.connection_label.setObjectName("connection_label")
+        self.input_dropdowns = []
+        self.input_is_dropdowns = []
 
-        self.and_radio_button = QtWidgets.QRadioButton(parent=self)
-        self.and_radio_button.setGeometry(QtCore.QRect(100, 150, 61, 20))
-        self.and_radio_button.setObjectName("and_radio_button")
-        self.and_radio_button.clicked.connect(self._radio_button_clicked)
+        input_vars = self.view_model.fuzzy_service.get_input_variables()
+        for i, var in enumerate(input_vars):
+            var_name = var.get("name", f"Input{i+1}")
+            mfs = self.view_model.fuzzy_service.get_membership_functions(var_name, "input")
 
-        self.or_radio_button = QtWidgets.QRadioButton(parent=self)
-        self.or_radio_button.setGeometry(QtCore.QRect(170, 150, 61, 20))
-        self.or_radio_button.setObjectName("or_radio_button")
-        self.or_radio_button.clicked.connect(self._radio_button_clicked)
+            row_layout = QtWidgets.QHBoxLayout()
+            row_layout.addWidget(QtWidgets.QLabel(f"{var_name}: ", parent=self))
 
-        self.output_rule_label = QtWidgets.QLabel(parent=self)
-        self.output_rule_label.setGeometry(QtCore.QRect(10, 470, 51, 16))
-        self.output_rule_label.setObjectName("output_rule_label")
+            is_dropdown = QtWidgets.QComboBox(parent=self)
+            is_dropdown.addItems(["is", "is not"])
+            row_layout.addWidget(is_dropdown)
+            self.input_is_dropdowns.append(is_dropdown)
 
-        self.output_is_isnt_dropdown = QtWidgets.QComboBox(parent=self)
-        self.output_is_isnt_dropdown.addItems(["Is", "Isn't"])
-        self.output_is_isnt_dropdown.setGeometry(QtCore.QRect(70, 460, 71, 31))
-        self.output_is_isnt_dropdown.setObjectName("output_is_isnt_dropdown")
-        self.output_is_isnt_dropdown.currentTextChanged.connect(self._is_dropdown_changed_func)
+            mf_dropdown = QtWidgets.QComboBox(parent=self)
+            mf_dropdown.addItem("None", 0)
+            for mf in mfs:
+                mf_dropdown.addItem(mf.get("name", ""), mf.get("index", 0) + 1)
+            row_layout.addWidget(mf_dropdown)
+            self.input_dropdowns.append(mf_dropdown)
 
-        self.output_mf_dropdown = QtWidgets.QComboBox(parent=self)
-        self.output_mf_dropdown.addItems(output_mf_list)
-        self.output_mf_dropdown.setGeometry(QtCore.QRect(150, 460, 61, 31))
-        self.output_mf_dropdown.setObjectName("output_mf_dropdown")
-        self.output_mf_dropdown.currentTextChanged.connect(self._mf_changed_func)
+            self.antecedent_layout.addLayout(row_layout)
+
+        self.output_dropdowns = []
+        self.output_is_dropdowns = []
+
+        output_vars = self.view_model.fuzzy_service.get_output_variables()
+        for i, var in enumerate(output_vars):
+            var_name = var.get("name", f"Output{i+1}")
+            mfs = self.view_model.fuzzy_service.get_membership_functions(var_name, "output")
+
+            row_layout = QtWidgets.QHBoxLayout()
+            row_layout.addWidget(QtWidgets.QLabel(f"{var_name}: ", parent=self))
+
+            is_dropdown = QtWidgets.QComboBox(parent=self)
+            is_dropdown.addItems(["is", "is not"])
+            row_layout.addWidget(is_dropdown)
+            self.output_is_dropdowns.append(is_dropdown)
+
+            mf_dropdown = QtWidgets.QComboBox(parent=self)
+            mf_dropdown.addItem("None", 0)
+            for mf in mfs:
+                mf_dropdown.addItem(mf.get("name", ""), mf.get("index", 0) + 1)
+            row_layout.addWidget(mf_dropdown)
+            self.output_dropdowns.append(mf_dropdown)
+
+            self.consequent_layout.addLayout(row_layout)
 
     def _update_rules_list(self, rules_list):
         """Update the rules list from view model."""
-        # This method will be implemented when rules list UI is added
-        pass
+        self.rules_list.clear()
+
+        display_mode = self.display_mode_combo.currentText()
+
+        for rule in rules_list:
+            rule_index = rule.get("index", 0)
+
+            if display_mode == "Symbolic":
+                text = self.view_model.get_rule_text(rule_index)
+            elif display_mode == "Indexed":
+                ant = rule.get("antecedent", [])
+                cons = rule.get("consequent", [])
+                text = f"Rule{rule_index + 1}: [{','.join(map(str, ant))}] -> [{','.join(map(str, cons))}]"
+            else:
+                text = self.view_model.get_rule_text(rule_index)
+
+            item = QtWidgets.QListWidgetItem(text)
+            item.setData(QtCore.Qt.ItemDataRole.UserRole, rule_index)
+            self.rules_list.addItem(item)
 
     def _update_input_mf_dropdowns(self, input_mf_options):
         """Update input MF dropdowns with new options."""
-        if hasattr(self, "first_input_mf_dropdown"):
-            self.first_input_mf_dropdown.clear()
-            self.first_input_mf_dropdown.addItems(input_mf_options)
-
-        if hasattr(self, "final_input_mf_dropdown"):
-            self.final_input_mf_dropdown.clear()
-            self.final_input_mf_dropdown.addItems(input_mf_options)
+        self._build_rule_editor_dropdowns()
 
     def _update_output_mf_dropdowns(self, output_mf_options):
         """Update output MF dropdowns with new options."""
-        if hasattr(self, "output_mf_dropdown"):
-            self.output_mf_dropdown.clear()
-            self.output_mf_dropdown.addItems(output_mf_options)
+        self._build_rule_editor_dropdowns()
 
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
-        self.rule_name_label.setText(self.t("NAME"))
-        self.rule_weight_edit.setText(self.t("ONE"))
-        self.rule_weight_label.setText(self.t("WEIGHT"))
-        self.rule_name_edit.setText(self.t("PLACEHOLDER"))
-        self.rule_editor_label.setText(self.t("RULE_EDITOR"))
-        self.if_label.setText(self.t("IF"))
-        self.then_label.setText(self.t("THEN"))
-        self.first_input_rule_label.setText(self.t("RULE_1"))
-        self.and_or_label.setText(self.t("AND_OR"))
-        self.final_input_rule_label.setText(self.t("RULE_2"))
-        self.connection_label.setText(self.t("CONNECTION"))
-        self.and_radio_button.setText(self.t("AND"))
-        self.or_radio_button.setText(self.t("OR"))
-        self.output_rule_label.setText(self.t("RULE_1"))
+        pass
 
-    def _is_dropdown_changed_func(self):
-        """Emit the signal that chosen condition logic was changed to the backend."""
-        self.is_dropdown_changed.emit()
+    def _on_add_all_rules_clicked(self):
+        """Handle Add All Rules button click."""
+        if self.view_model:
+            success = self.view_model.add_all_possible_rules()
+            if success:
+                QtWidgets.QMessageBox.information(self, self.t("SUCCESS"), self.t("ALL_RULES_ADDED"))
 
-    def _radio_button_clicked(self):
-        """Emit the signal that chosen connection was changed to the backend."""
-        self.is_or_radio_changed.emit()
+    def _on_clear_rules_clicked(self):
+        """Handle Clear Rules button click."""
+        if self.view_model:
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                self.t("CONFIRM"),
+                self.t("CLEAR_ALL_RULES_CONFIRM"),
+                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            )
 
-    def _mf_changed_func(self):
-        """Emit the signal that chosen mf was changed to the backend."""
-        self.mf_changed.emit()
+            if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+                success = self.view_model.clear_all_rules()
+                if success:
+                    self._clear_rule_editor()
+
+    def _on_add_rule_clicked(self):
+        """Handle Add Rule button click."""
+        if not self.view_model:
+            return
+
+        rule_name = self.rule_name_edit.text() or "NewRule"
+
+        try:
+            weight = float(self.rule_weight_edit.text())
+        except ValueError:
+            weight = 1.0
+
+        connection = 1 if self.and_radio_button.isChecked() else 0
+
+        antecedent = []
+        is_mf = []
+
+        for i, dropdown in enumerate(self.input_dropdowns):
+            mf_index = dropdown.currentData()
+            antecedent.append(mf_index if mf_index is not None else 0)
+            is_not = 1 if self.input_is_dropdowns[i].currentText() == "is" else -1
+            is_mf.append(is_not)
+
+        consequent = []
+        for i, dropdown in enumerate(self.output_dropdowns):
+            mf_index = dropdown.currentData()
+            consequent.append(mf_index if mf_index is not None else 0)
+            is_not = 1 if self.output_is_dropdowns[i].currentText() == "is" else -1
+            is_mf.append(is_not)
+
+        success = self.view_model.add_rule(
+            rule_name=rule_name,
+            weight=weight,
+            connection=connection,
+            antecedent=antecedent,
+            consequent=consequent,
+            is_mf=is_mf,
+        )
+
+        if success:
+            self._clear_rule_editor()
+
+    def _on_delete_rule_clicked(self):
+        """Handle Delete Rule button click."""
+        if not self.view_model:
+            return
+
+        selected_items = self.rules_list.selectedItems()
+        if not selected_items:
+            QtWidgets.QMessageBox.warning(self, self.t("WARNING"), self.t("NO_RULE_SELECTED"))
+            return
+
+        rule_index = selected_items[0].data(QtCore.Qt.ItemDataRole.UserRole)
+
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            self.t("CONFIRM"),
+            self.t("DELETE_RULE_CONFIRM"),
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+        )
+
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            success = self.view_model.delete_rule(rule_index)
+            if success:
+                self._clear_rule_editor()
+
+    def _on_rule_selected(self):
+        """Handle rule selection from list."""
+        selected_items = self.rules_list.selectedItems()
+        if not selected_items:
+            return
+
+        rule_index = selected_items[0].data(QtCore.Qt.ItemDataRole.UserRole)
+        self._load_rule_into_editor(rule_index)
+
+    def _load_rule_into_editor(self, rule_index):
+        """Load a rule into the editor fields."""
+        if not self.view_model or not (0 <= rule_index < len(self.view_model.rules)):
+            return
+
+        self._updating_rule = True
+        self._current_rule_index = rule_index
+
+        rule = self.view_model.rules[rule_index]
+
+        self.rule_name_edit.setText(rule.get("name", ""))
+        self.rule_weight_edit.setText(str(rule.get("weight", 1.0)))
+
+        connection = rule.get("connection", 1)
+        if connection == 1:
+            self.and_radio_button.setChecked(True)
+        else:
+            self.or_radio_button.setChecked(True)
+
+        antecedent = rule.get("antecedent", [])
+        consequent = rule.get("consequent", [])
+        is_mf = rule.get("is_mf", [])
+
+        for i, mf_idx in enumerate(antecedent):
+            if i < len(self.input_dropdowns):
+                index = self.input_dropdowns[i].findData(mf_idx)
+                if index >= 0:
+                    self.input_dropdowns[i].setCurrentIndex(index)
+
+                if i < len(is_mf):
+                    self.input_is_dropdowns[i].setCurrentText("is" if is_mf[i] == 1 else "is not")
+
+        for i, mf_idx in enumerate(consequent):
+            if i < len(self.output_dropdowns):
+                index = self.output_dropdowns[i].findData(mf_idx)
+                if index >= 0:
+                    self.output_dropdowns[i].setCurrentIndex(index)
+
+                out_is_idx = i + len(antecedent)
+                if out_is_idx < len(is_mf):
+                    self.output_is_dropdowns[i].setCurrentText("is" if is_mf[out_is_idx] == 1 else "is not")
+
+        self._updating_rule = False
+
+    def _clear_rule_editor(self):
+        """Clear the rule editor fields."""
+        self._updating_rule = True
+        self._current_rule_index = -1
+
+        self.rule_name_edit.clear()
+        self.rule_weight_edit.setText("1.0")
+        self.and_radio_button.setChecked(True)
+
+        for dropdown in self.input_dropdowns:
+            dropdown.setCurrentIndex(0)
+        for dropdown in self.input_is_dropdowns:
+            dropdown.setCurrentIndex(0)
+        for dropdown in self.output_dropdowns:
+            dropdown.setCurrentIndex(0)
+        for dropdown in self.output_is_dropdowns:
+            dropdown.setCurrentIndex(0)
+
+        self._updating_rule = False
+
+    def _on_rule_name_changed(self):
+        """Handle rule name change."""
+        if self._updating_rule or self._current_rule_index < 0:
+            return
+
+        new_name = self.rule_name_edit.text()
+        self.view_model.update_rule_name(self._current_rule_index, new_name)
+
+    def _on_rule_weight_changed(self):
+        """Handle rule weight change."""
+        if self._updating_rule or self._current_rule_index < 0:
+            return
+
+        try:
+            new_weight = float(self.rule_weight_edit.text())
+            self.view_model.update_rule_weight(self._current_rule_index, new_weight)
+        except ValueError:
+            pass
+
+    def _on_connection_changed(self):
+        """Handle connection (AND/OR) change."""
+        if self._updating_rule or self._current_rule_index < 0:
+            return
+
+        new_connection = 1 if self.and_radio_button.isChecked() else 0
+        self.view_model.update_rule_connection(self._current_rule_index, new_connection)
+
+    def _on_display_mode_changed(self, mode):
+        """Handle display mode change."""
+        self._update_rules_list(self.view_model.rules)

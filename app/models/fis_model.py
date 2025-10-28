@@ -113,7 +113,6 @@ class FISModel:
         self._fis.addInput(DEFAULT_IO_RANGE, Name=input_name)
 
         for rule in self._fis.Rules:
-            rule.numInputs += 1
             rule.Antecedent.append(0)
 
     def delete_input(self, input_idx: int) -> int:
@@ -134,13 +133,11 @@ class FISModel:
         for rule_idx in range(len(self._fis.Rules)):
             if self._fis.Rules[rule_idx].Antecedent[input_idx] == 0:
                 self._fis.Rules[rule_idx].Antecedent.pop(input_idx)
-                self._fis.Rules[rule_idx].numInputs -= 1
             else:
                 nr_of_none_variables = self._fis.Rules[rule_idx].Antecedent.count(0)
                 nr_of_not_none_variables = len(self._fis.Rules[rule_idx].Antecedent) - nr_of_none_variables
                 if nr_of_not_none_variables > 1:
                     self._fis.Rules[rule_idx].Antecedent.pop(input_idx)
-                    self._fis.Rules[rule_idx].numInputs -= 1
                 else:
                     rules_to_be_deleted_idx.append(rule_idx)
 
@@ -260,8 +257,6 @@ class FISModel:
                 nr_of_not_none_variables = len(search_list) - nr_of_none_variables
                 if nr_of_not_none_variables > 1:
                     search_list.pop(io_variable_idx)
-                    if input_or_output == "input":
-                        self._fis.Rules[rule_idx].numInputs -= 1
                 else:
                     rules_to_be_deleted_idx.append(rule_idx)
 
@@ -348,6 +343,7 @@ class FISModel:
                 behaviour - incorrect data provided
         """
         if not self._check_if_every_variable_has_mf():
+            print("Error in add_rule: Not all variables have MFs")
             return -2
 
         if rule_data is None:
@@ -365,10 +361,12 @@ class FISModel:
         else:
             rule = rule_data
             rule_for_input = rule[: len(self._fis.Inputs)]
-            rule_for_output = rule[len(self._fis.Inputs) :]
+            rule_for_output = rule[len(self._fis.Inputs) : len(self._fis.Inputs) + len(self._fis.Outputs)]
             if len(rule_for_input) - rule_for_input.count(0) == 0:
+                print(f"Error in add_rule: All inputs are 0. rule_for_input={rule_for_input}")
                 return -1
             if len(rule_for_output) - rule_for_output.count(0) == 0:
+                print(f"Error in add_rule: All outputs are 0. rule_for_output={rule_for_output}")
                 return -1
 
         rule = [rule]

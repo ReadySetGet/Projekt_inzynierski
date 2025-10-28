@@ -205,32 +205,44 @@ class RuleManager:
 
             antecedent_parts = []
             for i, mf_idx in enumerate(rule.Antecedent):
-                if mf_idx > 0:  # 0 means no condition
+                if mf_idx > 0:
                     if i < len(fis.Inputs):
                         input_name = fis.Inputs[i].Name
                         if mf_idx <= len(fis.Inputs[i].MembershipFunctions):
                             mf_name = fis.Inputs[i].MembershipFunctions[mf_idx - 1].Name
-                            is_not = "not " if (i < len(rule.IsMF) and rule.IsMF[i] != 1) else ""
-                            antecedent_parts.append(f"{input_name} is {is_not}{mf_name}")
+                            is_not = (
+                                "is not "
+                                if (hasattr(rule, "IsMFInput") and i < len(rule.IsMFInput) and rule.IsMFInput[i] != 1)
+                                else "is "
+                            )
+                            antecedent_parts.append(f"{input_name} {is_not}{mf_name}")
 
             consequent_parts = []
             for i, mf_idx in enumerate(rule.Consequent):
-                if mf_idx > 0:  # 0 means no condition
+                if mf_idx > 0:
                     if i < len(fis.Outputs):
                         output_name = fis.Outputs[i].Name
                         if mf_idx <= len(fis.Outputs[i].MembershipFunctions):
                             mf_name = fis.Outputs[i].MembershipFunctions[mf_idx - 1].Name
-                            output_idx = i + len(rule.Antecedent)
-                            is_not = "not " if (output_idx < len(rule.IsMF) and rule.IsMF[output_idx] != 1) else ""
-                            consequent_parts.append(f"{output_name} is {is_not}{mf_name}")
+                            is_not = (
+                                "is not "
+                                if (
+                                    hasattr(rule, "IsMFOutput") and i < len(rule.IsMFOutput) and rule.IsMFOutput[i] != 1
+                                )
+                                else "is "
+                            )
+                            consequent_parts.append(f"{output_name} {is_not}{mf_name}")
+
+            if not antecedent_parts or not consequent_parts:
+                return f"{rule.Name} (incomplete)"
 
             connection = " and " if rule.Connection == 1 else " or "
             antecedent_text = connection.join(antecedent_parts)
             consequent_text = " and ".join(consequent_parts)
 
-            return f"If {antecedent_text} then {consequent_text} (weight: {rule.Weight})"
-        except Exception:
-            return ""
+            return f"If {antecedent_text} then {consequent_text} ({rule.Weight})"
+        except Exception as e:
+            return f"Error: {str(e)}"
 
     def get_rule_count(self) -> int:
         """Get the number of rules.
@@ -242,3 +254,57 @@ class RuleManager:
             return len(self._fis_model._fis.Rules)
         except Exception:
             return 0
+
+    def add_all_possible_rules(self) -> bool:
+        """Add all possible rules based on current inputs and outputs.
+
+        Generates rules for ALL combinations of input and output membership functions.
+        This creates a complete rule base covering all possible scenarios.
+
+        For example, with 2 inputs (3 MFs each) and 2 outputs (3 MFs each):
+        - 9 input combinations × 9 output combinations = 81 rules
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        try:
+            fis = self._fis_model._fis
+
+            if not fis.Inputs or not fis.Outputs:
+                return False
+
+            input_mf_counts = [len(inp.MembershipFunctions) for inp in fis.Inputs]
+            output_mf_counts = [len(out.MembershipFunctions) for out in fis.Outputs]
+
+            if not input_mf_counts or not output_mf_counts:
+                return False
+
+            import itertools
+
+            input_combinations = list(itertools.product(*[range(1, count + 1) for count in input_mf_counts]))
+
+            output_combinations = list(itertools.product(*[range(1, count + 1) for count in output_mf_counts]))
+
+            rule_count = 0
+            # Generate ALL combinations: each input combo with EACH output combo
+            for input_combo in input_combinations:
+                for output_combo in output_combinations:
+                    antecedent = list(input_combo)
+                    consequent = list(output_combo)
+
+                    is_mf = [1] * (len(antecedent) + len(consequent))
+
+                    rule_data = antecedent + consequent + [1.0, 1]
+
+                    result = self._fis_model.add_rule(is_mf, rule_data)
+                    if result == 1:
+                        rule_count += 1
+                        self._fis_model._fis.Rules[-1].Name = f"Rule{rule_count}"
+
+            return rule_count > 0
+        except Exception as e:
+            print(f"Error in add_all_possible_rules: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return False
