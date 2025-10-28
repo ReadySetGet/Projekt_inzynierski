@@ -57,29 +57,21 @@ class GaussPlot:
         self.plot_widget.addItem(self.position_anchor)
 
     def _left_gauss_interaction(self):
-        """Change the width of the plot when interacting with left anchor.
-
-        The user is unable to drag the anchor past points 0 and 49.
-        """
+        """Change the width of the plot when interacting with left anchor."""
         new_pos = self.gauss_left_anchor.pos()
         new_sigma = abs(new_pos.x() - self.mu)
-        if new_sigma > 0 and new_pos.x() < 49:
+        if new_sigma > 0.01:
             self.sigma = new_sigma
-        self.gauss_left_anchor.setPos(self.mu - self.sigma, np.exp(-0.5))
-        self.gauss_right_anchor.setPos(self.mu + self.sigma, np.exp(-0.5))
+            self.gauss_right_anchor.setPos(self.mu + self.sigma, np.exp(-0.5))
         self._update_plot()
 
     def _right_gauss_interaction(self):
-        """Change the width of the plot when interacting with right anchor.
-
-        The user is unable to drag the anchor past points 51 and 100.
-        """
+        """Change the width of the plot when interacting with right anchor."""
         new_pos = self.gauss_right_anchor.pos()
         new_sigma = abs(new_pos.x() - self.mu)
-        if new_sigma > 0 and new_pos.x() > 51:
+        if new_sigma > 0.01:
             self.sigma = new_sigma
-        self.gauss_left_anchor.setPos(self.mu - self.sigma, np.exp(-0.5))
-        self.gauss_right_anchor.setPos(self.mu + self.sigma, np.exp(-0.5))
+            self.gauss_left_anchor.setPos(self.mu - self.sigma, np.exp(-0.5))
         self._update_plot()
 
     def _change_position(self):

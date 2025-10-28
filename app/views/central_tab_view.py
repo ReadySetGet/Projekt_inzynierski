@@ -555,20 +555,20 @@ class CentralTabWidget(BaseTabView):
                     lambda: self._on_triangle_anchor_changed(plot, mf_index)
                 )
         elif mf_type == "trapmf":
-            if hasattr(plot, "trapezoid_left_anchor"):
-                plot.trapezoid_left_anchor.sigPositionChangeFinished.connect(
+            if hasattr(plot, "trapezoid_left_down_anchor"):
+                plot.trapezoid_left_down_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
                 )
-            if hasattr(plot, "trapezoid_left_top_anchor"):
-                plot.trapezoid_left_top_anchor.sigPositionChangeFinished.connect(
+            if hasattr(plot, "trapezoid_left_up_anchor"):
+                plot.trapezoid_left_up_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
                 )
-            if hasattr(plot, "trapezoid_right_top_anchor"):
-                plot.trapezoid_right_top_anchor.sigPositionChangeFinished.connect(
+            if hasattr(plot, "trapezoid_right_up_anchor"):
+                plot.trapezoid_right_up_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
                 )
-            if hasattr(plot, "trapezoid_right_anchor"):
-                plot.trapezoid_right_anchor.sigPositionChangeFinished.connect(
+            if hasattr(plot, "trapezoid_right_down_anchor"):
+                plot.trapezoid_right_down_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
                 )
             if hasattr(plot, "position_anchor"):
@@ -576,10 +576,12 @@ class CentralTabWidget(BaseTabView):
                     lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
                 )
         elif mf_type == "gaussmf":
-            if hasattr(plot, "mu_anchor"):
-                plot.mu_anchor.sigPositionChangeFinished.connect(lambda: self._on_gauss_anchor_changed(plot, mf_index))
-            if hasattr(plot, "sigma_anchor"):
-                plot.sigma_anchor.sigPositionChangeFinished.connect(
+            if hasattr(plot, "gauss_left_anchor"):
+                plot.gauss_left_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_gauss_anchor_changed(plot, mf_index)
+                )
+            if hasattr(plot, "gauss_right_anchor"):
+                plot.gauss_right_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_gauss_anchor_changed(plot, mf_index)
                 )
             if hasattr(plot, "position_anchor"):
@@ -587,12 +589,22 @@ class CentralTabWidget(BaseTabView):
                     lambda: self._on_gauss_anchor_changed(plot, mf_index)
                 )
         elif mf_type == "gbellmf":
-            if hasattr(plot, "c_anchor"):
-                plot.c_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
-            if hasattr(plot, "a_anchor"):
-                plot.a_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
-            if hasattr(plot, "b_anchor"):
-                plot.b_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
+            if hasattr(plot, "left_a_anchor"):
+                plot.left_a_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_bell_anchor_changed(plot, mf_index)
+                )
+            if hasattr(plot, "right_a_anchor"):
+                plot.right_a_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_bell_anchor_changed(plot, mf_index)
+                )
+            if hasattr(plot, "left_b_anchor"):
+                plot.left_b_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_bell_anchor_changed(plot, mf_index)
+                )
+            if hasattr(plot, "right_b_anchor"):
+                plot.right_b_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_bell_anchor_changed(plot, mf_index)
+                )
             if hasattr(plot, "position_anchor"):
                 plot.position_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_bell_anchor_changed(plot, mf_index)
@@ -600,19 +612,15 @@ class CentralTabWidget(BaseTabView):
 
     def _on_triangle_anchor_changed(self, plot, mf_index):
         """Handle triangle anchor position changes and update fuzzy service."""
-        # Extract parameters from plot data: [a, b, c]
-        # tri_x format: [range_min, a, b, c, range_max]
         if hasattr(plot, "tri_x") and len(plot.tri_x) >= 5:
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
 
-            # Clamp values within range
-            a = max(var_range[0], min(var_range[1], round(plot.tri_x[1], 2)))
-            b = max(var_range[0], min(var_range[1], round(plot.tri_x[2], 2)))
-            c = max(var_range[0], min(var_range[1], round(plot.tri_x[3], 2)))
+            a = max(var_range[0], min(var_range[1], round(float(plot.tri_x[1]), 2)))
+            b = max(var_range[0], min(var_range[1], round(float(plot.tri_x[2]), 2)))
+            c = max(var_range[0], min(var_range[1], round(float(plot.tri_x[3]), 2)))
 
-            # Ensure proper ordering: a <= b <= c
             a = min(a, b)
             c = max(b, c)
 
@@ -621,20 +629,16 @@ class CentralTabWidget(BaseTabView):
 
     def _on_trapezoid_anchor_changed(self, plot, mf_index):
         """Handle trapezoid anchor position changes and update fuzzy service."""
-        # Extract parameters from plot data: [a, b, c, d]
-        # trap_x format: [range_min, a, b, c, d, range_max]
         if hasattr(plot, "trap_x") and len(plot.trap_x) >= 6:
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
 
-            # Clamp values within range
-            a = max(var_range[0], min(var_range[1], round(plot.trap_x[1], 2)))
-            b = max(var_range[0], min(var_range[1], round(plot.trap_x[2], 2)))
-            c = max(var_range[0], min(var_range[1], round(plot.trap_x[3], 2)))
-            d = max(var_range[0], min(var_range[1], round(plot.trap_x[4], 2)))
+            a = max(var_range[0], min(var_range[1], round(float(plot.trap_x[1]), 2)))
+            b = max(var_range[0], min(var_range[1], round(float(plot.trap_x[2]), 2)))
+            c = max(var_range[0], min(var_range[1], round(float(plot.trap_x[3]), 2)))
+            d = max(var_range[0], min(var_range[1], round(float(plot.trap_x[4]), 2)))
 
-            # Ensure proper ordering: a <= b <= c <= d
             a = min(a, b)
             b = min(b, c)
             c = max(b, c)
@@ -645,31 +649,27 @@ class CentralTabWidget(BaseTabView):
 
     def _on_gauss_anchor_changed(self, plot, mf_index):
         """Handle Gaussian anchor position changes and update fuzzy service."""
-        # Extract parameters: [sigma, mu]
-        if hasattr(plot, "sigma_data") and hasattr(plot, "mu_data"):
+        if hasattr(plot, "sigma") and hasattr(plot, "mu"):
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
 
-            # Clamp mu within range (sigma can be any positive value)
-            sigma = max(0.01, round(plot.sigma_data, 2))  # Ensure sigma is positive
-            mu = max(var_range[0], min(var_range[1], round(plot.mu_data, 2)))
+            sigma = max(0.01, round(float(plot.sigma), 2))
+            mu = max(var_range[0], min(var_range[1], round(float(plot.mu), 2)))
 
             new_params = [sigma, mu]
             self._update_mf_parameters(mf_index, new_params)
 
     def _on_bell_anchor_changed(self, plot, mf_index):
         """Handle Bell anchor position changes and update fuzzy service."""
-        # Extract parameters: [a, b, c]
-        if hasattr(plot, "a_data") and hasattr(plot, "b_data") and hasattr(plot, "c_data"):
+        if hasattr(plot, "a") and hasattr(plot, "b") and hasattr(plot, "c"):
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
 
-            # Clamp c (center) within range, a and b are shape parameters (positive)
-            a = max(0.01, round(plot.a_data, 2))  # Ensure a is positive
-            b = max(0.01, round(plot.b_data, 2))  # Ensure b is positive
-            c = max(var_range[0], min(var_range[1], round(plot.c_data, 2)))
+            a = max(0.01, round(float(plot.a), 2))
+            b = max(0.01, round(float(plot.b), 2))
+            c = max(var_range[0], min(var_range[1], round(float(plot.c), 2)))
 
             new_params = [a, b, c]
             self._update_mf_parameters(mf_index, new_params)
