@@ -37,7 +37,6 @@ class FuzzyInferenceEngine:
             # Perform inference using the evalfis function
             outputs = evalfis(fis_model._fis, inputs)
 
-            # Convert to list if needed
             if hasattr(outputs, "tolist"):
                 outputs = outputs.tolist()
             elif not isinstance(outputs, list):

@@ -47,11 +47,9 @@ class BaseTabView(QTabWidget):
         """
         self.view_model = view_model
         if self.view_model:
-            # Connect to view model signals
             self.view_model.theme_changed.connect(self.reload_stylesheet)
             self.view_model.data_changed.connect(self.refresh_ui)
             self.view_model.notify_data_changed.connect(self.update_ui)
-            # Connect to language change signal
             self.view_model.translate_manager.language_changed.connect(self._on_language_changed)
             # Initial stylesheet load
             self.reload_stylesheet()

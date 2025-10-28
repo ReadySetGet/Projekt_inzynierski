@@ -18,10 +18,8 @@ class FuzzyCalculationService:
         Args:
             fis_type: Type of FIS to create ("mamdani" or "sugeno")
         """
-        # Initialize the state manager
         self._state_manager = FISStateManager(fis_type)
 
-        # Initialize managers
         self._variable_manager = VariableManager(self._state_manager.fis_model)
         self._mf_manager = MembershipFunctionManager(self._state_manager.fis_model)
         self._rule_manager = RuleManager(self._state_manager.fis_model)

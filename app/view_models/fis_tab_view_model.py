@@ -40,7 +40,6 @@ class FisTabViewModel(BaseViewModel):
 
     def _update_fis_data(self) -> None:
         """Update FIS data from the fuzzy service."""
-        # Get system information
         system_status = self.fuzzy_service.get_system_status()
         self._system_info = {
             "name": "FIS System",  # Default name since no name method exists
@@ -52,10 +51,8 @@ class FisTabViewModel(BaseViewModel):
             "inference_state": system_status.get("inference_state", "idle"),
         }
 
-        # Get input variables
         self._inputs = self._get_variables_data("input")
 
-        # Get output variables
         self._outputs = self._get_variables_data("output")
 
         # Emit complete data
@@ -89,7 +86,6 @@ class FisTabViewModel(BaseViewModel):
         """Get membership functions data for a specific variable."""
         mfs = self.fuzzy_service.get_membership_functions(variable_name, variable_type)
 
-        # Get the variable range for plotting
         var_range = [0, 100]  # Default range
         if variable_type == "input":
             inputs = self.fuzzy_service.get_input_variables()
@@ -123,11 +119,9 @@ class FisTabViewModel(BaseViewModel):
         mf_type = mf.get("type", "")
         parameters = mf.get("parameters", [])
 
-        # Generate x values using the variable range
         x_min, x_max = var_range
         x = [x_min + i * (x_max - x_min) / 100 for i in range(101)]
 
-        # Generate y values based on membership function type
         y = self._calculate_membership_values(x, mf_type, parameters)
 
         return x, y
@@ -136,7 +130,6 @@ class FisTabViewModel(BaseViewModel):
         """Calculate membership values for given x values."""
         import numpy as np
 
-        # Map Polish names to English names
         type_mapping = {
             "trojkatna": "trimf",
             "trapezoidalna": "trapmf",
@@ -146,7 +139,6 @@ class FisTabViewModel(BaseViewModel):
             "liniowa": "linear",
         }
 
-        # Convert to English name
         mf_type = type_mapping.get(mf_type, mf_type)
 
         x = np.array(x)

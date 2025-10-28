@@ -93,7 +93,6 @@ class RulesEditorViewModel(BaseViewModel):
         input_variables = self.fuzzy_service.get_input_variables()
         output_variables = self.fuzzy_service.get_output_variables()
 
-        # Update input MF options
         self._input_mf_options = []
         for input_var in input_variables:
             var_name = input_var.get("name", "")
@@ -102,7 +101,6 @@ class RulesEditorViewModel(BaseViewModel):
                 mf_name = mf.get("name", "")
                 self._input_mf_options.append(f"{var_name}.{mf_name}")
 
-        # Update output MF options
         self._output_mf_options = []
         for output_var in output_variables:
             var_name = output_var.get("name", "")
@@ -205,9 +203,7 @@ class RulesEditorViewModel(BaseViewModel):
             return False
 
         if self.fuzzy_service:
-            # Get current rule data
             current_rule = self._rules[rule_index]
-            # Update the rule with new name but same other properties
             result = self.fuzzy_service.update_rule(
                 rule_index,
                 current_rule["antecedent"],
@@ -217,7 +213,6 @@ class RulesEditorViewModel(BaseViewModel):
                 current_rule["is_mf"],
             )
             if result:
-                # Update the local rule name
                 self._rules[rule_index]["name"] = new_name
                 self.rule_name_changed.emit(rule_index, new_name)
                 self._update_rules()
@@ -231,9 +226,7 @@ class RulesEditorViewModel(BaseViewModel):
             return False
 
         if self.fuzzy_service:
-            # Get current rule data
             current_rule = self._rules[rule_index]
-            # Update the rule with new weight but same other properties
             result = self.fuzzy_service.update_rule(
                 rule_index,
                 current_rule["antecedent"],
@@ -243,7 +236,6 @@ class RulesEditorViewModel(BaseViewModel):
                 current_rule["is_mf"],
             )
             if result:
-                # Update the local rule weight
                 self._rules[rule_index]["weight"] = new_weight
                 self.rule_weight_changed.emit(rule_index, new_weight)
                 self._update_rules()
@@ -257,9 +249,7 @@ class RulesEditorViewModel(BaseViewModel):
             return False
 
         if self.fuzzy_service:
-            # Get current rule data
             current_rule = self._rules[rule_index]
-            # Update the rule with new connection but same other properties
             result = self.fuzzy_service.update_rule(
                 rule_index,
                 current_rule["antecedent"],
@@ -269,7 +259,6 @@ class RulesEditorViewModel(BaseViewModel):
                 current_rule["is_mf"],
             )
             if result:
-                # Update the local rule connection
                 self._rules[rule_index]["connection"] = new_connection
                 self.rule_connection_changed.emit(rule_index, new_connection)
                 self._update_rules()

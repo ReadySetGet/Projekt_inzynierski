@@ -24,7 +24,6 @@ class VariableManager:
         """
         variables = []
         for i, input_var in enumerate(self._fis_model._fis.Inputs):
-            # Get membership functions for this variable
             mfs = []
             for j, mf in enumerate(input_var.MembershipFunctions):
                 mfs.append(
@@ -55,7 +54,6 @@ class VariableManager:
         """
         variables = []
         for i, output_var in enumerate(self._fis_model._fis.Outputs):
-            # Get membership functions for this variable
             mfs = []
             for j, mf in enumerate(output_var.MembershipFunctions):
                 mfs.append(
@@ -93,12 +91,10 @@ class VariableManager:
             self._fis_model.add_input()
             # Check if input was successfully added
             if self._fis_model._fis.Inputs:
-                # Set the name and range for the newly added input
                 new_input = self._fis_model._fis.Inputs[-1]
                 new_input.Name = name
                 new_input.Range = [range_min, range_max]
 
-                # Add default membership functions
                 self._add_default_input_membership_functions(name)
                 return True
             return False
@@ -121,12 +117,10 @@ class VariableManager:
             self._fis_model.add_output()
             # Check if output was successfully added
             if self._fis_model._fis.Outputs:
-                # Set the name and range for the newly added output
                 new_output = self._fis_model._fis.Outputs[-1]
                 new_output.Name = name
                 new_output.Range = [range_min, range_max]
 
-                # Add default membership functions
                 self._add_default_output_membership_functions(name)
                 return True
             return False
@@ -141,31 +135,51 @@ class VariableManager:
             variable_name: Name of the input variable
         """
         try:
-            # Add triangular membership functions with different parameters
-            # Low: [0, 0, 0.5] -> [0, 0, 5] when scaled to [0, 10]
+            var_range = [0, 10]  # Default range
+            if self._fis_model._fis.Inputs:
+                for var in self._fis_model._fis.Inputs:
+                    if var.Name == variable_name:
+                        var_range = var.Range
+                        break
+
+            range_min, range_max = var_range[0], var_range[1]
+
+            # Low: [range_min, range_min, mid] for the variable's range
             self._fis_model.add_mf(variable_name, "input", "trojkatna")
             if self._fis_model._fis.Inputs:
                 for var in self._fis_model._fis.Inputs:
                     if var.Name == variable_name and var.MembershipFunctions:
-                        var.MembershipFunctions[0].Parameters = [0, 0, 0.5]
+                        var.MembershipFunctions[0].Parameters = [
+                            range_min,
+                            range_min,
+                            (range_min + range_max) / 2,
+                        ]
                         var.MembershipFunctions[0].Name = "low"
                         break
 
-            # Medium: [0, 0.5, 1] -> [0, 5, 10] when scaled to [0, 10]
+            # Medium: [range_min, mid, range_max] for the variable's range
             self._fis_model.add_mf(variable_name, "input", "trojkatna")
             if self._fis_model._fis.Inputs:
                 for var in self._fis_model._fis.Inputs:
                     if var.Name == variable_name and len(var.MembershipFunctions) >= 2:
-                        var.MembershipFunctions[1].Parameters = [0, 0.5, 1]
+                        var.MembershipFunctions[1].Parameters = [
+                            range_min,
+                            (range_min + range_max) / 2,
+                            range_max,
+                        ]
                         var.MembershipFunctions[1].Name = "medium"
                         break
 
-            # High: [0.5, 1, 1] -> [5, 10, 10] when scaled to [0, 10]
+            # High: [mid, range_max, range_max] for the variable's range
             self._fis_model.add_mf(variable_name, "input", "trojkatna")
             if self._fis_model._fis.Inputs:
                 for var in self._fis_model._fis.Inputs:
                     if var.Name == variable_name and len(var.MembershipFunctions) >= 3:
-                        var.MembershipFunctions[2].Parameters = [0.5, 1, 1]
+                        var.MembershipFunctions[2].Parameters = [
+                            (range_min + range_max) / 2,
+                            range_max,
+                            range_max,
+                        ]
                         var.MembershipFunctions[2].Name = "high"
                         break
         except Exception:
@@ -178,31 +192,51 @@ class VariableManager:
             variable_name: Name of the output variable
         """
         try:
-            # Add triangular membership functions with different parameters
-            # Low: [0, 0, 0.5] -> [0, 0, 5] when scaled to [0, 10]
+            var_range = [0, 10]  # Default range
+            if self._fis_model._fis.Outputs:
+                for var in self._fis_model._fis.Outputs:
+                    if var.Name == variable_name:
+                        var_range = var.Range
+                        break
+
+            range_min, range_max = var_range[0], var_range[1]
+
+            # Low: [range_min, range_min, mid] for the variable's range
             self._fis_model.add_mf(variable_name, "output", "trojkatna")
             if self._fis_model._fis.Outputs:
                 for var in self._fis_model._fis.Outputs:
                     if var.Name == variable_name and var.MembershipFunctions:
-                        var.MembershipFunctions[0].Parameters = [0, 0, 0.5]
+                        var.MembershipFunctions[0].Parameters = [
+                            range_min,
+                            range_min,
+                            (range_min + range_max) / 2,
+                        ]
                         var.MembershipFunctions[0].Name = "low"
                         break
 
-            # Medium: [0, 0.5, 1] -> [0, 5, 10] when scaled to [0, 10]
+            # Medium: [range_min, mid, range_max] for the variable's range
             self._fis_model.add_mf(variable_name, "output", "trojkatna")
             if self._fis_model._fis.Outputs:
                 for var in self._fis_model._fis.Outputs:
                     if var.Name == variable_name and len(var.MembershipFunctions) >= 2:
-                        var.MembershipFunctions[1].Parameters = [0, 0.5, 1]
+                        var.MembershipFunctions[1].Parameters = [
+                            range_min,
+                            (range_min + range_max) / 2,
+                            range_max,
+                        ]
                         var.MembershipFunctions[1].Name = "medium"
                         break
 
-            # High: [0.5, 1, 1] -> [5, 10, 10] when scaled to [0, 10]
+            # High: [mid, range_max, range_max] for the variable's range
             self._fis_model.add_mf(variable_name, "output", "trojkatna")
             if self._fis_model._fis.Outputs:
                 for var in self._fis_model._fis.Outputs:
                     if var.Name == variable_name and len(var.MembershipFunctions) >= 3:
-                        var.MembershipFunctions[2].Parameters = [0.5, 1, 1]
+                        var.MembershipFunctions[2].Parameters = [
+                            (range_min + range_max) / 2,
+                            range_max,
+                            range_max,
+                        ]
                         var.MembershipFunctions[2].Name = "high"
                         break
         except Exception:

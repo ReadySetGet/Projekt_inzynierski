@@ -31,7 +31,6 @@ class CentralEventBus(QObject):
         """
         if view_model not in self._registered_view_models:
             self._registered_view_models.append(view_model)
-            # Connect the view model's signals to our global signals
             view_model.notify_data_changed.connect(self._request_data_refresh)
 
     def _request_data_refresh(self) -> None:

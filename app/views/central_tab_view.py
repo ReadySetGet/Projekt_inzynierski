@@ -103,7 +103,6 @@ class CentralTabWidget(BaseTabView):
         self.setObjectName("centralTab")
         self.status_bar = status_bar
 
-        # Initialize view model
         self.view_model = CentralTabViewModel()
         self.view_model.setParent(self)
 
@@ -358,7 +357,6 @@ class CentralTabWidget(BaseTabView):
 
     def _connect_view_model_signals(self):
         """Connect view model signals to widget slots."""
-        # Connect to data changed signal for refreshing MF plots
         if hasattr(self.view_model, "data_changed"):
             self.view_model.data_changed.connect(self._on_data_changed)
 
@@ -371,10 +369,8 @@ class CentralTabWidget(BaseTabView):
 
     def _load_mf_plots(self):
         """Load and display membership function plots for the selected input or output variable."""
-        # Clear existing plots
         self._clear_mf_plots()
 
-        # Get fuzzy service
         fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
         if not fuzzy_service:
             return
@@ -404,14 +400,11 @@ class CentralTabWidget(BaseTabView):
         if not variable_data:
             return
 
-        # Get MFs for this variable
         mfs = variable_data.get("membership_functions", [])
         var_range = variable_data.get("range", [0, 100])
 
-        # Update plot range
         self.mf_plot_graph.setXRange(var_range[0], var_range[1])
 
-        # Update plot labels
         var_type_label = "Input" if variable_type == "input" else "Output"
         self.mf_plot_graph.setLabel("bottom", f"{var_type_label} variable: {variable_name}", color="black")
 
@@ -427,14 +420,12 @@ class CentralTabWidget(BaseTabView):
             "#FF8800",
         ]
 
-        # Create a plot for each MF
         for i, mf in enumerate(mfs):
             mf_type = mf.get("type", "trimf")
             mf_name = mf.get("name", f"MF{i}")
             mf_params = mf.get("parameters", [])
             color = colors[i % len(colors)]
 
-            # Create plot based on MF type
             plot_obj = self._create_mf_plot(mf_type, mf_name, mf_params, var_range, color, i)
             if plot_obj:
                 self.mf_plots.append(
@@ -477,7 +468,6 @@ class CentralTabWidget(BaseTabView):
                     color=color,
                     central_x=central_x,
                 )
-                # Connect anchor changes to update fuzzy service
                 self._connect_plot_to_fuzzy_service(plot, mf_index, "trimf")
                 return plot
 
@@ -547,7 +537,6 @@ class CentralTabWidget(BaseTabView):
             mf_index: Index of the MF
             mf_type: Type of the MF
         """
-        # Connect anchor signals to update handler
         if mf_type == "trimf":
             if hasattr(plot, "triangle_left_anchor"):
                 plot.triangle_left_anchor.sigPositionChangeFinished.connect(
@@ -561,7 +550,6 @@ class CentralTabWidget(BaseTabView):
                 plot.triangle_right_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_triangle_anchor_changed(plot, mf_index)
                 )
-            # Connect position anchor (moves entire plot)
             if hasattr(plot, "position_anchor"):
                 plot.position_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_triangle_anchor_changed(plot, mf_index)
@@ -583,7 +571,6 @@ class CentralTabWidget(BaseTabView):
                 plot.trapezoid_right_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
                 )
-            # Connect position anchor (moves entire plot)
             if hasattr(plot, "position_anchor"):
                 plot.position_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
@@ -595,7 +582,6 @@ class CentralTabWidget(BaseTabView):
                 plot.sigma_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_gauss_anchor_changed(plot, mf_index)
                 )
-            # Connect position anchor (moves entire plot)
             if hasattr(plot, "position_anchor"):
                 plot.position_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_gauss_anchor_changed(plot, mf_index)
@@ -607,7 +593,6 @@ class CentralTabWidget(BaseTabView):
                 plot.a_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
             if hasattr(plot, "b_anchor"):
                 plot.b_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
-            # Connect position anchor (moves entire plot)
             if hasattr(plot, "position_anchor"):
                 plot.position_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_bell_anchor_changed(plot, mf_index)
@@ -618,7 +603,6 @@ class CentralTabWidget(BaseTabView):
         # Extract parameters from plot data: [a, b, c]
         # tri_x format: [range_min, a, b, c, range_max]
         if hasattr(plot, "tri_x") and len(plot.tri_x) >= 5:
-            # Get the variable range for this MF
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
@@ -640,7 +624,6 @@ class CentralTabWidget(BaseTabView):
         # Extract parameters from plot data: [a, b, c, d]
         # trap_x format: [range_min, a, b, c, d, range_max]
         if hasattr(plot, "trap_x") and len(plot.trap_x) >= 6:
-            # Get the variable range for this MF
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
@@ -664,7 +647,6 @@ class CentralTabWidget(BaseTabView):
         """Handle Gaussian anchor position changes and update fuzzy service."""
         # Extract parameters: [sigma, mu]
         if hasattr(plot, "sigma_data") and hasattr(plot, "mu_data"):
-            # Get the variable range for this MF
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
@@ -680,7 +662,6 @@ class CentralTabWidget(BaseTabView):
         """Handle Bell anchor position changes and update fuzzy service."""
         # Extract parameters: [a, b, c]
         if hasattr(plot, "a_data") and hasattr(plot, "b_data") and hasattr(plot, "c_data"):
-            # Get the variable range for this MF
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
@@ -734,7 +715,6 @@ class CentralTabWidget(BaseTabView):
         else:
             return
 
-        # Update the parameters
         success = fuzzy_service.update_membership_function_parameters(
             variable_name, mf_index, new_params, variable_type
         )
@@ -744,22 +724,17 @@ class CentralTabWidget(BaseTabView):
             if hasattr(self, "status_bar") and self.status_bar:
                 self.status_bar.showMessage(f"Updated MF parameters: {new_params}")
 
-            # Trigger refresh of other views
             if hasattr(self.view_model, "notify_data_changed"):
                 self.view_model.notify_data_changed.emit()
 
     def _clear_mf_plots(self):
         """Clear all existing MF plots from the graph."""
-        # Remove all plots from the graph
         for mf_plot_info in self.mf_plots:
             plot_obj = mf_plot_info.get("plot")
             if plot_obj:
-                # Remove all items from the plot widget using clear() method
                 if hasattr(plot_obj, "plot_widget"):
-                    # Clear all items from the plot widget
                     plot_obj.plot_widget.clear()
 
-        # Clear the list
         self.mf_plots = []
 
     def _setup_sample_data(self):
