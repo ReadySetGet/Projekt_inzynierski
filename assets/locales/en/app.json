@@ -96,5 +96,17 @@
   "CONVERT": "Convert",
   "SAVE": "Save",
   "MAMDANI": "Mamdani",
-  "SUGENO": "Sugeno"
+  "SUGENO": "Sugeno",
+  "RULES_LIST": "Rules List",
+  "DISPLAY_MODE": "Display Mode",
+  "ADD_ALL_RULES": "Add All Rules",
+  "ADD_RULE": "Add Rule",
+  "DELETE_RULE": "Delete Rule",
+  "SUCCESS": "Success",
+  "ALL_RULES_ADDED": "All possible rules have been added successfully.",
+  "CONFIRM": "Confirm",
+  "CLEAR_ALL_RULES_CONFIRM": "Are you sure you want to clear all rules?",
+  "NO_RULE_SELECTED": "No rule selected. Please select a rule to delete.",
+  "DELETE_RULE_CONFIRM": "Are you sure you want to delete this rule?",
+  "WARNING": "Warning"
 }

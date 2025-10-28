@@ -40,6 +40,13 @@ class FuzzyCalculationService:
         """Get the current system status."""
         return self._state_manager.get_system_status()
 
+    def get_system_name(self) -> str:
+        """Get the system name."""
+        try:
+            return self._state_manager.fis_model._fis.Name
+        except Exception:
+            return "Fuzzy System"
+
     def get_inference_state(self) -> str:
         """Get the current inference state."""
         return self._state_manager.inference_state
@@ -185,7 +192,7 @@ class FuzzyCalculationService:
             antecedent = [0] * len(self.get_input_variables())
         if consequent is None:
             consequent = [0] * len(self.get_output_variables())
-        return self._rule_manager.add_rule(rule_name, antecedent, consequent, weight, connection, is_mf)
+        return self._rule_manager.add_rule(antecedent, consequent, rule_name, weight, connection, is_mf)
 
     def delete_rule(self, rule_index: int) -> bool:
         """Delete a rule by index."""
@@ -217,6 +224,10 @@ class FuzzyCalculationService:
     def get_rule_text(self, rule_index: int) -> str:
         """Get the text representation of a rule."""
         return self._rule_manager.get_rule_text(rule_index)
+
+    def add_all_possible_rules(self) -> bool:
+        """Add all possible rules based on current inputs and outputs."""
+        return self._rule_manager.add_all_possible_rules()
 
     # Inference Operations
     def perform_inference(self, inputs: List[float]) -> Tuple[List[float], bool]:

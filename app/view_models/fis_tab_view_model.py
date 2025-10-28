@@ -156,8 +156,16 @@ class FisTabViewModel(BaseViewModel):
                 b = x_min + b * (x_max - x_min)
                 c = x_min + c * (x_max - x_min)
 
-            y[(x >= a) & (x <= b)] = (x[(x >= a) & (x <= b)] - a) / (b - a)
-            y[(x > b) & (x <= c)] = (c - x[(x > b) & (x <= c)]) / (c - b)
+            # Avoid division by zero for degenerate triangles
+            if abs(b - a) > 1e-10:
+                y[(x >= a) & (x <= b)] = (x[(x >= a) & (x <= b)] - a) / (b - a)
+            else:
+                y[(x >= a) & (x <= b)] = 1.0 if b == a else 0.0
+
+            if abs(c - b) > 1e-10:
+                y[(x > b) & (x <= c)] = (c - x[(x > b) & (x <= c)]) / (c - b)
+            else:
+                y[(x > b) & (x <= c)] = 1.0 if c == b else 0.0
 
         elif mf_type == "trapmf" and len(parameters) >= 4:
             # Trapezoidal membership function
