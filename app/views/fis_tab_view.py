@@ -11,6 +11,8 @@ Classes:
 Temporarily(?) imports placeholder classes in MembershipFunction and InOutput.
 """
 
+from typing import List, Optional
+
 import pyqtgraph as pg
 from PyQt6 import QtCore, QtGui, QtWidgets
 
@@ -63,6 +65,11 @@ class FisTabView(BaseTabView):
         colors: table of colours used to differentiate different membership functions.
     """
 
+    # Signals for variable selection
+    input_selected = QtCore.pyqtSignal(object)  # Emits selected input InOutput object
+    output_selected = QtCore.pyqtSignal(object)  # Emits selected output InOutput object
+    selection_cleared = QtCore.pyqtSignal()  # Emits when selection is cleared
+
     membership_functions = []
     inputs = []
     outputs = []
@@ -72,15 +79,26 @@ class FisTabView(BaseTabView):
     middle_height = 180
     gap = 160
     colors = [
-        "#0027FF",
-        "#FF0000",
-        "#3D7A00",
-        "#FF2BE7",
-        "#FFAE21",
-        "#2AFF83#DF79FF",
-        "#09FF24",
-        "#FF723B",
-        "#FF6CBA",
+        "#0027FF",  # Blue
+        "#FF0000",  # Red
+        "#3D7A00",  # Green
+        "#FF2BE7",  # Magenta
+        "#FFAE21",  # Orange
+        "#2AFF83",  # Light Green
+        "#DF79FF",  # Purple
+        "#09FF24",  # Bright Green
+        "#FF723B",  # Red-Orange
+        "#FF6CBA",  # Pink
+        "#00FFFF",  # Cyan
+        "#FFFF00",  # Yellow
+        "#8B4513",  # Brown
+        "#FF1493",  # Deep Pink
+        "#00FF7F",  # Spring Green
+        "#FFD700",  # Gold
+        "#DC143C",  # Crimson
+        "#32CD32",  # Lime Green
+        "#FF4500",  # Orange Red
+        "#9370DB",  # Medium Purple
     ]
 
     def __init__(self, parent=None):
@@ -96,21 +114,173 @@ class FisTabView(BaseTabView):
         self.view_model.setParent(self)
         self.set_view_model(self.view_model)
 
-        # Set up placeholder data for testing
-        self.membership_functions.append(MembershipFunction(x=[0, 10], y=[0, 10]))
-        self.membership_functions.append(MembershipFunction(x=[0, 10], y=[10, 0]))
-        self.membership_functions.append(MembershipFunction(x=[0, 10], y=[5, 5]))
-        self.input_1 = InOutput(mfs=self.membership_functions, name="Input 1")
-        self.inputs.append(self.input_1)
-        self.inputs.append(self.input_1)
-        self.output_1 = InOutput(mfs=self.membership_functions, name="Output 1")
-        self.outputs.append(self.output_1)
-        self.outputs.append(self.output_1)
-        super().__init__(parent)
+        # Connect to view model signals
+        self.view_model.fis_data_updated.connect(self._on_fis_data_updated)
+
+        # Selection state
+        self._selected_input: Optional[InOutput] = None
+        self._selected_output: Optional[InOutput] = None
+        self._plot_to_input_map = {}  # Maps plot widgets to input objects
+        self._plot_to_output_map = {}  # Maps plot widgets to output objects
+
         pg.setConfigOption("background", "w")
         self.setObjectName("fisTab")
         self._setup_ui()
         self._retranslate_ui()
+
+        # Load initial data from view model
+        self.view_model.refresh_data()
+
+    def _on_fis_data_updated(self, fis_data: dict):
+        """Handle FIS data updates from the view model.
+
+        Args:
+            fis_data: Dictionary containing system info, inputs, and outputs
+        """
+        # Clear existing data
+        self.remove_plots()
+        self.inputs.clear()
+        self.outputs.clear()
+        self.membership_functions.clear()
+
+        # Update system display
+        system_info = fis_data.get("system_info", {})
+        self._update_system_display(system_info)
+
+        # Convert and add inputs
+        inputs_data = fis_data.get("inputs", [])
+        for input_data in inputs_data:
+            input_obj = self._create_inoutput_from_data(input_data)
+            if input_obj:
+                self.inputs.append(input_obj)
+
+        # Convert and add outputs
+        outputs_data = fis_data.get("outputs", [])
+        for output_data in outputs_data:
+            output_obj = self._create_inoutput_from_data(output_data)
+            if output_obj:
+                self.outputs.append(output_obj)
+
+        # Redraw all plots
+        self._redraw_all_plots()
+
+    def _create_inoutput_from_data(self, var_data: dict) -> InOutput:
+        """Create an InOutput object from view model data.
+
+        Args:
+            var_data: Dictionary containing variable data from view model
+
+        Returns:
+            InOutput object or None if creation fails
+        """
+        try:
+            var_name = var_data.get("name", "Unknown")
+            mfs_data = var_data.get("membership_functions", [])
+
+            # Create membership functions
+            mfs = []
+            for i, mf_data in enumerate(mfs_data):
+                plot_data = mf_data.get("plot_data", ([], []))
+                x_data, y_data = plot_data
+
+                if x_data and y_data:
+                    mf = MembershipFunction(x=x_data, y=y_data)
+                    mfs.append(mf)
+
+            # Create InOutput object
+            if mfs:
+                return InOutput(mfs=mfs, name=var_name)
+            else:
+                # Create default empty membership function if none provided
+                default_mf = MembershipFunction(x=[0, 1], y=[0, 0])
+                return InOutput(mfs=[default_mf], name=var_name)
+
+        except Exception:
+            return None
+
+    def _update_system_display(self, system_info: dict):
+        """Update the system display information.
+
+        Args:
+            system_info: Dictionary containing system information
+        """
+        system_type = system_info.get("type", "Mamdani")
+        self.box_system_label.setText(f"{system_type}\nType 1")
+
+    def _redraw_all_plots(self):
+        """Redraw all input and output plots."""
+        if not self.inputs and not self.outputs:
+            return
+
+        # Calculate positions and draw plots
+        if self.inputs:
+            input_pos = self._calculate_plot_positions(self.inputs, "input")
+            for i in range(len(self.inputs)):
+                self._plot_graphs(position_y=input_pos[i], position_x=20, data=self.inputs[i])
+
+        if self.outputs:
+            output_pos = self._calculate_plot_positions(self.outputs, "output")
+            for i in range(len(self.outputs)):
+                self._plot_graphs(position_y=output_pos[i], position_x=330, data=self.outputs[i])
+
+        self._draw_lines()
+
+        # Restore selection highlighting after plots are redrawn
+        self._restore_selection_highlighting()
+
+    def _restore_selection_highlighting(self):
+        """Restore selection highlighting based on fuzzy service state."""
+        if not hasattr(self.view_model, "fuzzy_service"):
+            return
+
+        fuzzy_service = self.view_model.fuzzy_service
+        selected_input_name = fuzzy_service.get_selected_input_name()
+        selected_output_name = fuzzy_service.get_selected_output_name()
+
+        # Clear current selection state
+        self._selected_input = None
+        self._selected_output = None
+
+        # Find and restore input selection
+        if selected_input_name:
+            for input_data in self.inputs:
+                if input_data.GetName() == selected_input_name:
+                    self._selected_input = input_data
+                    break
+
+        # Find and restore output selection
+        if selected_output_name:
+            for output_data in self.outputs:
+                if output_data.GetName() == selected_output_name:
+                    self._selected_output = output_data
+                    break
+
+        # Apply visual highlighting
+        self._update_plot_styling()
+
+    def refresh_selection(self):
+        """Manually refresh the selection highlighting."""
+        self._restore_selection_highlighting()
+
+    def get_membership_function_color(self, mf_index: int) -> str:
+        """Get color for a membership function by index.
+
+        Args:
+            mf_index: Index of the membership function
+
+        Returns:
+            Color string in hex format
+        """
+        color_index = mf_index % len(self.colors)
+        return self.colors[color_index]
+
+    def get_available_colors(self) -> List[str]:
+        """Get list of all available colors for membership functions.
+
+        Returns:
+            List of color strings in hex format
+        """
+        return self.colors.copy()
 
     def _setup_ui(self):
         """Set up all the GUI sub elements."""
@@ -135,38 +305,29 @@ class FisTabView(BaseTabView):
         self.graph_frame.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
         self.graph_frame.setObjectName("graph_frame")
 
-        # Calculate plot positions for inputs and outputs
-        # plot_positions = self._calculate_plot_positions(self.inputs, "input")
-        # for i in range(len(self.inputs)):
-        #     self.plot_graphs(position_y=plot_positions[i], position_x=20,
-        #                     data=self.inputs[i])
-
-        # plot_positions = self._calculate_plot_positions(self.outputs, "output")
-        # for i in range(len(self.outputs)):
-        #     self.plot_graphs(position_y=plot_positions[i], position_x=330,
-        #                     data=self.outputs[i])
-
+        # Initialize graphics scene
         self.scene = QtWidgets.QGraphicsScene(parent=self.graph_frame)
         self.graph_frame.setScene(self.scene)
         self.pen = QtGui.QPen()
         self.pen.setColor(QtGui.QColor("black"))
         self.pen.setWidth(2)
-        self._draw_lines()
 
+        # Create system label
         self.box_system_label = QtWidgets.QLabel(parent=self.graph_frame)
         self.box_system_label.setGeometry(175, 180, 140, 140)
         self.box_system_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.box_system_label.setStyleSheet("background-color: white; border: 1px solid gray")
+
+        # Initialize empty state
         self.remove_plots()
-        # self.add_input(self.input_1)
-        self.add_output(self.output_1)
 
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
         _translate = QtCore.QCoreApplication.translate
-        self.box_system_label.setText(_translate("Main Window", "Mamdani \nType 1"))
+        # System display will be updated when data is loaded
+        self.box_system_label.setText(_translate("Main Window", "Loading..."))
         self.system_label.setText(_translate("MainWindow", "System:"))
-        self.name_label.setText(_translate("MainWindow", "Placeholder"))
+        self.name_label.setText(_translate("MainWindow", "FIS System"))
 
     def _plot_graphs(self, position_y, position_x, data):
         """Plot all the input or output data as graphs and label them.
@@ -182,13 +343,26 @@ class FisTabView(BaseTabView):
         in_out_plot = pg.PlotWidget(parent=self.graph_frame)
         mfs = data.GetMfs()
         for i in range(len(mfs)):
-            if i >= 10:
-                in_out_plot.plot(mfs[i].getX(), mfs[i].getY(), pen="b")
-            else:
-                in_out_plot.plot(mfs[i].getX(), mfs[i].getY(), pen=self.colors[i])
+            # Cycle through colors if we have more MFs than colors
+            color_index = i % len(self.colors)
+            color = self.colors[color_index]
+            x_data = mfs[i].getX()
+            y_data = mfs[i].getY()
+            in_out_plot.plot(x_data, y_data, pen=color)
         self.plots.append(in_out_plot)
+
+        # Set initial styling
         in_out_plot.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
         in_out_plot.setGeometry(QtCore.QRect(position_x, position_y, 140, 140))
+
+        # Enable mouse events for click handling
+        in_out_plot.scene().sigMouseClicked.connect(lambda event, plot=in_out_plot: self._on_plot_clicked(event, plot))
+
+        # Determine if this is an input or output based on position
+        if position_x == 20:  # Input position
+            self._plot_to_input_map[in_out_plot] = data
+        elif position_x == 330:  # Output position
+            self._plot_to_output_map[in_out_plot] = data
 
         name_label = QtWidgets.QLabel(parent=self.graph_frame)
         name_label.setGeometry(QtCore.QRect(position_x, position_y + 140, 140, 20))
@@ -197,6 +371,8 @@ class FisTabView(BaseTabView):
         name_label.setText(f"{data.GetName()} ({len(data.GetMfs())} MFs)")
         self.labels.append(name_label)
 
+        in_out_plot.show()
+        name_label.show()
         hide_axi(in_out_plot)
 
     def _calculate_plot_positions(self, data, side):
@@ -259,6 +435,128 @@ class FisTabView(BaseTabView):
         for point in self.points:
             self.scene.addLine(point[0], point[1], 255, 180, self.pen)
 
+    def _on_plot_clicked(self, event, plot):
+        """Handle click events on input/output plots.
+
+        Args:
+            event: Mouse click event
+            plot: The plot widget that was clicked
+        """
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            # Check if this is an input plot
+            if plot in self._plot_to_input_map:
+                input_data = self._plot_to_input_map[plot]
+                self._select_input(input_data)
+            # Check if this is an output plot
+            elif plot in self._plot_to_output_map:
+                output_data = self._plot_to_output_map[plot]
+                self._select_output(output_data)
+
+    def _select_input(self, input_data: InOutput):
+        """Select an input variable.
+
+        Args:
+            input_data: The InOutput object representing the input
+        """
+        # Clear previous selections
+        self._clear_selection()
+
+        # Set new selection
+        self._selected_input = input_data
+
+        # Update fuzzy service with selection
+        if hasattr(self.view_model, "fuzzy_service"):
+            self.view_model.fuzzy_service.set_selected_input(input_data.GetName())
+
+        # Update visual feedback
+        self._update_plot_styling()
+
+        # Notify data refresh
+        if hasattr(self.view_model, "notify_data_changed"):
+            self.view_model.notify_data_changed.emit()
+
+        # Emit signal
+        self.input_selected.emit(input_data)
+
+    def _select_output(self, output_data: InOutput):
+        """Select an output variable.
+
+        Args:
+            output_data: The InOutput object representing the output
+        """
+        # Clear previous selections
+        self._clear_selection()
+
+        # Set new selection
+        self._selected_output = output_data
+
+        # Update fuzzy service with selection
+        if hasattr(self.view_model, "fuzzy_service"):
+            self.view_model.fuzzy_service.set_selected_output(output_data.GetName())
+
+        # Update visual feedback
+        self._update_plot_styling()
+
+        # Notify data refresh
+        if hasattr(self.view_model, "notify_data_changed"):
+            self.view_model.notify_data_changed.emit()
+
+        # Emit signal
+        self.output_selected.emit(output_data)
+
+    def _clear_selection(self):
+        """Clear current selection."""
+        self._selected_input = None
+        self._selected_output = None
+
+        # Update fuzzy service with cleared selection
+        if hasattr(self.view_model, "fuzzy_service"):
+            self.view_model.fuzzy_service.clear_selection()
+
+        self._update_plot_styling()
+
+        # Notify data refresh
+        if hasattr(self.view_model, "notify_data_changed"):
+            self.view_model.notify_data_changed.emit()
+
+        self.selection_cleared.emit()
+
+    def _update_plot_styling(self):
+        """Update the visual styling of plots based on selection state."""
+        # Reset all plots to default styling
+        for plot in self.plots:
+            plot.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
+
+        # Highlight selected input
+        if self._selected_input:
+            for plot, input_data in self._plot_to_input_map.items():
+                if input_data == self._selected_input:
+                    plot.setStyleSheet("background-color: #E5E8E8; border: 3px solid #0078D4")
+                    break
+
+        # Highlight selected output
+        if self._selected_output:
+            for plot, output_data in self._plot_to_output_map.items():
+                if output_data == self._selected_output:
+                    plot.setStyleSheet("background-color: #E5E8E8; border: 3px solid #0078D4")
+                    break
+
+    def get_selected_input(self) -> Optional[InOutput]:
+        """Get the currently selected input.
+
+        Returns:
+            Selected input InOutput object or None
+        """
+        return self._selected_input
+
+    def get_selected_output(self) -> Optional[InOutput]:
+        """Get the currently selected output.
+
+        Returns:
+            Selected output InOutput object or None
+        """
+        return self._selected_output
+
     def remove_plots(self):
         """Remove all plots, labels and points from the widget.
 
@@ -274,6 +572,14 @@ class FisTabView(BaseTabView):
         self.plots.clear()
         self.scene.clear()
         self.points.clear()
+
+        # Clear mapping dictionaries
+        self._plot_to_input_map.clear()
+        self._plot_to_output_map.clear()
+
+        # Clear selection state
+        self._selected_input = None
+        self._selected_output = None
 
     def add_input(self, inp):
         """Add a new input to the system.

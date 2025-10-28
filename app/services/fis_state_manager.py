@@ -20,6 +20,10 @@ class FISStateManager:
         self._last_inference_inputs = []
         self._inference_state = "idle"  # idle, calculating, error
 
+        # Selection tracking
+        self._selected_input_name: str = None
+        self._selected_output_name: str = None
+
         # Create the specified FIS type
         if fis_type.lower() == "sugeno":
             self.create_sugeno_fis("default_sugeno_fis")
@@ -52,6 +56,53 @@ class FISStateManager:
         """Get the last inference inputs."""
         return self._last_inference_inputs
 
+    @property
+    def selected_input_name(self) -> str:
+        """Get the currently selected input name."""
+        return self._selected_input_name
+
+    @property
+    def selected_output_name(self) -> str:
+        """Get the currently selected output name."""
+        return self._selected_output_name
+
+    def set_selected_input(self, input_name: str) -> None:
+        """Set the selected input variable.
+
+        Args:
+            input_name: Name of the input variable to select
+        """
+        self._selected_input_name = input_name
+        # Clear output selection when input is selected
+        self._selected_output_name = None
+
+    def set_selected_output(self, output_name: str) -> None:
+        """Set the selected output variable.
+
+        Args:
+            output_name: Name of the output variable to select
+        """
+        self._selected_output_name = output_name
+        # Clear input selection when output is selected
+        self._selected_input_name = None
+
+    def clear_selection(self) -> None:
+        """Clear all selections."""
+        self._selected_input_name = None
+        self._selected_output_name = None
+
+    def get_selected_variable_info(self) -> Dict[str, Any]:
+        """Get information about the currently selected variable.
+
+        Returns:
+            Dictionary containing selection information
+        """
+        return {
+            "selected_input": self._selected_input_name,
+            "selected_output": self._selected_output_name,
+            "has_selection": self._selected_input_name is not None or self._selected_output_name is not None,
+        }
+
     def get_system_status(self) -> Dict[str, Any]:
         """Get the current system status."""
         return {
@@ -61,6 +112,8 @@ class FISStateManager:
             "has_outputs": len(self._fis_model._fis.Outputs) > 0,
             "has_rules": len(self._fis_model._fis.Rules) > 0,
             "is_ready": self._is_system_ready_for_inference(),
+            "selected_input": self._selected_input_name,
+            "selected_output": self._selected_output_name,
         }
 
     def set_inference_state(self, state: str) -> None:
@@ -84,6 +137,9 @@ class FISStateManager:
         try:
             self._fis_model = FISModel()
             self._fis_type = "mamdani"
+            # Clear any existing selections
+            self._selected_input_name = None
+            self._selected_output_name = None
             self._add_default_variables()
             return True
         except Exception:
@@ -101,6 +157,9 @@ class FISStateManager:
         try:
             self._fis_model = FISModel()
             self._fis_type = "sugeno"
+            # Clear any existing selections
+            self._selected_input_name = None
+            self._selected_output_name = None
             self._add_default_variables()
             return True
         except Exception:
@@ -166,22 +225,86 @@ class FISStateManager:
             # Add membership functions to the output variable
             self._add_default_output_membership_functions()
 
+        # Set the first input as selected by default
+        if self._fis_model._fis.Inputs:
+            self._selected_input_name = self._fis_model._fis.Inputs[0].Name
+
     def _add_default_input_membership_functions(self) -> None:
         """Add default membership functions to the input variable."""
         try:
-            # Add triangular membership functions using predefined types
+            # Get the input range for scaling
+            input_range = self._fis_model._fis.Inputs[0].Range if self._fis_model._fis.Inputs else [0, 10]
+            range_min, range_max = input_range[0], input_range[1]
+
+            # Add triangular membership functions with parameters scaled to range
+            # Low: [0, 0, 5] for range [0, 10]
             self._fis_model.add_mf("input1", "input", "trojkatna")
+            if self._fis_model._fis.Inputs and self._fis_model._fis.Inputs[0].MembershipFunctions:
+                self._fis_model._fis.Inputs[0].MembershipFunctions[0].Parameters = [
+                    range_min,
+                    range_min,
+                    (range_min + range_max) / 2,
+                ]
+                self._fis_model._fis.Inputs[0].MembershipFunctions[0].Name = "low"
+
+            # Medium: [0, 5, 10] for range [0, 10]
             self._fis_model.add_mf("input1", "input", "trojkatna")
+            if self._fis_model._fis.Inputs and self._fis_model._fis.Inputs[0].MembershipFunctions:
+                self._fis_model._fis.Inputs[0].MembershipFunctions[1].Parameters = [
+                    range_min,
+                    (range_min + range_max) / 2,
+                    range_max,
+                ]
+                self._fis_model._fis.Inputs[0].MembershipFunctions[1].Name = "medium"
+
+            # High: [5, 10, 10] for range [0, 10]
             self._fis_model.add_mf("input1", "input", "trojkatna")
-        except Exception as e:
-            print(f"Error adding input membership functions: {e}")
+            if self._fis_model._fis.Inputs and self._fis_model._fis.Inputs[0].MembershipFunctions:
+                self._fis_model._fis.Inputs[0].MembershipFunctions[2].Parameters = [
+                    (range_min + range_max) / 2,
+                    range_max,
+                    range_max,
+                ]
+                self._fis_model._fis.Inputs[0].MembershipFunctions[2].Name = "high"
+        except Exception:
+            pass
 
     def _add_default_output_membership_functions(self) -> None:
         """Add default membership functions to the output variable."""
         try:
-            # Add triangular membership functions using predefined types
+            # Get the output range for scaling
+            output_range = self._fis_model._fis.Outputs[0].Range if self._fis_model._fis.Outputs else [0, 10]
+            range_min, range_max = output_range[0], output_range[1]
+
+            # Add triangular membership functions with parameters scaled to range
+            # Low: [0, 0, 5] for range [0, 10]
             self._fis_model.add_mf("output1", "output", "trojkatna")
+            if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:
+                self._fis_model._fis.Outputs[0].MembershipFunctions[0].Parameters = [
+                    range_min,
+                    range_min,
+                    (range_min + range_max) / 2,
+                ]
+                self._fis_model._fis.Outputs[0].MembershipFunctions[0].Name = "low"
+
+            # Medium: [0, 5, 10] for range [0, 10]
             self._fis_model.add_mf("output1", "output", "trojkatna")
+            if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:
+                self._fis_model._fis.Outputs[0].MembershipFunctions[1].Parameters = [
+                    range_min,
+                    (range_min + range_max) / 2,
+                    range_max,
+                ]
+                self._fis_model._fis.Outputs[0].MembershipFunctions[1].Name = "medium"
+
+            # High: [5, 10, 10] for range [0, 10]
             self._fis_model.add_mf("output1", "output", "trojkatna")
-        except Exception as e:
-            print(f"Error adding output membership functions: {e}")
+            if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:
+                self._fis_model._fis.Outputs[0].MembershipFunctions[2].Parameters = [
+                    (range_min + range_max) / 2,
+                    range_max,
+                    range_max,
+                ]
+                self._fis_model._fis.Outputs[0].MembershipFunctions[2].Name = "high"
+        except Exception:
+            pass

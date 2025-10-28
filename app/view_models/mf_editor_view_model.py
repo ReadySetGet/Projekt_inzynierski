@@ -34,13 +34,12 @@ class MFEditorViewModel(BaseViewModel):
         self._fuzzy_service = fuzzy_service
 
     def _emit_system_changed(self) -> None:
-        """Emit system_changed signal to notify other components."""
+        """Emit notify_data_changed signal to notify other components."""
         if self._updating:
             return
         self._updating = True
         try:
-            if self._fuzzy_service:
-                self._fuzzy_service.system_changed.emit()
+            self.notify_data_changed.emit()
         finally:
             self._updating = False
 
@@ -192,10 +191,15 @@ class MFEditorViewModel(BaseViewModel):
 
         mf_info = self.get_mf_info(variable_name, mf_index)
         if mf_info and mf_info["type"] == new_type:
+            # If already the correct type, check if parameters need updating
             expected_params = self.get_default_parameters_for_type(new_type)
             current_params = mf_info["parameters"]
+            # Always update to ensure parameters are properly scaled to variable range
             if len(current_params) != len(expected_params):
+                # Parameter count changed, definitely update
                 self.update_mf_parameters(variable_name, mf_index, expected_params)
+                self._update_mf_list()
+                self._emit_system_changed()
             return True
 
         type_mapping = {
@@ -347,20 +351,65 @@ class MFEditorViewModel(BaseViewModel):
             mf_type: The membership function type (UI name)
 
         Returns:
-            List of default parameters for the type
+            List of default parameters for the type, scaled to variable range
         """
-        defaults = {
-            "Triangle": [0, 0.5, 1],  # 3 parameters: left, center, right
-            "Trapezoid": [
-                0,
-                0.3,
-                0.7,
-                1,
-            ],  # 4 parameters: left, left_shoulder, right_shoulder, right
-            "Gauss": [0.5, 0.2],  # 2 parameters: center, width
-            "Bell": [0.5, 0.2, 2],  # 3 parameters: center, width, slope
+        # Get the variable range for scaling
+        var_range = self._get_current_variable_range()
+        if not var_range:
+            var_range = [0, 1]
+
+        range_min, range_max = var_range[0], var_range[1]
+        range_span = range_max - range_min
+
+        # Default parameters in normalized [0, 1] space
+        defaults_normalized = {
+            "Triangle": [0, 0.5, 1],  # 3 parameters: a, b, c
+            "Trapezoid": [0, 0.3, 0.7, 1],  # 4 parameters: a, b, c, d
+            "Gauss": [0.2, 0.5],  # 2 parameters: sigma, mu (order matters!)
+            "Bell": [0.2, 3, 0.5],  # 3 parameters: a (width), b (slope), c (center)
         }
-        return defaults.get(mf_type, [0, 0.5, 1])
+
+        normalized = defaults_normalized.get(mf_type, [0, 0.5, 1])
+
+        # Scale parameters to actual variable range
+        # For Gauss and Bell: only scale position parameters, not shape parameters
+        if mf_type == "Gauss":
+            # sigma (width) scales with range span, mu (center) scales to range
+            return [
+                round(normalized[0] * range_span, 2),  # sigma
+                round(range_min + normalized[1] * range_span, 2),  # mu
+            ]
+        elif mf_type == "Bell":
+            # a (width) scales with range span, b (slope) stays constant, c (center) scales to range
+            return [
+                round(normalized[0] * range_span, 2),  # a (width)
+                normalized[1],  # b (slope) - dimensionless
+                round(range_min + normalized[2] * range_span, 2),  # c (center)
+            ]
+        else:
+            # Triangle and Trapezoid: all parameters are positions, scale to range
+            return [round(range_min + p * range_span, 2) for p in normalized]
+
+    def _get_current_variable_range(self) -> Optional[List[float]]:
+        """Get the range of the currently selected variable.
+
+        Returns:
+            [min, max] or None if no variable selected
+        """
+        if not self._model or not hasattr(self._model, "_fis"):
+            return None
+
+        if not self._selected_variable or not self._selected_variable_type:
+            return None
+
+        fis = self._model._fis
+        search_list = fis.Inputs if self._selected_variable_type == "input" else fis.Outputs
+
+        for var in search_list:
+            if var.Name == self._selected_variable:
+                return var.Range
+
+        return None
 
     def _parse_parameters(self, parameters_str: str) -> List[float]:
         """Parse parameters string into a list of floats.

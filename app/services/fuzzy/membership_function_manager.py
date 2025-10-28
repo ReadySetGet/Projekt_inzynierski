@@ -120,7 +120,8 @@ class MembershipFunctionManager:
             bool: True if successful, False otherwise.
         """
         try:
-            result = self._fis_model.change_mf_type(variable_name, mf_index, new_type, variable_type)
+            # FIS model expects: io_variable_name, input_or_output, mf_idx, new_mf_type
+            result = self._fis_model.change_mf_type(variable_name, variable_type, mf_index, new_type)
             return result == 1
         except Exception:
             return False
