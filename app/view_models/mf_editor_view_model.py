@@ -353,7 +353,6 @@ class MFEditorViewModel(BaseViewModel):
         Returns:
             List of default parameters for the type, scaled to variable range
         """
-        # Get the variable range for scaling
         var_range = self._get_current_variable_range()
         if not var_range:
             var_range = [0, 1]

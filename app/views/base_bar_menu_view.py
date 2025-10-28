@@ -39,9 +39,7 @@ class BaseBarMenuView(QMenuBar):
         """
         self.view_model = view_model
         if self.view_model:
-            # Connect to view model signals
             self.view_model.theme_changed.connect(self.reload_stylesheet)
-            # Connect to language change signal
             self.view_model.translate_manager.language_changed.connect(self._on_language_changed)
             # Initial stylesheet load
             self.reload_stylesheet()

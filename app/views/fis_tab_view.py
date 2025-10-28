@@ -114,7 +114,6 @@ class FisTabView(BaseTabView):
         self.view_model.setParent(self)
         self.set_view_model(self.view_model)
 
-        # Connect to view model signals
         self.view_model.fis_data_updated.connect(self._on_fis_data_updated)
 
         # Selection state
@@ -137,24 +136,20 @@ class FisTabView(BaseTabView):
         Args:
             fis_data: Dictionary containing system info, inputs, and outputs
         """
-        # Clear existing data
         self.remove_plots()
         self.inputs.clear()
         self.outputs.clear()
         self.membership_functions.clear()
 
-        # Update system display
         system_info = fis_data.get("system_info", {})
         self._update_system_display(system_info)
 
-        # Convert and add inputs
         inputs_data = fis_data.get("inputs", [])
         for input_data in inputs_data:
             input_obj = self._create_inoutput_from_data(input_data)
             if input_obj:
                 self.inputs.append(input_obj)
 
-        # Convert and add outputs
         outputs_data = fis_data.get("outputs", [])
         for output_data in outputs_data:
             output_obj = self._create_inoutput_from_data(output_data)
@@ -177,7 +172,6 @@ class FisTabView(BaseTabView):
             var_name = var_data.get("name", "Unknown")
             mfs_data = var_data.get("membership_functions", [])
 
-            # Create membership functions
             mfs = []
             for i, mf_data in enumerate(mfs_data):
                 plot_data = mf_data.get("plot_data", ([], []))
@@ -187,11 +181,9 @@ class FisTabView(BaseTabView):
                     mf = MembershipFunction(x=x_data, y=y_data)
                     mfs.append(mf)
 
-            # Create InOutput object
             if mfs:
                 return InOutput(mfs=mfs, name=var_name)
             else:
-                # Create default empty membership function if none provided
                 default_mf = MembershipFunction(x=[0, 1], y=[0, 0])
                 return InOutput(mfs=[default_mf], name=var_name)
 
@@ -212,7 +204,6 @@ class FisTabView(BaseTabView):
         if not self.inputs and not self.outputs:
             return
 
-        # Calculate positions and draw plots
         if self.inputs:
             input_pos = self._calculate_plot_positions(self.inputs, "input")
             for i in range(len(self.inputs)):
@@ -237,7 +228,6 @@ class FisTabView(BaseTabView):
         selected_input_name = fuzzy_service.get_selected_input_name()
         selected_output_name = fuzzy_service.get_selected_output_name()
 
-        # Clear current selection state
         self._selected_input = None
         self._selected_output = None
 
@@ -305,20 +295,17 @@ class FisTabView(BaseTabView):
         self.graph_frame.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
         self.graph_frame.setObjectName("graph_frame")
 
-        # Initialize graphics scene
         self.scene = QtWidgets.QGraphicsScene(parent=self.graph_frame)
         self.graph_frame.setScene(self.scene)
         self.pen = QtGui.QPen()
         self.pen.setColor(QtGui.QColor("black"))
         self.pen.setWidth(2)
 
-        # Create system label
         self.box_system_label = QtWidgets.QLabel(parent=self.graph_frame)
         self.box_system_label.setGeometry(175, 180, 140, 140)
         self.box_system_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.box_system_label.setStyleSheet("background-color: white; border: 1px solid gray")
 
-        # Initialize empty state
         self.remove_plots()
 
     def _retranslate_ui(self):
@@ -351,7 +338,6 @@ class FisTabView(BaseTabView):
             in_out_plot.plot(x_data, y_data, pen=color)
         self.plots.append(in_out_plot)
 
-        # Set initial styling
         in_out_plot.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
         in_out_plot.setGeometry(QtCore.QRect(position_x, position_y, 140, 140))
 
@@ -458,17 +444,13 @@ class FisTabView(BaseTabView):
         Args:
             input_data: The InOutput object representing the input
         """
-        # Clear previous selections
         self._clear_selection()
 
-        # Set new selection
         self._selected_input = input_data
 
-        # Update fuzzy service with selection
         if hasattr(self.view_model, "fuzzy_service"):
             self.view_model.fuzzy_service.set_selected_input(input_data.GetName())
 
-        # Update visual feedback
         self._update_plot_styling()
 
         # Notify data refresh
@@ -484,17 +466,13 @@ class FisTabView(BaseTabView):
         Args:
             output_data: The InOutput object representing the output
         """
-        # Clear previous selections
         self._clear_selection()
 
-        # Set new selection
         self._selected_output = output_data
 
-        # Update fuzzy service with selection
         if hasattr(self.view_model, "fuzzy_service"):
             self.view_model.fuzzy_service.set_selected_output(output_data.GetName())
 
-        # Update visual feedback
         self._update_plot_styling()
 
         # Notify data refresh
@@ -509,7 +487,6 @@ class FisTabView(BaseTabView):
         self._selected_input = None
         self._selected_output = None
 
-        # Update fuzzy service with cleared selection
         if hasattr(self.view_model, "fuzzy_service"):
             self.view_model.fuzzy_service.clear_selection()
 
@@ -573,11 +550,9 @@ class FisTabView(BaseTabView):
         self.scene.clear()
         self.points.clear()
 
-        # Clear mapping dictionaries
         self._plot_to_input_map.clear()
         self._plot_to_output_map.clear()
 
-        # Clear selection state
         self._selected_input = None
         self._selected_output = None
 

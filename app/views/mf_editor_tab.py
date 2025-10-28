@@ -44,7 +44,6 @@ class MFPropertiesWidget(BaseWidgetView):
         self.view_model.setParent(self)
         self.set_view_model(self.view_model)
 
-        # Get fuzzy service from view model
         self.fuzzy_service = self.view_model.fuzzy_service
         fis_model = self.fuzzy_service.get_fis_model()
         self.view_model.model = fis_model
@@ -60,7 +59,6 @@ class MFPropertiesWidget(BaseWidgetView):
         """Connect view model signals to view methods."""
         self.view_model.mf_list_updated.connect(self._update_table_from_model)
         self.view_model.variable_selected.connect(self._on_variable_selected_from_model)
-        # Connect view signals to view model
         self.add_mf_clicked.connect(self.view_model.refresh_data)
         self.remove_mf_clicked.connect(self.view_model.refresh_data)
 
@@ -240,7 +238,6 @@ class MFPropertiesWidget(BaseWidgetView):
                 type_dropdown.setCurrentText(mf_data["mf_type"])
             type_dropdown.blockSignals(False)
 
-            # Connect signal after setting initial value
             def make_type_change_handler(row_num, dropdown_ref):
                 def handler(index):
                     print(f"DEBUG: Signal fired! index={index}, row={row_num}")
@@ -344,7 +341,6 @@ class MFPropertiesWidget(BaseWidgetView):
             success = self.view_model.update_mf_parameters(self.view_model.selected_variable, current_row, params)
 
             if success:
-                # Update the table to reflect the changes
                 self.view_model.refresh_data()
         except Exception:
             pass
@@ -370,10 +366,8 @@ class MFPropertiesWidget(BaseWidgetView):
             success = self.view_model.update_mf_parameters(self.view_model.selected_variable, row, params)
 
             if success:
-                # Update the parameter field to match
                 self.mf_range_edit.setText(params_text)
         except Exception:
-            # Revert the item text on error
             try:
                 mf_info = self.view_model.get_mf_info(self.view_model.selected_variable, row)
                 if mf_info:

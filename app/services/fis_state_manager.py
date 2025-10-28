@@ -24,7 +24,6 @@ class FISStateManager:
         self._selected_input_name: str = None
         self._selected_output_name: str = None
 
-        # Create the specified FIS type
         if fis_type.lower() == "sugeno":
             self.create_sugeno_fis("default_sugeno_fis")
         else:
@@ -73,7 +72,6 @@ class FISStateManager:
             input_name: Name of the input variable to select
         """
         self._selected_input_name = input_name
-        # Clear output selection when input is selected
         self._selected_output_name = None
 
     def set_selected_output(self, output_name: str) -> None:
@@ -83,7 +81,6 @@ class FISStateManager:
             output_name: Name of the output variable to select
         """
         self._selected_output_name = output_name
-        # Clear input selection when output is selected
         self._selected_input_name = None
 
     def clear_selection(self) -> None:
@@ -137,7 +134,6 @@ class FISStateManager:
         try:
             self._fis_model = FISModel()
             self._fis_type = "mamdani"
-            # Clear any existing selections
             self._selected_input_name = None
             self._selected_output_name = None
             self._add_default_variables()
@@ -157,7 +153,6 @@ class FISStateManager:
         try:
             self._fis_model = FISModel()
             self._fis_type = "sugeno"
-            # Clear any existing selections
             self._selected_input_name = None
             self._selected_output_name = None
             self._add_default_variables()
@@ -174,7 +169,6 @@ class FISStateManager:
         if self._fis_type == "mamdani":
             return True
 
-        # Create new Mamdani FIS
         if not self.create_mamdani_fis():
             return False
 
@@ -190,7 +184,6 @@ class FISStateManager:
         if self._fis_type == "sugeno":
             return True
 
-        # Create new Sugeno FIS
         if not self.create_sugeno_fis():
             return False
 
@@ -207,36 +200,29 @@ class FISStateManager:
 
     def _add_default_variables(self) -> None:
         """Add default variables to the FIS system."""
-        # Add a default input variable
         self._fis_model.add_input()
         if self._fis_model._fis.Inputs:
             self._fis_model._fis.Inputs[0].Name = "input1"
             self._fis_model._fis.Inputs[0].Range = [0, 10]
 
-            # Add membership functions to the input variable
             self._add_default_input_membership_functions()
 
-        # Add a default output variable
         self._fis_model.add_output()
         if self._fis_model._fis.Outputs:
             self._fis_model._fis.Outputs[0].Name = "output1"
             self._fis_model._fis.Outputs[0].Range = [0, 10]
 
-            # Add membership functions to the output variable
             self._add_default_output_membership_functions()
 
-        # Set the first input as selected by default
         if self._fis_model._fis.Inputs:
             self._selected_input_name = self._fis_model._fis.Inputs[0].Name
 
     def _add_default_input_membership_functions(self) -> None:
         """Add default membership functions to the input variable."""
         try:
-            # Get the input range for scaling
             input_range = self._fis_model._fis.Inputs[0].Range if self._fis_model._fis.Inputs else [0, 10]
             range_min, range_max = input_range[0], input_range[1]
 
-            # Add triangular membership functions with parameters scaled to range
             # Low: [0, 0, 5] for range [0, 10]
             self._fis_model.add_mf("input1", "input", "trojkatna")
             if self._fis_model._fis.Inputs and self._fis_model._fis.Inputs[0].MembershipFunctions:
@@ -272,11 +258,9 @@ class FISStateManager:
     def _add_default_output_membership_functions(self) -> None:
         """Add default membership functions to the output variable."""
         try:
-            # Get the output range for scaling
             output_range = self._fis_model._fis.Outputs[0].Range if self._fis_model._fis.Outputs else [0, 10]
             range_min, range_max = output_range[0], output_range[1]
 
-            # Add triangular membership functions with parameters scaled to range
             # Low: [0, 0, 5] for range [0, 10]
             self._fis_model.add_mf("output1", "output", "trojkatna")
             if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:

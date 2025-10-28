@@ -40,9 +40,8 @@ class TopMenuViewModel(BaseViewModel):
 
     def add_input(self) -> None:
         """Handle add input button click."""
-        # Add a new input variable with default name and range
         input_count = self.fuzzy_service.get_input_count()
-        success = self.fuzzy_service.add_input_variable(f"input{input_count + 1}", 0.0, 100.0)
+        success = self.fuzzy_service.add_input_variable(f"input{input_count + 1}", 0.0, 10.0)
         if success:
             self.notify_data_changed.emit()
 
@@ -57,9 +56,8 @@ class TopMenuViewModel(BaseViewModel):
 
     def add_output(self) -> None:
         """Handle add output button click."""
-        # Add a new output variable with default name and range
         output_count = self.fuzzy_service.get_output_count()
-        success = self.fuzzy_service.add_output_variable(f"output{output_count}", 0.0, 100.0)
+        success = self.fuzzy_service.add_output_variable(f"output{output_count}", 0.0, 10.0)
         if success:
             self.notify_data_changed.emit()
 

@@ -117,7 +117,6 @@ class CentralTabViewModel(BaseViewModel):
         if not self.fuzzy_service:
             return
 
-        # Get system status to get the system name
         system_status = self.fuzzy_service.get_system_status()
         if system_status and "name" in system_status:
             self.system_name = system_status["name"]
@@ -154,7 +153,6 @@ class CentralTabViewModel(BaseViewModel):
 
         rule = self._rules[rule_index]
 
-        # Build antecedent text
         antecedent_parts = []
         for i, mf_idx in enumerate(rule["antecedent"]):
             if mf_idx > 0:  # 0 means no condition
@@ -165,7 +163,6 @@ class CentralTabViewModel(BaseViewModel):
                         is_not = "not " if (i < len(rule["is_mf"]) and rule["is_mf"][i] != 1) else ""
                         antecedent_parts.append(f"{input_name} is {is_not}{mf_name}")
 
-        # Build consequent text
         consequent_parts = []
         for i, mf_idx in enumerate(rule["consequent"]):
             if mf_idx > 0:  # 0 means no condition
@@ -177,7 +174,6 @@ class CentralTabViewModel(BaseViewModel):
                         is_not = "not " if (output_idx < len(rule["is_mf"]) and rule["is_mf"][output_idx] != 1) else ""
                         consequent_parts.append(f"{output_name} is {is_not}{mf_name}")
 
-        # Combine parts
         connection = " and " if rule["connection"] == 1 else " or "
         antecedent_text = connection.join(antecedent_parts)
         consequent_text = " and ".join(consequent_parts)
@@ -218,7 +214,6 @@ class CentralTabViewModel(BaseViewModel):
             return
         self._updating = True
         try:
-            # Update graphs
             self._update_data()
             self._update_membership_functions_plot()
         finally:
@@ -253,7 +248,6 @@ class CentralTabViewModel(BaseViewModel):
 
     def _update_membership_functions_plot(self) -> None:
         """Update the membership functions plot data."""
-        # Update plot
         if not self._fuzzy_service:
             return
 

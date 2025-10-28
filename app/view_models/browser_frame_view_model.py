@@ -37,11 +37,9 @@ class BrowserFrameViewModel(BaseViewModel):
         if not self.fuzzy_service:
             return
 
-        # Update system items (inputs, outputs, rules)
         self._system_items = self._get_system_items()
         self.system_browser_updated.emit(self._system_items)
 
-        # Update design items (membership functions, etc.)
         self._design_items = self._get_design_items()
         self.design_browser_updated.emit(self._design_items)
 
@@ -52,7 +50,6 @@ class BrowserFrameViewModel(BaseViewModel):
         if not self.fuzzy_service:
             return items
 
-        # Get input variables using service API
         input_variables = self.fuzzy_service.get_input_variables()
         for i, input_var in enumerate(input_variables):
             items.append(
@@ -65,7 +62,6 @@ class BrowserFrameViewModel(BaseViewModel):
                 }
             )
 
-        # Get output variables using service API
         output_variables = self.fuzzy_service.get_output_variables()
         for i, output_var in enumerate(output_variables):
             items.append(
@@ -78,7 +74,6 @@ class BrowserFrameViewModel(BaseViewModel):
                 }
             )
 
-        # Get rules using service API
         rules = self.fuzzy_service.get_rules()
         for i, rule in enumerate(rules):
             items.append(
@@ -102,7 +97,6 @@ class BrowserFrameViewModel(BaseViewModel):
         if not self.fuzzy_service:
             return items
 
-        # Get membership functions for input variables using service API
         input_variables = self.fuzzy_service.get_input_variables()
         for input_var in input_variables:
             var_name = input_var.get("name", "")
@@ -119,7 +113,6 @@ class BrowserFrameViewModel(BaseViewModel):
                     }
                 )
 
-        # Get membership functions for output variables using service API
         output_variables = self.fuzzy_service.get_output_variables()
         for output_var in output_variables:
             var_name = output_var.get("name", "")

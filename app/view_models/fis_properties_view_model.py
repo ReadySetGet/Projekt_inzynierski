@@ -110,11 +110,9 @@ class FisPropertiesViewModel(BaseViewModel):
 
         fis = fis_model._fis
 
-        # Update system name
         if hasattr(fis, "Name") and fis.Name:
             self.system_name = fis.Name
 
-        # Update system type
         if hasattr(fis, "__class__"):
             if "mamfis" in str(fis.__class__).lower():
                 self.system_type = "mamfis"
@@ -130,7 +128,6 @@ class FisPropertiesViewModel(BaseViewModel):
             fis_model.add_input()
             self._update_system_info()
 
-            # Get the newly added input
             if fis_model._fis.Inputs:
                 new_input = fis_model._fis.Inputs[-1]
                 self.input_added.emit(new_input.Name, len(fis_model._fis.Inputs) - 1)
@@ -156,7 +153,6 @@ class FisPropertiesViewModel(BaseViewModel):
             fis_model.add_output()
             self._update_system_info()
 
-            # Get the newly added output
             if fis_model._fis.Outputs:
                 new_output = fis_model._fis.Outputs[-1]
                 self.output_added.emit(new_output.Name, len(fis_model._fis.Outputs) - 1)

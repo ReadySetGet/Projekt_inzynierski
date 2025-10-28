@@ -77,9 +77,15 @@ class MembershipFunctionManager:
 
             for var in var_list:
                 if var.Name == variable_name:
-                    # Add the membership function using the FIS model
-                    result = self._fis_model.add_mf(variable_name, mf_name, mf_type, parameters, variable_type)
-                    return result == 1
+                    result = self._fis_model.add_mf(variable_name, variable_type, mf_type)
+
+                    if result == 1:
+                        if len(var.MembershipFunctions) > 0:
+                            new_mf = var.MembershipFunctions[-1]  # Get the last (newly added) MF
+                            new_mf.Name = mf_name
+                            new_mf.Parameters = parameters
+                        return True
+                    return False
             return False
         except Exception:
             return False

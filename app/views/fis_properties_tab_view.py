@@ -19,15 +19,12 @@ class FisPropertiesTabView(BaseWidgetView):
         super().__init__(qss_filename=qss_filename, parent=parent)
         self.setObjectName("fis_properties_tab")
 
-        # Initialize view model
         self.view_model = FisPropertiesViewModel()
         self.view_model.setParent(self)
         self.set_view_model(self.view_model)
 
-        # Initialize the system info from the fuzzy service
         self.view_model._update_system_info()
 
-        # Connect view model signals
         self._connect_view_model_signals()
 
         self._setup_ui()
@@ -113,11 +110,9 @@ class FisPropertiesTabView(BaseWidgetView):
         self.variable_info_text.setObjectName("variable_info_text")
         self.variable_info_text.setReadOnly(True)
 
-        # Connect list selection changes
         self.inputs_list.itemSelectionChanged.connect(self._on_input_selected)
         self.outputs_list.itemSelectionChanged.connect(self._on_output_selected)
 
-        # Update the UI with current data
         self._update_ui_from_model()
 
     def _retranslate_ui(self):
@@ -175,13 +170,10 @@ class FisPropertiesTabView(BaseWidgetView):
 
     def _update_ui_from_model(self):
         """Update UI elements from the model."""
-        # Update system name
         self.system_name_edit.setText(self.view_model.system_name)
 
-        # Update system type
         self.system_type_combo.setCurrentText(self.view_model.system_type)
 
-        # Update lists
         self._update_inputs_list()
         self._update_outputs_list()
 

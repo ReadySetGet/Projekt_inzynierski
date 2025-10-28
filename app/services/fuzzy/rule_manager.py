@@ -63,7 +63,6 @@ class RuleManager:
         """
         try:
             if is_mf is None:
-                # Generate default is_mf based on antecedent and consequent lengths
                 is_mf = [1] * (len(antecedent) + len(consequent))
 
             result = self._fis_model.add_rule(
@@ -71,7 +70,6 @@ class RuleManager:
                 antecedent + consequent + [weight, connection],
             )
             if result == 1:
-                # Set the rule name
                 if self._fis_model._fis.Rules:
                     self._fis_model._fis.Rules[-1].Name = rule_name
                 return True
@@ -205,7 +203,6 @@ class RuleManager:
             rule = self._fis_model._fis.Rules[rule_index]
             fis = self._fis_model._fis
 
-            # Build antecedent text
             antecedent_parts = []
             for i, mf_idx in enumerate(rule.Antecedent):
                 if mf_idx > 0:  # 0 means no condition
@@ -216,7 +213,6 @@ class RuleManager:
                             is_not = "not " if (i < len(rule.IsMF) and rule.IsMF[i] != 1) else ""
                             antecedent_parts.append(f"{input_name} is {is_not}{mf_name}")
 
-            # Build consequent text
             consequent_parts = []
             for i, mf_idx in enumerate(rule.Consequent):
                 if mf_idx > 0:  # 0 means no condition
@@ -228,7 +224,6 @@ class RuleManager:
                             is_not = "not " if (output_idx < len(rule.IsMF) and rule.IsMF[output_idx] != 1) else ""
                             consequent_parts.append(f"{output_name} is {is_not}{mf_name}")
 
-            # Combine parts
             connection = " and " if rule.Connection == 1 else " or "
             antecedent_text = connection.join(antecedent_parts)
             consequent_text = " and ".join(consequent_parts)

@@ -43,12 +43,10 @@ class RulesEditorTab(BaseWidgetView):
         super().__init__(parent=parent)
         self.setObjectName("rules_properties_tab")
 
-        # Initialize view model
         self.view_model = RulesEditorViewModel()
         self.view_model.setParent(self)
         self.set_view_model(self.view_model)
 
-        # Connect view model signals
         self._connect_view_model_signals()
 
         self._setup_ui()
@@ -63,7 +61,6 @@ class RulesEditorTab(BaseWidgetView):
 
     def _on_data_changed(self):
         """Handle data changed signal from view model."""
-        # Refresh the UI when data changes
         self.refresh_ui()
 
     def refresh_ui(self) -> None:
@@ -81,7 +78,6 @@ class RulesEditorTab(BaseWidgetView):
 
     def _setup_ui(self):
         """Set up all the GUI sub elements."""
-        # Get real data from view model instead of hardcoded placeholders
         input_mf_list = (
             self.view_model.input_mf_options if self.view_model.input_mf_options else ["No input MFs available"]
         )

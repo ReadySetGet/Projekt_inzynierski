@@ -47,7 +47,6 @@ class BaseViewModel(QObject):
             if context and context.event_bus:
                 context.event_bus.register_view_model(self)
 
-        # Connect to theme changes
         if self._context_provider:
             context = self._context_provider()
             if context and context.theme_manager:
