@@ -1,8 +1,6 @@
-"""Create a button area element GUI object above the central window of the application.
+"""Create a button area element GUI object above the central window of the application."""
 
-Classes:
-    TopMenu: button area element inheriting from QTabWidget.
-"""
+import typing
 
 from PyQt6 import QtCore, QtWidgets
 
@@ -15,16 +13,17 @@ from app.views.settings_view import SettingsView
 class TopMenu(BaseTabView):
     """Class responsible for the rectangle widget at the top of the window.
 
-    It's main function is to display buttons essential for functioning of the app.
+    Its main function is to display buttons essential for functioning of the app.
     """
 
-    def __init__(self, parent=None, status_bar=None):
-        """Initialize the top menu widget.
+    new_clicked = QtCore.pyqtSignal()
+    import_clicked = QtCore.pyqtSignal()
+    help_clicked = QtCore.pyqtSignal()
+    conversion_clicked = QtCore.pyqtSignal()
+    export_clicked = QtCore.pyqtSignal()
 
-        Args:
-            parent: Parent widget
-            status_bar: Status bar widget
-        """
+    def __init__(self, parent: typing.Optional[QtWidgets.QWidget] = None, status_bar=None):
+        """Initialize the top menu widget."""
         super().__init__(parent=parent)
 
         self.view_model = TopMenuViewModel()
@@ -183,7 +182,8 @@ class TopMenu(BaseTabView):
 
         Only one such window can exist at any given time.
         """
-        self.status_bar.showMessage("Last action: Opened area plot window.")
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: Opened area plot window.")
         if self.w is None:
             self.w = AreaPlot()
         self.w.show()
@@ -193,29 +193,35 @@ class TopMenu(BaseTabView):
 
         Only one such window can exist at any given time.
         """
-        self.status_bar.showMessage("Last action: Opened settings window.")
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: Opened settings window.")
         if self.s is None:
             self.s = SettingsView()
         self.s.show()
 
     def _add_input_button_clicked(self):
-        self.status_bar.showMessage("Last action: Add input clicked.")
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: Add input clicked.")
         self.view_model.add_input()
 
     def _del_input_button_clicked(self):
-        self.status_bar.showMessage("Last action: Delete input clicked.")
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: Delete input clicked.")
         self.view_model.delete_input()
 
     def _add_output_button_clicked(self):
-        self.status_bar.showMessage("Last action: Add output clicked.")
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: Add output clicked.")
         self.view_model.add_output()
 
     def _del_output_button_clicked(self):
-        self.status_bar.showMessage("Last action: Delete output clicked.")
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: Delete output clicked.")
         self.view_model.delete_output()
 
     def _help_button_clicked(self):
-        self.status_bar.showMessage("Last action: Help clicked.")
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: Help clicked.")
         if hasattr(self, "help_clicked"):
             self.help_clicked.emit()
 
@@ -229,21 +235,24 @@ class TopMenu(BaseTabView):
         else:
             self.system_type = "Mamdani"
             self.conversion_button.setText("Mamdani to Sugeno")
-        self.status_bar.showMessage(f"Last action: Conversion clicked. System type: {self.system_type}")
+        if self.status_bar:
+            self.status_bar.showMessage(f"Last action: Conversion clicked. System type: {self.system_type}")
         if hasattr(self, "conversion_clicked"):
             self.conversion_clicked.emit()
 
     def _new_button_clicked(self):
-        self.status_bar.showMessage("Last action: New clicked.")
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: New clicked.")
         if hasattr(self, "new_clicked"):
             self.new_clicked.emit()
 
     def _export_button_clicked(self):
-        self.status_bar.showMessage("Last action: Export clicked.")
-        if hasattr(self, "export_clicked"):
-            self.export_clicked.emit()
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: Export clicked.")
+        self.export_clicked.emit()
 
     def _import_button_clicked(self):
-        self.status_bar.showMessage("Last action: Import clicked.")
+        if self.status_bar:
+            self.status_bar.showMessage("Last action: Import clicked.")
         if hasattr(self, "import_clicked"):
             self.import_clicked.emit()
