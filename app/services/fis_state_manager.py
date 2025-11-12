@@ -88,6 +88,23 @@ class FISStateManager:
         self._selected_input_name = None
         self._selected_output_name = None
 
+    def set_fis_model(self, fis_model: FISModel) -> None:
+        """Replace the current FIS model with a new one."""
+        self._fis_model = fis_model
+        self._selected_input_name = None
+        self._selected_output_name = None
+        self._last_inference_results = []
+        self._last_inference_inputs = []
+        try:
+            fis_type_name = type(self._fis_model._fis).__name__.lower()
+            if "sug" in fis_type_name:
+                self._fis_type = "sugeno"
+            else:
+                self._fis_type = "mamdani"
+        except Exception:
+            # Fall back to existing type if inspection fails
+            pass
+
     def get_selected_variable_info(self) -> Dict[str, Any]:
         """Get information about the currently selected variable.
 
