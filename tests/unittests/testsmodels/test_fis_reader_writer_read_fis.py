@@ -9,8 +9,7 @@ class DeleteOutputTestCase(unittest.TestCase):
 
     def test_1_unsupported_extension(self) -> None:
         result = self.reader.read_fis("./resources/notfisfile.txt")
-        self.assertEqual(result, -1, "Unsupported extension wrongly"
-                                     "recognized")
+        self.assertEqual(result, -1, "Unsupported extension wronglyrecognized")
 
     def test_2_file_not_exists(self) -> None:
         result = self.reader.read_fis("./resources/notexistingfile.fis")
@@ -23,12 +22,11 @@ class DeleteOutputTestCase(unittest.TestCase):
 
     def test_4_poorly_formatted_file(self) -> None:
         result = self.reader.read_fis("./resources/model_bad_formatting.fis")
-        self.assertEqual(result, -3, "Problems with file import - possible "
-                                     "structural errors")
+        self.assertEqual(result, -3, "Problems with file import - possible structural errors")
 
     def tearDown(self) -> None:
         del self.reader
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,7 @@
 import pytest
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
+
 from app.views.top_menu_view import TopMenu
 
 
@@ -32,7 +33,6 @@ def test_tabs_structure(tested_widget):
 
 
 def test_scroll_area_widgets(tested_widget):
-
     files_area = tested_widget.findChild(QtWidgets.QScrollArea, "files_management_button_area")
     assert isinstance(files_area, QtWidgets.QScrollArea)
 
@@ -44,4 +44,3 @@ def test_scroll_area_widgets(tested_widget):
 def test_import_clicked_emit(qtbot, tested_widget):
     with qtbot.waitSignal(tested_widget.import_clicked, timeout=1000):
         qtbot.mouseClick(tested_widget.import_button, Qt.MouseButton.LeftButton)
-
