@@ -3,6 +3,7 @@
 import os
 from typing import Optional
 
+import pyqtgraph as pg
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QWidget
 
@@ -48,11 +49,13 @@ class BaseWidgetView(QWidget):
         self.view_model = view_model
         if self.view_model:
             self.view_model.theme_changed.connect(self.reload_stylesheet)
+            self.view_model.theme_changed.connect(self._apply_pyqtgraph_theme)
             self.view_model.data_changed.connect(self.refresh_ui)
             self.view_model.notify_data_changed.connect(self.update_ui)
             self.view_model.translate_manager.language_changed.connect(self._on_language_changed)
-            # Initial stylesheet load
+            # Initial stylesheet and theme load
             self.reload_stylesheet()
+            self._apply_pyqtgraph_theme()
 
     def reload_stylesheet(self) -> None:
         """Reload and apply the local stylesheet if qss_filename is set and exists."""
@@ -104,6 +107,47 @@ class BaseWidgetView(QWidget):
         """Handle language change event."""
         if hasattr(self, "_retranslate_ui"):
             self._retranslate_ui()
+
+    def _apply_pyqtgraph_theme(self) -> None:
+        """Apply the current theme colors to pyqtgraph plots."""
+        if not self.view_model or not self.view_model.theme_manager:
+            return
+
+        palette = self.view_model.theme_manager.current_palette
+        if not palette or "colors" not in palette:
+            return
+
+        colors = palette["colors"]
+
+        # Set pyqtgraph background and foreground
+        background = colors.get("background", "#ffffff")
+        foreground = colors.get("text", "#000000")
+
+        pg.setConfigOption("background", background)
+        pg.setConfigOption("foreground", foreground)
+
+        # Update axis colors and plot styling
+        self._update_plot_widgets_theme(colors)
+
+    def _update_plot_widgets_theme(self, colors: dict) -> None:
+        """Update all PlotWidget children with new theme colors.
+
+        Args:
+            colors: Dictionary of theme colors.
+        """
+        # Find all PlotWidget children recursively
+        plot_widgets = self.findChildren(pg.PlotWidget)
+
+        for plot_widget in plot_widgets:
+            # Update plot background
+            plot_widget.setBackground(colors.get("background", "#ffffff"))
+
+            # Update axis label colors
+            for axis_name in ["left", "bottom", "right", "top"]:
+                axis = plot_widget.getAxis(axis_name)
+                if axis:
+                    axis.setPen(colors.get("text", "#000000"))
+                    axis.setTextPen(colors.get("text", "#000000"))
 
 
 # Alias for backward compatibility

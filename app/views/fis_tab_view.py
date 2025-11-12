@@ -122,7 +122,7 @@ class FisTabView(BaseTabView):
         self._plot_to_input_map = {}  # Maps plot widgets to input objects
         self._plot_to_output_map = {}  # Maps plot widgets to output objects
 
-        pg.setConfigOption("background", "w")
+        # Don't set hardcoded background - theme will handle it
         self.setObjectName("fisTab")
         self._setup_ui()
         self._retranslate_ui()
@@ -292,7 +292,7 @@ class FisTabView(BaseTabView):
         self.graph_frame.setGeometry(QtCore.QRect(10, 60, 490, 510))
         self.graph_frame.setFrameShape(QtWidgets.QGraphicsView.Shape.StyledPanel)
         self.graph_frame.setFrameShadow(QtWidgets.QGraphicsView.Shadow.Raised)
-        self.graph_frame.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
+        # Styling will be applied by theme
         self.graph_frame.setObjectName("graph_frame")
 
         self.scene = QtWidgets.QGraphicsScene(parent=self.graph_frame)
@@ -304,7 +304,8 @@ class FisTabView(BaseTabView):
         self.box_system_label = QtWidgets.QLabel(parent=self.graph_frame)
         self.box_system_label.setGeometry(175, 180, 140, 140)
         self.box_system_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.box_system_label.setStyleSheet("background-color: white; border: 1px solid gray")
+        # Styling will be applied by theme
+        self.box_system_label.setObjectName("box_system_label")
 
         self.remove_plots()
 
@@ -338,7 +339,7 @@ class FisTabView(BaseTabView):
             in_out_plot.plot(x_data, y_data, pen=color)
         self.plots.append(in_out_plot)
 
-        in_out_plot.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
+        # Styling will be applied by theme
         in_out_plot.setGeometry(QtCore.QRect(position_x, position_y, 140, 140))
 
         # Enable mouse events for click handling
@@ -500,22 +501,51 @@ class FisTabView(BaseTabView):
 
     def _update_plot_styling(self):
         """Update the visual styling of plots based on selection state."""
+        # Get theme colors
+        bg_color = "#E5E8E8"
+        border_color = "gray"
+
+        if self.view_model and self.view_model.theme_manager:
+            palette = self.view_model.theme_manager.current_palette
+            if palette and "colors" in palette:
+                colors = palette["colors"]
+                bg_color = colors.get("surface", "#E5E8E8")
+                border_color = colors.get("border", "gray")
+
         # Reset all plots to default styling
+        default_style = "; ".join(
+            [
+                f"background-color: {bg_color}",
+                f"border: 1px solid {border_color}",
+            ]
+        )
         for plot in self.plots:
-            plot.setStyleSheet("background-color: #E5E8E8; border: 1px solid gray")
+            plot.setStyleSheet(default_style)
 
         # Highlight selected input
         if self._selected_input:
             for plot, input_data in self._plot_to_input_map.items():
                 if input_data == self._selected_input:
-                    plot.setStyleSheet("background-color: #E5E8E8; border: 3px solid #0078D4")
+                    highlight_style = "; ".join(
+                        [
+                            f"background-color: {bg_color}",
+                            "border: 3px solid #0078D4",
+                        ]
+                    )
+                    plot.setStyleSheet(highlight_style)
                     break
 
         # Highlight selected output
         if self._selected_output:
             for plot, output_data in self._plot_to_output_map.items():
                 if output_data == self._selected_output:
-                    plot.setStyleSheet("background-color: #E5E8E8; border: 3px solid #0078D4")
+                    highlight_style = "; ".join(
+                        [
+                            f"background-color: {bg_color}",
+                            "border: 3px solid #0078D4",
+                        ]
+                    )
+                    plot.setStyleSheet(highlight_style)
                     break
 
     def get_selected_input(self) -> Optional[InOutput]:
@@ -533,6 +563,54 @@ class FisTabView(BaseTabView):
             Selected output InOutput object or None
         """
         return self._selected_output
+
+    def _apply_pyqtgraph_theme(self) -> None:
+        """Apply the current theme colors to pyqtgraph plots and FIS elements."""
+        # Call parent method to handle pyqtgraph plots
+        super()._apply_pyqtgraph_theme()
+
+        # Apply theme to FIS-specific elements
+        self._apply_fis_theme()
+
+    def _apply_fis_theme(self) -> None:
+        """Apply theme colors to FIS plot elements (graph frame and center box)."""
+        if not self.view_model or not self.view_model.theme_manager:
+            return
+
+        palette = self.view_model.theme_manager.current_palette
+        if not palette or "colors" not in palette:
+            return
+
+        colors = palette["colors"]
+        surface_color = colors.get("surface", "#ffffff")
+        border_color = colors.get("border", "#cccccc")
+        text_color = colors.get("text", "#000000")
+
+        # Update graph frame background
+        graph_style = "; ".join(
+            [
+                f"background-color: {surface_color}",
+                f"border: 1px solid {border_color}",
+            ]
+        )
+        self.graph_frame.setStyleSheet(graph_style)
+
+        # Update center system label (Mamdani Type 1 box)
+        self.box_system_label.setStyleSheet(
+            "; ".join(
+                [
+                    f"background-color: {surface_color}",
+                    f"border: 1px solid {border_color}",
+                    f"color: {text_color}",
+                ]
+            )
+        )
+
+        # Update pen color for lines
+        self.pen.setColor(QtGui.QColor(text_color))
+
+        # Update all plot styling to match theme
+        self._update_plot_styling()
 
     def remove_plots(self):
         """Remove all plots, labels and points from the widget.

@@ -39,6 +39,24 @@ class AppConfig:
         return cls._config.get(section, key)
 
     @classmethod
+    def set_value(cls, section: str, key: str, value: str) -> None:
+        """Set a value in the config.
+
+        Args:
+            section (str): The section in the config file.
+            key (str): The key in the section.
+            value (str): The value to set.
+
+        Raises:
+            RuntimeError: If AppConfig is not initialized.
+        """
+        if not cls._initialized:
+            raise RuntimeError("AppConfig not initialized")
+        if not cls._config.has_section(section):
+            cls._config.add_section(section)
+        cls._config.set(section, key, value)
+
+    @classmethod
     def app_name(cls) -> str:
         """Get the application name.
 

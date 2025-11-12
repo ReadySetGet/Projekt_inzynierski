@@ -97,9 +97,10 @@ class CentralTabWidget(BaseTabView):
         # Plots will be created dynamically based on selected variable's MFs
         # Placeholder plots removed - will be loaded from fuzzy service
 
-        self.mf_plot_graph.setTitle("Membership Function Plot", color="black")
-        self.mf_plot_graph.setLabel("left", "Degree of Membership", color="black")
-        self.mf_plot_graph.setLabel("bottom", "Variable", color="black")
+        # Plot title and labels will be styled by theme
+        self.mf_plot_graph.setTitle("Membership Function Plot")
+        self.mf_plot_graph.setLabel("left", "Degree of Membership")
+        self.mf_plot_graph.setLabel("bottom", "Variable")
         frame_layout.addWidget(self.mf_plot_graph)
 
         self.seperator_line = QtWidgets.QFrame(parent=self.mf_plot)

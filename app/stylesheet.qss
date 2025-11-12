@@ -132,18 +132,29 @@ QCheckBox::indicator:checked, QRadioButton::indicator:checked {
 }
 
 QComboBox {
-    background: {colors.surface};
+    background: {colors.input-background};
     color: {colors.text};
     border: 1px solid {colors.border};
     border-radius: 4px;
     padding: 4px 8px;
 }
+QComboBox:focus {
+    border: 1px solid {colors.primary};
+}
+QComboBox:disabled {
+    background: {colors.disabled};
+    color: {colors.text-disabled};
+}
 QComboBox QAbstractItemView {
     background: {colors.surface};
     color: {colors.text};
     border: 1px solid {colors.border};
-    selection-background-color: {colors.button-hover};
-    selection-color: {colors.primary};
+    selection-background-color: {colors.selection-background};
+    selection-color: {colors.selection-text};
+}
+QComboBox::drop-down {
+    border: none;
+    padding-right: 4px;
 }
 
 QSlider::groove:horizontal {
@@ -187,13 +198,22 @@ QProgressBar::chunk {
     border-radius: 4px;
 }
 
-QListView, QTableView {
+QListView {
     background: {colors.surface};
     color: {colors.text};
     border: 1px solid {colors.border};
-    selection-background-color: {colors.button-hover};
-    selection-color: {colors.primary};
-    gridline-color: {colors.border};
+    selection-background-color: {colors.selection-background};
+    selection-color: {colors.selection-text};
+}
+QListView::item {
+    padding: 4px;
+}
+QListView::item:hover {
+    background: {colors.button-hover};
+}
+QListView::item:selected {
+    background: {colors.selection-background};
+    color: {colors.selection-text};
 }
 
 QGroupBox {
@@ -228,12 +248,15 @@ QDialog {
     border-radius: 8px;
 }
 
-QSpinBox, QDoubleSpinBox, QDateEdit, QTimeEdit {
-    background: {colors.surface};
+QDateEdit, QTimeEdit {
+    background: {colors.input-background};
     color: {colors.text};
     border: 1px solid {colors.border};
     border-radius: 4px;
     padding: 4px 8px;
+}
+QDateEdit:focus, QTimeEdit:focus {
+    border: 1px solid {colors.primary};
 }
 
 QCalendarWidget QWidget {
@@ -254,4 +277,212 @@ QToolTip {
     border-radius: 4px;
     padding: 6px 12px;
     font-size: 13px;
+}
+
+QPushButton {
+    background: {colors.button};
+    color: {colors.text};
+    border: 1px solid {colors.border};
+    border-radius: 4px;
+    padding: 6px 16px;
+    min-height: 20px;
+}
+QPushButton:hover {
+    background: {colors.button-hover};
+}
+QPushButton:pressed {
+    background: {colors.button-pressed};
+}
+QPushButton:disabled {
+    background: {colors.disabled};
+    color: {colors.text-disabled};
+    border: 1px solid {colors.border};
+}
+
+QLineEdit {
+    background: {colors.input-background};
+    color: {colors.text};
+    border: 1px solid {colors.border};
+    border-radius: 4px;
+    padding: 4px 8px;
+    selection-background-color: {colors.selection-background};
+    selection-color: {colors.selection-text};
+}
+QLineEdit:focus {
+    border: 1px solid {colors.primary};
+}
+QLineEdit:disabled {
+    background: {colors.disabled};
+    color: {colors.text-disabled};
+}
+
+QTextEdit, QPlainTextEdit {
+    background: {colors.input-background};
+    color: {colors.text};
+    border: 1px solid {colors.border};
+    border-radius: 4px;
+    selection-background-color: {colors.selection-background};
+    selection-color: {colors.selection-text};
+}
+QTextEdit:focus, QPlainTextEdit:focus {
+    border: 1px solid {colors.primary};
+}
+
+QLabel {
+    background: transparent;
+    color: {colors.text};
+    border: none;
+}
+QLabel:disabled {
+    color: {colors.text-disabled};
+}
+
+QTreeView {
+    background: {colors.surface};
+    color: {colors.text};
+    border: 1px solid {colors.border};
+    border-radius: 4px;
+    selection-background-color: {colors.selection-background};
+    selection-color: {colors.selection-text};
+    show-decoration-selected: 1;
+}
+QTreeView::item {
+    padding: 4px;
+    border: none;
+}
+QTreeView::item:hover {
+    background: {colors.button-hover};
+}
+QTreeView::item:selected {
+    background: {colors.selection-background};
+    color: {colors.selection-text};
+}
+QTreeView::branch:has-siblings:!adjoins-item {
+    background: transparent;
+}
+QTreeView::branch:has-siblings:adjoins-item {
+    background: transparent;
+}
+QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+    background: transparent;
+}
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+    background: transparent;
+}
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings {
+    background: transparent;
+}
+QTreeView::indicator:unchecked {
+    border: 1px solid {colors.border};
+    background: {colors.surface};
+}
+QTreeView::indicator:checked {
+    border: 1px solid {colors.primary};
+    background: {colors.primary};
+}
+
+QTableWidget, QTableView {
+    background: {colors.surface};
+    color: {colors.text};
+    border: 1px solid {colors.border};
+    gridline-color: {colors.border};
+    selection-background-color: {colors.selection-background};
+    selection-color: {colors.selection-text};
+}
+QTableWidget::item, QTableView::item {
+    padding: 4px;
+}
+QTableWidget::item:hover, QTableView::item:hover {
+    background: {colors.button-hover};
+}
+QTableWidget::item:selected, QTableView::item:selected {
+    background: {colors.selection-background};
+    color: {colors.selection-text};
+}
+
+QHeaderView::section {
+    background: {colors.button};
+    color: {colors.text};
+    border: 1px solid {colors.border};
+    padding: 4px 8px;
+    font-weight: bold;
+}
+QHeaderView::section:hover {
+    background: {colors.button-hover};
+}
+
+QTableView QTableCornerButton::section {
+    background: {colors.button};
+    border: 1px solid {colors.border};
+}
+QTableWidget QTableCornerButton::section {
+    background: {colors.button};
+    border: 1px solid {colors.border};
+}
+
+QSpinBox, QDoubleSpinBox {
+    background: {colors.input-background};
+    color: {colors.text};
+    border: 1px solid {colors.border};
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border: 1px solid {colors.primary};
+}
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    background: {colors.button};
+    border: 1px solid {colors.border};
+    border-top-right-radius: 4px;
+}
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover {
+    background: {colors.button-hover};
+}
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    background: {colors.button};
+    border: 1px solid {colors.border};
+    border-bottom-right-radius: 4px;
+}
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
+    background: {colors.button-hover};
+}
+
+QFontComboBox {
+    background: {colors.input-background};
+    color: {colors.text};
+    border: 1px solid {colors.border};
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+QFontComboBox:focus {
+    border: 1px solid {colors.primary};
+}
+QFontComboBox QAbstractItemView {
+    background: {colors.surface};
+    color: {colors.text};
+    border: 1px solid {colors.border};
+    selection-background-color: {colors.selection-background};
+    selection-color: {colors.selection-text};
+}
+
+QGraphicsView {
+    background: {colors.surface};
+    border: 1px solid {colors.border};
+}
+
+QGraphicsScene {
+    background: {colors.surface};
+}
+
+#graph_frame {
+    background: {colors.surface};
+    border: 1px solid {colors.border};
+}
+
+#box_system_label {
+    background: {colors.surface};
+    border: 1px solid {colors.border};
+    color: {colors.text};
 } 

@@ -43,92 +43,115 @@ class TopMenu(BaseTabView):
         self.designTab = QtWidgets.QWidget()
         self.designTab.setObjectName("designTab")
 
-        """Area grouping buttons responsible for managing inputs and outputs in the fis system."""
-        self.input_output_button_area = QtWidgets.QScrollArea(parent=self.designTab)
-        self.input_output_button_area.setGeometry(QtCore.QRect(270, 0, 221, 131))
-        self.input_output_button_area.setWidgetResizable(True)
-        self.input_output_button_area.setObjectName("input_output_button_area")
+        # Create main layout for design tab
+        main_layout = QtWidgets.QHBoxLayout(self.designTab)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
 
-        self.scroll_area_widget_contents_3 = QtWidgets.QWidget()
-        self.scroll_area_widget_contents_3.setGeometry(QtCore.QRect(0, 0, 219, 129))
-        self.scroll_area_widget_contents_3.setObjectName("scroll_area_widget_contents_3")
+        # Left section - File management buttons
+        files_group = QtWidgets.QGroupBox("File Management")
+        files_layout = QtWidgets.QVBoxLayout(files_group)
+        files_layout.setContentsMargins(5, 5, 5, 5)
 
-        self.add_input_button = QtWidgets.QPushButton(parent=self.scroll_area_widget_contents_3)
-        self.add_input_button.setGeometry(QtCore.QRect(10, 10, 91, 41))
-        self.add_input_button.setObjectName("add_input_button")
-        self.add_input_button.clicked.connect(self._add_input_button_clicked)
-
-        self.delete_input_button = QtWidgets.QPushButton(parent=self.scroll_area_widget_contents_3)
-        self.delete_input_button.setGeometry(QtCore.QRect(110, 10, 91, 41))
-        self.delete_input_button.setObjectName("delete_input_button")
-        self.delete_input_button.clicked.connect(self._del_input_button_clicked)
-
-        self.add_output_button = QtWidgets.QPushButton(parent=self.scroll_area_widget_contents_3)
-        self.add_output_button.setGeometry(QtCore.QRect(10, 70, 91, 41))
-        self.add_output_button.setObjectName("add_output_button")
-        self.add_output_button.clicked.connect(self._add_output_button_clicked)
-
-        self.delete_output_button = QtWidgets.QPushButton(parent=self.scroll_area_widget_contents_3)
-        self.delete_output_button.setGeometry(QtCore.QRect(110, 70, 95, 41))
-        self.delete_output_button.setObjectName("delete_output_button")
-        self.delete_output_button.clicked.connect(self._del_output_button_clicked)
-        self.input_output_button_area.setWidget(self.scroll_area_widget_contents_3)
-
-        self.help_button = QtWidgets.QPushButton(parent=self.designTab)
-        self.help_button.setGeometry(QtCore.QRect(950, 20, 93, 28))
-        self.help_button.setObjectName("help_button")
-        self.help_button.clicked.connect(self._help_button_clicked)
-
-        self.settings_button = QtWidgets.QPushButton(parent=self.designTab)
-        self.settings_button.setGeometry(QtCore.QRect(950, 70, 93, 28))
-        self.settings_button.setObjectName("settings_button")
-        self.settings_button.clicked.connect(self._show_settings_window)
-
-        self.conversion_button = QtWidgets.QPushButton(parent=self.designTab)
-        self.conversion_button.setGeometry(QtCore.QRect(530, 30, 131, 61))
-        self.conversion_button.setObjectName("conversion_button")
-        self.conversion_button.clicked.connect(self._conversion_button_clicked)
-
-        """Button area grouping buttons responsible for files management."""
-        self.files_management_button_area = QtWidgets.QScrollArea(parent=self.designTab)
-        self.files_management_button_area.setGeometry(QtCore.QRect(0, 0, 271, 131))
-        self.files_management_button_area.setWidgetResizable(True)
-        self.files_management_button_area.setObjectName("files_management_button_area")
-
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 269, 129))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-
-        self.new_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
-        self.new_button.setGeometry(QtCore.QRect(10, 40, 81, 41))
+        self.new_button = QtWidgets.QToolButton()
         self.new_button.setObjectName("new_button")
         self.new_button.clicked.connect(self._new_button_clicked)
+        files_layout.addWidget(self.new_button)
 
-        self.import_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
-        self.import_button.setGeometry(QtCore.QRect(100, 40, 71, 41))
+        self.import_button = QtWidgets.QToolButton()
         self.import_button.setObjectName("import_button")
         self.import_button.clicked.connect(self._import_button_clicked)
+        files_layout.addWidget(self.import_button)
 
-        self.export_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
-        self.export_button.setGeometry(QtCore.QRect(180, 41, 81, 41))
+        self.export_button = QtWidgets.QToolButton()
         self.export_button.setObjectName("export_button")
         self.export_button.clicked.connect(self._export_button_clicked)
+        files_layout.addWidget(self.export_button)
 
-        self.files_management_button_area.setWidget(self.scrollAreaWidgetContents)
+        files_group.setMaximumWidth(200)
+        main_layout.addWidget(files_group)
 
-        self.surface_button = QtWidgets.QToolButton(parent=self.designTab)
-        self.surface_button.setGeometry(QtCore.QRect(700, 30, 101, 61))
+        # Center section - Input/Output management
+        io_group = QtWidgets.QGroupBox("Input/Output Management")
+        io_layout = QtWidgets.QVBoxLayout(io_group)
+        io_layout.setContentsMargins(5, 5, 5, 5)
+
+        # Create grid for IO buttons
+        io_grid = QtWidgets.QGridLayout()
+
+        self.add_input_button = QtWidgets.QPushButton()
+        self.add_input_button.setObjectName("add_input_button")
+        self.add_input_button.clicked.connect(self._add_input_button_clicked)
+        io_grid.addWidget(self.add_input_button, 0, 0)
+
+        self.delete_input_button = QtWidgets.QPushButton()
+        self.delete_input_button.setObjectName("delete_input_button")
+        self.delete_input_button.clicked.connect(self._del_input_button_clicked)
+        io_grid.addWidget(self.delete_input_button, 0, 1)
+
+        self.add_output_button = QtWidgets.QPushButton()
+        self.add_output_button.setObjectName("add_output_button")
+        self.add_output_button.clicked.connect(self._add_output_button_clicked)
+        io_grid.addWidget(self.add_output_button, 1, 0)
+
+        self.delete_output_button = QtWidgets.QPushButton()
+        self.delete_output_button.setObjectName("delete_output_button")
+        self.delete_output_button.clicked.connect(self._del_output_button_clicked)
+        io_grid.addWidget(self.delete_output_button, 1, 1)
+
+        io_layout.addLayout(io_grid)
+        main_layout.addWidget(io_group)
+
+        # Center-right section - Conversion and surface
+        control_group = QtWidgets.QGroupBox("Controls")
+        control_layout = QtWidgets.QVBoxLayout(control_group)
+        control_layout.setContentsMargins(5, 5, 5, 5)
+
+        self.conversion_button = QtWidgets.QPushButton()
+        self.conversion_button.setObjectName("conversion_button")
+        self.conversion_button.clicked.connect(self._conversion_button_clicked)
+        control_layout.addWidget(self.conversion_button)
+
+        self.surface_button = QtWidgets.QToolButton()
         self.surface_button.setObjectName("surface_button")
         self.surface_button.clicked.connect(self._show_area_plot_window)
+        control_layout.addWidget(self.surface_button)
 
-        self.interpolation_spinbox = QtWidgets.QSpinBox(parent=self.designTab)
-        self.interpolation_spinbox.setGeometry(QtCore.QRect(830, 60, 81, 22))
-        self.interpolation_spinbox.setObjectName("interpolation_spinbox")
-
-        self.interpolation_label = QtWidgets.QLabel(parent=self.designTab)
-        self.interpolation_label.setGeometry(QtCore.QRect(810, 30, 121, 20))
-        self.interpolation_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        # Interpolation controls
+        interpolation_layout = QtWidgets.QHBoxLayout()
+        self.interpolation_label = QtWidgets.QLabel()
         self.interpolation_label.setObjectName("interpolation_label")
+        self.interpolation_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        interpolation_layout.addWidget(self.interpolation_label)
+
+        self.interpolation_spinbox = QtWidgets.QSpinBox()
+        self.interpolation_spinbox.setObjectName("interpolation_spinbox")
+        interpolation_layout.addWidget(self.interpolation_spinbox)
+
+        control_layout.addLayout(interpolation_layout)
+        main_layout.addWidget(control_group)
+
+        # Right section - Help and Settings
+        help_group = QtWidgets.QGroupBox("Help & Settings")
+        help_layout = QtWidgets.QVBoxLayout(help_group)
+        help_layout.setContentsMargins(5, 5, 5, 5)
+
+        self.help_button = QtWidgets.QPushButton()
+        self.help_button.setObjectName("help_button")
+        self.help_button.clicked.connect(self._help_button_clicked)
+        help_layout.addWidget(self.help_button)
+
+        self.settings_button = QtWidgets.QPushButton()
+        self.settings_button.setObjectName("settings_button")
+        self.settings_button.clicked.connect(self._show_settings_window)
+        help_layout.addWidget(self.settings_button)
+
+        help_group.setMaximumWidth(150)
+        main_layout.addWidget(help_group)
+
+        # Add stretch to push everything to the left
+        main_layout.addStretch()
+
         self.addTab(self.designTab, "")
         self.tuningTab = QtWidgets.QWidget()
         self.tuningTab.setObjectName("tuningTab")

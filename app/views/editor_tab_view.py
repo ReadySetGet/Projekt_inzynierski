@@ -35,45 +35,62 @@ class EditorTabWidget(BaseTabView):
         self.fis_properties_tab = FisPropertiesTabView(parent=self)
         self.fis_properties_tab.setObjectName("fis_properties_tab")
 
-        self.system_type_label_1 = QtWidgets.QLabel(parent=self.fis_properties_tab)
-        self.system_type_label_1.setGeometry(QtCore.QRect(10, 20, 41, 21))
+        # Create layout for FIS properties tab
+        fis_layout = QtWidgets.QVBoxLayout(self.fis_properties_tab)
+        fis_layout.setContentsMargins(10, 10, 10, 10)
+        fis_layout.setSpacing(10)
+
+        # System type section
+        system_type_layout = QtWidgets.QHBoxLayout()
+        self.system_type_label_1 = QtWidgets.QLabel()
         self.system_type_label_1.setObjectName("system_type_label_1")
+        system_type_layout.addWidget(self.system_type_label_1)
 
-        self.system_name_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
-        self.system_name_label.setGeometry(QtCore.QRect(10, 70, 55, 16))
+        self.system_type_label_2 = QtWidgets.QLabel()
+        self.system_type_label_2.setObjectName("system_type_label_2")
+        system_type_layout.addWidget(self.system_type_label_2)
+        system_type_layout.addStretch()
+        fis_layout.addLayout(system_type_layout)
+
+        # System name section
+        self.system_name_label = QtWidgets.QLabel()
         self.system_name_label.setObjectName("system_name_label")
+        fis_layout.addWidget(self.system_name_label)
 
-        self.and_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
-        self.and_method_label.setGeometry(QtCore.QRect(10, 110, 71, 16))
+        # Method labels
+        self.and_method_label = QtWidgets.QLabel()
         self.and_method_label.setObjectName("and_method_label")
+        fis_layout.addWidget(self.and_method_label)
 
-        self.or_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
-        self.or_method_label.setGeometry(QtCore.QRect(10, 150, 71, 16))
+        self.or_method_label = QtWidgets.QLabel()
         self.or_method_label.setObjectName("or_method_label")
-        self.implication_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
-        self.implication_method_label.setGeometry(QtCore.QRect(10, 190, 141, 16))
+        fis_layout.addWidget(self.or_method_label)
+
+        self.implication_method_label = QtWidgets.QLabel()
         self.implication_method_label.setObjectName("implication_method_label")
+        fis_layout.addWidget(self.implication_method_label)
 
-        self.aggregation_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
-        self.aggregation_method_label.setGeometry(QtCore.QRect(10, 230, 121, 16))
+        self.aggregation_method_label = QtWidgets.QLabel()
         self.aggregation_method_label.setObjectName("aggregation_method_label")
+        fis_layout.addWidget(self.aggregation_method_label)
 
-        self.defuzzification_method_label = QtWidgets.QLabel(parent=self.fis_properties_tab)
-        self.defuzzification_method_label.setGeometry(QtCore.QRect(0, 295, 141, 21))
+        # Defuzzification section
+        defuzz_layout = QtWidgets.QHBoxLayout()
+        self.defuzzification_method_label = QtWidgets.QLabel()
         self.defuzzification_method_label.setObjectName("defuzzification_method_label")
+        defuzz_layout.addWidget(self.defuzzification_method_label)
 
-        """Dropdown allowing the user to choose their preferred defuzzification method.
-        """
-        self.defuzzification_dropdown = QtWidgets.QComboBox(parent=self.fis_properties_tab)
-        self.defuzzification_dropdown.setGeometry(QtCore.QRect(160, 290, 101, 31))
+        self.defuzzification_dropdown = QtWidgets.QComboBox()
         self.defuzzification_dropdown.setObjectName("defuzzification_dropdown")
         self.defuzzification_dropdown.addItem("")
         self.defuzzification_dropdown.addItem("")
         self.defuzzification_dropdown.currentTextChanged.connect(self.defuzzification_changed)
+        defuzz_layout.addWidget(self.defuzzification_dropdown)
+        defuzz_layout.addStretch()
+        fis_layout.addLayout(defuzz_layout)
 
-        self.system_type_label_2 = QtWidgets.QLabel(parent=self.fis_properties_tab)
-        self.system_type_label_2.setGeometry(QtCore.QRect(150, 20, 111, 21))
-        self.system_type_label_2.setObjectName("system_type_label_2")
+        # Add stretch to push everything to the top
+        fis_layout.addStretch()
 
         self.addTab(self.fis_properties_tab, "fis_properties_tab")
 
