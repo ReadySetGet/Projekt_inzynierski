@@ -86,26 +86,30 @@ class BrowserFrameWidget(BaseFrameView):
         self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.setObjectName("browserFrame")
 
-        self.delete_all_inputs_button = QtWidgets.QPushButton(parent=self)
-        self.delete_all_inputs_button.setGeometry(QtCore.QRect(10, 246, 140, 28))
-        self.delete_all_inputs_button.setObjectName("del_inputs_buttons")
-        self.delete_all_inputs_button.clicked.connect(self.clear_inputs)
+        # Create main layout
+        main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
 
-        self.delete_all_outputs_button = QtWidgets.QPushButton(parent=self)
-        self.delete_all_outputs_button.setGeometry(QtCore.QRect(155, 246, 140, 28))
-        self.delete_all_outputs_button.setObjectName("del_outputs_buttons")
-        self.delete_all_outputs_button.clicked.connect(self.clear_outputs)
+        # Design browser label
+        self.design_browser_label = QtWidgets.QLabel()
+        self.design_browser_label.setObjectName("design_browser_label")
+        main_layout.addWidget(self.design_browser_label)
 
-        self.system_browser_tree_view = QtWidgets.QTreeView(parent=self)
-        self.system_browser_tree_view.setGeometry(QtCore.QRect(0, 300, 301, 295))
+        # System browser label
+        self.system_browser_label = QtWidgets.QLabel()
+        self.system_browser_label.setObjectName("system_browser_label")
+        main_layout.addWidget(self.system_browser_label)
+
+        # Tree view
+        self.system_browser_tree_view = QtWidgets.QTreeView()
         self.system_browser_tree_view.setObjectName("system_browser_tree_view")
 
-        self.tree = QtWidgets.QTreeWidget(parent=self.system_browser_tree_view)
-        self.tree.resize(301, 295)
+        self.tree = QtWidgets.QTreeWidget()
         self.tree.setHeaderHidden(True)
-
         self.tree.itemSelectionChanged.connect(self.selection_changed)
 
+        # Add tree items
         self.tree_data_input = QtWidgets.QTreeWidgetItem(["Inputs"])
         self.tree.insertTopLevelItem(0, self.tree_data_input)
         populate_inoutputs(data_inoutputs=self.inoutputs, tree_parent=self.tree_data_input)
@@ -118,13 +122,23 @@ class BrowserFrameWidget(BaseFrameView):
         self.tree.insertTopLevelItem(2, self.tree_data_rules)
         self.populate_rules(self.rules)
 
-        self.system_browser_label = QtWidgets.QLabel(parent=self)
-        self.system_browser_label.setGeometry(QtCore.QRect(4, 274, 281, 21))
-        self.system_browser_label.setObjectName("system_browser_label")
+        # Add tree to layout
+        main_layout.addWidget(self.tree)
 
-        self.design_browser_label = QtWidgets.QLabel(parent=self)
-        self.design_browser_label.setGeometry(QtCore.QRect(10, 10, 111, 16))
-        self.design_browser_label.setObjectName("design_browser_label")
+        # Button layout
+        button_layout = QtWidgets.QHBoxLayout()
+
+        self.delete_all_inputs_button = QtWidgets.QPushButton()
+        self.delete_all_inputs_button.setObjectName("del_inputs_buttons")
+        self.delete_all_inputs_button.clicked.connect(self.clear_inputs)
+        button_layout.addWidget(self.delete_all_inputs_button)
+
+        self.delete_all_outputs_button = QtWidgets.QPushButton()
+        self.delete_all_outputs_button.setObjectName("del_outputs_buttons")
+        self.delete_all_outputs_button.clicked.connect(self.clear_outputs)
+        button_layout.addWidget(self.delete_all_outputs_button)
+
+        main_layout.addLayout(button_layout)
 
     def _retranslate_ui(self):
         self.system_browser_label.setText(self.t("SYSTEM_BROWSER"))

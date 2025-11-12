@@ -11,7 +11,6 @@ from app.view_models.browser_frame_view_model import BrowserFrameViewModel
 from app.view_models.central_tab_view_model import CentralTabViewModel
 from app.view_models.editor_tab_view_model import EditorTabViewModel
 from app.view_models.top_menu_view_model import TopMenuViewModel
-from app.views.bar_menu_view import BarMenuWidget
 from app.views.browser_frame_view import BrowserFrameWidget
 from app.views.central_tab_view import CentralTabWidget
 from app.views.editor_tab_view import EditorTabWidget
@@ -112,31 +111,57 @@ class MainWindow(QMainWindow):
     def setupUi(self):
         """Set up the UI for the main window."""
         self.setObjectName("MainWindow")
-        self.resize(1096, 780)
+        self.resize(1200, 800)
+
+        # Create central widget with main layout
         self.central_widget = QtWidgets.QWidget(parent=self)
         self.central_widget.setObjectName("centralwidget")
+        self.setCentralWidget(self.central_widget)
 
+        # Create main vertical layout
+        main_layout = QtWidgets.QVBoxLayout(self.central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Status bar
         self.statusBar = QtWidgets.QStatusBar(parent=self)
         self.statusBar.setObjectName("statusbar")
         self.setStatusBar(self.statusBar)
         self.statusBar.showMessage("Started application")
 
-        self.plotTabs = CentralTabWidget(parent=self.central_widget, status_bar=self.statusBar)
-        self.plotTabs.setGeometry(QtCore.QRect(310, 160, 531, 601))
-
-        self.browserFrame = BrowserFrameWidget(parent=self.central_widget, status_bar=self.statusBar)
-        self.browserFrame.setGeometry(QtCore.QRect(0, 160, 301, 641))
-
+        # Top menu (fixed height)
         self.upMenuTab = TopMenu(parent=self.central_widget, status_bar=self.statusBar)
-        self.upMenuTab.setGeometry(QtCore.QRect(0, 0, 1081, 161))
+        self.upMenuTab.setFixedHeight(160)
+        main_layout.addWidget(self.upMenuTab)
 
-        self.editorTab = EditorTabWidget(parent=self.central_widget, status_bar=self.statusBar)
-        self.editorTab.setGeometry(QtCore.QRect(820, 160, 281, 641))
+        # Create horizontal splitter for main content area
+        main_splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
+        main_splitter.setObjectName("main_splitter")
 
-        self.setCentralWidget(self.central_widget)
+        # Left panel (browser frame)
+        self.browserFrame = BrowserFrameWidget(parent=main_splitter, status_bar=self.statusBar)
+        self.browserFrame.setMinimumWidth(250)
+        self.browserFrame.setMaximumWidth(400)
 
-        self.menuBar = BarMenuWidget(parent=self)
-        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1096, 26))
+        # Center panel (plot tabs)
+        self.plotTabs = CentralTabWidget(parent=main_splitter, status_bar=self.statusBar)
+        self.plotTabs.setMinimumWidth(400)
+
+        # Right panel (editor)
+        self.editorTab = EditorTabWidget(parent=main_splitter, status_bar=self.statusBar)
+        self.editorTab.setMinimumWidth(250)
+        self.editorTab.setMaximumWidth(400)
+
+        # Add panels to splitter
+        main_splitter.addWidget(self.browserFrame)
+        main_splitter.addWidget(self.plotTabs)
+        main_splitter.addWidget(self.editorTab)
+
+        # Set splitter proportions (left:center:right = 1:2:1)
+        main_splitter.setSizes([300, 600, 300])
+
+        # Add splitter to main layout
+        main_layout.addWidget(main_splitter)
 
         """Sets up the default tabs of tab widgets."""
         self.plotTabs.setCurrentIndex(0)

@@ -3,10 +3,20 @@
       "primary": "#007bff",
       "secondary": "#6c757d",
       "background": "#f8f9fa",
-      "surface": "#fff",
+      "surface": "#ffffff",
       "text": "#232629",
+      "text-secondary": "#6c757d",
+      "text-disabled": "#adb5bd",
       "button": "#e9ecef",
       "button-hover": "#dee2e6",
-      "border": "#ccc"
+      "button-pressed": "#ced4da",
+      "border": "#cccccc",
+      "input-background": "#ffffff",
+      "selection-background": "#007bff",
+      "selection-text": "#ffffff",
+      "disabled": "#e9ecef",
+      "error": "#dc3545",
+      "success": "#28a745",
+      "warning": "#ffc107"
    }
 } 

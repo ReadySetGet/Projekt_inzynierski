@@ -108,5 +108,9 @@
   "CLEAR_ALL_RULES_CONFIRM": "Czy na pewno chcesz wyczyścić wszystkie reguły?",
   "NO_RULE_SELECTED": "Nie wybrano reguły. Proszę wybrać regułę do usunięcia.",
   "DELETE_RULE_CONFIRM": "Czy na pewno chcesz usunąć tę regułę?",
-  "WARNING": "Ostrzeżenie"
+  "WARNING": "Ostrzeżenie",
+  "THEME_AND_LANGUAGE": "Motyw i Język",
+  "THEME": "Motyw:",
+  "LANGUAGE": "Język:",
+  "APPLY": "Zastosuj"
 }

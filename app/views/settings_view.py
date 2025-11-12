@@ -1,5 +1,6 @@
 from PyQt6 import QtCore, QtWidgets
 
+from app.view_models.settings_view_model import SettingsViewModel
 from app.views.base_widget_view import BaseWidgetView
 
 
@@ -11,12 +12,19 @@ class SettingsView(BaseWidgetView):
 
     styles = ["Light", "Dark", "Blue", "Red", "Green"]
 
-    def __init__(self):
-        """Initialize the settings view widget."""
+    def __init__(self, view_model: SettingsViewModel = None):
+        """Initialize the settings view widget.
+
+        Args:
+            view_model (SettingsViewModel, optional): The view model for this view.
+        """
         super().__init__()
         self.setObjectName("settings")
+        self.view_model = view_model if view_model else SettingsViewModel()
         self._setup_ui()
+        self._setup_connections()
         self._retranslate_ui()
+        self._load_initial_data()
 
     def _setup_ui(self):
         self.resize(800, 600)
@@ -30,31 +38,36 @@ class SettingsView(BaseWidgetView):
         self.settings_buttons.setContentsMargins(0, 0, 0, 0)
         self.settings_buttons.setObjectName("settings_buttons")
 
+        self.theme_language_button = QtWidgets.QPushButton(parent=self.verticalLayoutWidget)
+        self.theme_language_button.setObjectName("theme_language_button")
+        self.theme_language_button.clicked.connect(self._show_theme_language_tab)
+        self.settings_buttons.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.theme_language_button)
+
         self.colour_button = QtWidgets.QPushButton(parent=self.verticalLayoutWidget)
         self.colour_button.setObjectName("colour_button")
         self.colour_button.clicked.connect(self._show_color_tab)
-        self.settings_buttons.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.colour_button)
+        self.settings_buttons.setWidget(1, QtWidgets.QFormLayout.ItemRole.LabelRole, self.colour_button)
 
         self.text_button = QtWidgets.QPushButton(parent=self.verticalLayoutWidget)
         self.text_button.setObjectName("text_button")
         self.text_button.clicked.connect(self._show_font_tab)
-        self.settings_buttons.setWidget(1, QtWidgets.QFormLayout.ItemRole.LabelRole, self.text_button)
+        self.settings_buttons.setWidget(2, QtWidgets.QFormLayout.ItemRole.LabelRole, self.text_button)
 
         self.pushButton_6 = QtWidgets.QPushButton(parent=self.verticalLayoutWidget)
         self.pushButton_6.setObjectName("pushButton_6")
-        self.settings_buttons.setWidget(2, QtWidgets.QFormLayout.ItemRole.LabelRole, self.pushButton_6)
+        self.settings_buttons.setWidget(3, QtWidgets.QFormLayout.ItemRole.LabelRole, self.pushButton_6)
 
         self.pushButton_5 = QtWidgets.QPushButton(parent=self.verticalLayoutWidget)
         self.pushButton_5.setObjectName("pushButton_5")
-        self.settings_buttons.setWidget(3, QtWidgets.QFormLayout.ItemRole.LabelRole, self.pushButton_5)
+        self.settings_buttons.setWidget(4, QtWidgets.QFormLayout.ItemRole.LabelRole, self.pushButton_5)
 
         self.pushButton_3 = QtWidgets.QPushButton(parent=self.verticalLayoutWidget)
         self.pushButton_3.setObjectName("pushButton_3")
-        self.settings_buttons.setWidget(4, QtWidgets.QFormLayout.ItemRole.LabelRole, self.pushButton_3)
+        self.settings_buttons.setWidget(5, QtWidgets.QFormLayout.ItemRole.LabelRole, self.pushButton_3)
 
         self.button_6 = QtWidgets.QPushButton(parent=self.verticalLayoutWidget)
         self.button_6.setObjectName("button_6")
-        self.settings_buttons.setWidget(5, QtWidgets.QFormLayout.ItemRole.LabelRole, self.button_6)
+        self.settings_buttons.setWidget(6, QtWidgets.QFormLayout.ItemRole.LabelRole, self.button_6)
 
         self.line = QtWidgets.QFrame(parent=self)
         self.line.setGeometry(QtCore.QRect(99, 10, 31, 561))
@@ -69,8 +82,33 @@ class SettingsView(BaseWidgetView):
         self.frame.setObjectName("frame")
         self.frame.setStyleSheet("background-color: #FCFCFC")
 
+        # Theme and Language Tab
+        self.theme_language_tab = QtWidgets.QWidget(parent=self.frame)
+        self.theme_language_tab.setObjectName("theme_language_tab")
+
+        self.theme_label = QtWidgets.QLabel(parent=self.theme_language_tab)
+        self.theme_label.setGeometry(QtCore.QRect(10, 20, 181, 41))
+        self.theme_label.setObjectName("theme_label")
+
+        self.theme_dropdown = QtWidgets.QComboBox(parent=self.theme_language_tab)
+        self.theme_dropdown.setGeometry(QtCore.QRect(220, 30, 200, 31))
+        self.theme_dropdown.setObjectName("theme_dropdown")
+
+        self.language_label = QtWidgets.QLabel(parent=self.theme_language_tab)
+        self.language_label.setGeometry(QtCore.QRect(10, 80, 181, 41))
+        self.language_label.setObjectName("language_label")
+
+        self.language_dropdown = QtWidgets.QComboBox(parent=self.theme_language_tab)
+        self.language_dropdown.setGeometry(QtCore.QRect(220, 90, 200, 31))
+        self.language_dropdown.setObjectName("language_dropdown")
+
+        self.apply_button = QtWidgets.QPushButton(parent=self.theme_language_tab)
+        self.apply_button.setGeometry(QtCore.QRect(220, 150, 100, 31))
+        self.apply_button.setObjectName("apply_button")
+
         self.colour_tab = QtWidgets.QWidget(parent=self.frame)
         self.colour_tab.setObjectName("colour_tab")
+        self.colour_tab.hide()
 
         self.central_label = QtWidgets.QLabel(parent=self.colour_tab)
         self.central_label.setGeometry(QtCore.QRect(10, 10, 181, 41))
@@ -157,12 +195,16 @@ class SettingsView(BaseWidgetView):
         self.font_size_spinbox.valueChanged.connect(self._font_size)
 
     def _retranslate_ui(self):
+        self.theme_language_button.setText(self.t("THEME_AND_LANGUAGE"))
         self.colour_button.setText(self.t("COLOUR"))
         self.text_button.setText(self.t("TEXT"))
         self.pushButton_6.setText(self.t("OPTION_3"))
         self.pushButton_5.setText(self.t("OPTION_4"))
         self.pushButton_3.setText(self.t("OPTION_5"))
         self.button_6.setText(self.t("OPTION_6"))
+        self.theme_label.setText(self.t("THEME"))
+        self.language_label.setText(self.t("LANGUAGE"))
+        self.apply_button.setText(self.t("APPLY"))
         self.central_label.setText(self.t("CENTRAL_WINDOW_COLOUR"))
         self.editor_label.setText(self.t("EDITOR_WINDOW_COLOUR"))
         self.browser_label.setText(self.t("BROWSER_WINDOW_COLOUR"))
@@ -173,11 +215,21 @@ class SettingsView(BaseWidgetView):
         self.font_color_label.setText(self.t("FONT_COLOUR"))
         self.font_family_label.setText(self.t("FONT_STYLE"))
 
+    def _show_theme_language_tab(self):
+        """Show the theme and language settings tab."""
+        self.colour_tab.hide()
+        self.font_tab.hide()
+        self.theme_language_tab.show()
+
     def _show_color_tab(self):
+        """Show the color settings tab."""
+        self.theme_language_tab.hide()
         self.font_tab.hide()
         self.colour_tab.show()
 
     def _show_font_tab(self):
+        """Show the font settings tab."""
+        self.theme_language_tab.hide()
         self.colour_tab.hide()
         self.font_tab.show()
 
@@ -227,3 +279,104 @@ class SettingsView(BaseWidgetView):
         family = self.font_family_dropdown.currentText()
         font.setFamily(family)
         self.font_family_label.setFont(font)
+
+    def _setup_connections(self):
+        """Setup connections between view and view model."""
+        # Connect dropdown changes to handlers
+        self.apply_button.clicked.connect(self._on_apply_settings)
+
+        # Connect view model signals to update UI
+        self.view_model.theme_list_changed.connect(self._update_theme_list)
+        self.view_model.language_list_changed.connect(self._update_language_list)
+        self.view_model.current_theme_changed.connect(self._on_current_theme_changed)
+        self.view_model.current_language_changed.connect(self._on_current_language_changed)
+
+    def _load_initial_data(self):
+        """Load initial data from view model."""
+        # Load available themes and languages
+        themes = self.view_model.get_available_themes()
+        languages = self.view_model.get_available_languages()
+
+        self._update_theme_list(themes)
+        self._update_language_list(languages)
+
+        # Set current selections
+        current_theme = self.view_model.get_current_theme()
+        current_language = self.view_model.get_current_language()
+
+        if current_theme:
+            index = self.theme_dropdown.findText(current_theme)
+            if index >= 0:
+                self.theme_dropdown.setCurrentIndex(index)
+
+        if current_language:
+            index = self.language_dropdown.findText(current_language)
+            if index >= 0:
+                self.language_dropdown.setCurrentIndex(index)
+
+    def _update_theme_list(self, themes: list[str]):
+        """Update the theme dropdown with available themes.
+
+        Args:
+            themes (list[str]): List of available theme names.
+        """
+        current_text = self.theme_dropdown.currentText()
+        self.theme_dropdown.clear()
+        self.theme_dropdown.addItems(themes)
+
+        # Restore selection if possible
+        if current_text:
+            index = self.theme_dropdown.findText(current_text)
+            if index >= 0:
+                self.theme_dropdown.setCurrentIndex(index)
+
+    def _update_language_list(self, languages: list[str]):
+        """Update the language dropdown with available languages.
+
+        Args:
+            languages (list[str]): List of available language codes.
+        """
+        current_text = self.language_dropdown.currentText()
+        self.language_dropdown.clear()
+        self.language_dropdown.addItems(languages)
+
+        # Restore selection if possible
+        if current_text:
+            index = self.language_dropdown.findText(current_text)
+            if index >= 0:
+                self.language_dropdown.setCurrentIndex(index)
+
+    def _on_apply_settings(self):
+        """Apply the selected theme and language settings."""
+        selected_theme = self.theme_dropdown.currentText()
+        selected_language = self.language_dropdown.currentText()
+
+        if selected_theme:
+            self.view_model.set_theme(selected_theme)
+
+        if selected_language:
+            self.view_model.set_language(selected_language)
+            # Update all UI text after language change
+            self._retranslate_ui()
+
+    def _on_current_theme_changed(self, theme_name: str):
+        """Handle theme change from view model.
+
+        Args:
+            theme_name (str): The new theme name.
+        """
+        index = self.theme_dropdown.findText(theme_name)
+        if index >= 0:
+            self.theme_dropdown.setCurrentIndex(index)
+
+    def _on_current_language_changed(self, language_code: str):
+        """Handle language change from view model.
+
+        Args:
+            language_code (str): The new language code.
+        """
+        index = self.language_dropdown.findText(language_code)
+        if index >= 0:
+            self.language_dropdown.setCurrentIndex(index)
+        # Update all UI text after language change
+        self._retranslate_ui()

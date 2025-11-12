@@ -3,7 +3,7 @@
 VENV_PY = .venv\Scripts\python.exe
 
 start:
-	python main.py
+	$(VENV_PY) main.py
 
 debug:
 	set PYTHONDEBUG=1 && $(VENV_PY) -m debugpy --wait-for-client --listen 5678 main.py
@@ -12,7 +12,7 @@ lint:
 	$(VENV_PY) -m flake8 app
 
 lint-fix:
-	python -m isort app && python -m black app
+	$(VENV_PY) -m isort app && $(VENV_PY) -m black app
 
 format:
 	$(VENV_PY) -m black app
@@ -24,10 +24,10 @@ test:
 	$(VENV_PY) -m pytest
 
 test-watch:
-	pytest --maxfail=1 --disable-warnings --tb=short -v
+	$(VENV_PY) -m pytest --maxfail=1 --disable-warnings --tb=short -v
 
 test-coverage:
-	pytest --cov=app
+	$(VENV_PY) -m pytest --cov=app
 
 type-check:
 	$(VENV_PY) -m mypy app

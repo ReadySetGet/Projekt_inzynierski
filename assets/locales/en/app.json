@@ -108,5 +108,9 @@
   "CLEAR_ALL_RULES_CONFIRM": "Are you sure you want to clear all rules?",
   "NO_RULE_SELECTED": "No rule selected. Please select a rule to delete.",
   "DELETE_RULE_CONFIRM": "Are you sure you want to delete this rule?",
-  "WARNING": "Warning"
+  "WARNING": "Warning",
+  "THEME_AND_LANGUAGE": "Theme & Language",
+  "THEME": "Theme:",
+  "LANGUAGE": "Language:",
+  "APPLY": "Apply"
 }

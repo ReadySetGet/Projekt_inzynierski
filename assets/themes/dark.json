@@ -5,8 +5,18 @@
     "background": "#232629",
     "surface": "#2c2f34",
     "text": "#f0f0f0",
+    "text-secondary": "#b0b0b0",
+    "text-disabled": "#777777",
     "button": "#444950",
     "button-hover": "#555a60",
-    "border": "#555"
+    "button-pressed": "#3a3d42",
+    "border": "#555555",
+    "input-background": "#3a3d42",
+    "selection-background": "#0d5b99",
+    "selection-text": "#ffffff",
+    "disabled": "#4a4a4a",
+    "error": "#d9534f",
+    "success": "#5cb85c",
+    "warning": "#f0ad4e"
   }
 } 
