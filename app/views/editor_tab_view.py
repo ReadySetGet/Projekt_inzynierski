@@ -386,7 +386,7 @@ class EditorTabWidget(BaseTabView):
 
     def _update_variable_display(self, var_info):
         """Update the variable name and range display."""
-        var_data = var_info.get("data", {})
+        var_data = var_info.get("data") or {}
         var_name = var_info.get("name", "Unknown")
         var_range = var_data.get("range", [0, 100])
 
@@ -399,7 +399,7 @@ class EditorTabWidget(BaseTabView):
         self.mf_table.itemChanged.disconnect(self._on_mf_table_item_changed)
 
         try:
-            var_data = var_info.get("data", {})
+            var_data = var_info.get("data") or {}
             mfs = var_data.get("membership_functions", [])
 
             self.number_of_mf_label.setText(f"Number of MF: {len(mfs)}")

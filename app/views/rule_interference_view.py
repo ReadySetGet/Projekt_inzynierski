@@ -110,20 +110,27 @@ class RuleInterferenceTabWidget(BaseTabView):
         self.rules_layout.setContentsMargins(0, 0, 0, 0)
         self.rules_layout.setSpacing(16)
 
-        # Aggregated output section (inserted after rule rows)
+        self.rules_list_container = QtWidgets.QWidget(parent=self.rules_container)
+        self.rules_list_layout = QtWidgets.QVBoxLayout(self.rules_list_container)
+        self.rules_list_layout.setContentsMargins(0, 0, 0, 0)
+        self.rules_list_layout.setSpacing(16)
+        self.rules_layout.addWidget(self.rules_list_container)
+
+        # Aggregated output section (displayed below rule rows)
         self.aggregated_section = QtWidgets.QWidget(parent=self.rules_container)
-        aggregated_layout = QtWidgets.QVBoxLayout(self.aggregated_section)
-        aggregated_layout.setContentsMargins(0, 0, 0, 0)
-        aggregated_layout.setSpacing(8)
+        self.aggregated_layout = QtWidgets.QVBoxLayout(self.aggregated_section)
+        self.aggregated_layout.setContentsMargins(0, 0, 0, 0)
+        self.aggregated_layout.setSpacing(16)
 
-        self.output_label = QtWidgets.QLabel(parent=self.aggregated_section)
-        self.output_label.setObjectName("output_label")
-        aggregated_layout.addWidget(self.output_label)
+        self.aggregated_placeholder = QtWidgets.QLabel(
+            self.t("NO_OUTPUT") if hasattr(self, "t") else "No outputs defined."
+        )
+        self.aggregated_placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.aggregated_layout.addWidget(self.aggregated_placeholder)
 
-        self.result_plot = pg.PlotWidget(parent=self.aggregated_section)
-        self.result_plot.setMinimumHeight(180)
-        hide_axes(self.result_plot)
-        aggregated_layout.addWidget(self.result_plot)
+        self._aggregated_outputs: List[Dict[str, Any]] = []
+
+        self.rules_layout.addWidget(self.aggregated_section)
 
         self.rules_scroll_area.setWidget(self.rules_container)
         main_layout.addWidget(self.rules_scroll_area, stretch=3)
@@ -140,7 +147,7 @@ class RuleInterferenceTabWidget(BaseTabView):
     def _retranslate_ui(self) -> None:
         self.system_label.setText(self.t("SYSTEM"))
         self.input_values_label.setText(self.t("INPUT_VALUES"))
-        self.output_label.setText("Output = --")
+        self.aggregated_placeholder.setText(self.t("NO_OUTPUT") if hasattr(self, "t") else "No outputs defined.")
         self.input_values_edit.setPlaceholderText("0.0, 0.0")
 
     def _update_system_name(self) -> None:
@@ -259,63 +266,96 @@ class RuleInterferenceTabWidget(BaseTabView):
                 self.inputs_summary_layout.removeWidget(label)
                 label.deleteLater()
 
-    def _rebuild_rule_rows(self, rules_payload: List[Dict[str, Any]]) -> None:
-        self._clear_layout(self.rules_layout)
+    def _ensure_aggregated_outputs(self, count: int) -> None:
+        if count == 0:
+            for entry in self._aggregated_outputs:
+                container = entry["container"]
+                self.aggregated_layout.removeWidget(container)
+                container.setParent(None)
+                container.deleteLater()
+            self._aggregated_outputs.clear()
+            self.aggregated_placeholder.show()
+            return
 
-        # Temporarily remove aggregated section before rebuilding rules
-        # Remove existing rule widgets while leaving the aggregated section intact.
-        self._remove_rule_widgets()
+        self.aggregated_placeholder.hide()
+
+        current = len(self._aggregated_outputs)
+        if current < count:
+            for _ in range(current, count):
+                container = QtWidgets.QWidget(parent=self.aggregated_section)
+                container_layout = QtWidgets.QVBoxLayout(container)
+                container_layout.setContentsMargins(0, 0, 0, 0)
+                container_layout.setSpacing(6)
+
+                label = QtWidgets.QLabel(parent=container)
+                label.setStyleSheet("font-weight: bold;")
+                container_layout.addWidget(label)
+
+                plot = pg.PlotWidget(parent=container)
+                plot.setMinimumHeight(180)
+                hide_axes(plot)
+                container_layout.addWidget(plot)
+
+                self._aggregated_outputs.append({"container": container, "label": label, "plot": plot})
+                self.aggregated_layout.addWidget(container)
+        elif current > count:
+            for _ in range(current - count):
+                entry = self._aggregated_outputs.pop()
+                container = entry["container"]
+                self.aggregated_layout.removeWidget(container)
+                container.setParent(None)
+                container.deleteLater()
+
+    def _rebuild_rule_rows(self, rules_payload: List[Dict[str, Any]]) -> None:
+        self._clear_layout(self.rules_list_layout)
 
         if not rules_payload:
             empty_label = QtWidgets.QLabel(self.t("NO_RULES_DEFINED") if hasattr(self, "t") else "No rules defined.")
             empty_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            self.rules_layout.addWidget(empty_label)
+            self.rules_list_layout.addWidget(empty_label)
+            return
 
-        else:
-            for rule in rules_payload:
-                title_label = QtWidgets.QLabel(rule.get("display", "Rule"))
-                title_label.setStyleSheet("font-weight: bold;")
-                self.rules_layout.addWidget(title_label)
+        for rule in rules_payload:
+            title_label = QtWidgets.QLabel(rule.get("display", "Rule"))
+            title_label.setStyleSheet("font-weight: bold;")
+            self.rules_list_layout.addWidget(title_label)
 
-                row_widget = QtWidgets.QWidget(parent=self.rules_container)
-                row_layout = QtWidgets.QHBoxLayout(row_widget)
-                row_layout.setContentsMargins(0, 0, 0, 0)
-                row_layout.setSpacing(12)
+            row_widget = QtWidgets.QWidget(parent=self.rules_container)
+            row_layout = QtWidgets.QHBoxLayout(row_widget)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.setSpacing(12)
 
-                inputs = rule.get("inputs", [])
-                if inputs:
-                    for input_vis in inputs:
-                        plot = pg.PlotWidget()
-                        plot.setMinimumSize(140, 110)
-                        self._render_input_condition_plot(plot, input_vis)
-                        row_layout.addWidget(plot)
-                else:
-                    placeholder = QtWidgets.QLabel(self.t("NO_INPUT_CONDITIONS") if hasattr(self, "t") else "No inputs")
-                    placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                    row_layout.addWidget(placeholder)
+            inputs = rule.get("inputs", [])
+            if inputs:
+                for input_vis in inputs:
+                    plot = pg.PlotWidget()
+                    plot.setMinimumSize(140, 110)
+                    self._render_input_condition_plot(plot, input_vis)
+                    row_layout.addWidget(plot)
+            else:
+                placeholder = QtWidgets.QLabel(self.t("NO_INPUT_CONDITIONS") if hasattr(self, "t") else "No inputs")
+                placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                row_layout.addWidget(placeholder)
 
-                connection_label = QtWidgets.QLabel(rule.get("connection_label", ""))
-                connection_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                connection_label.setMinimumWidth(70)
-                row_layout.addWidget(connection_label)
+            connection_label = QtWidgets.QLabel(rule.get("connection_label", ""))
+            connection_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            connection_label.setMinimumWidth(70)
+            row_layout.addWidget(connection_label)
 
-                outputs = rule.get("outputs", [])
-                if outputs:
-                    for output_vis in outputs:
-                        plot = pg.PlotWidget()
-                        plot.setMinimumSize(140, 110)
-                        self._render_output_condition_plot(plot, output_vis)
-                        row_layout.addWidget(plot)
-                else:
-                    placeholder = QtWidgets.QLabel(self.t("NO_OUTPUT") if hasattr(self, "t") else "No outputs")
-                    placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                    row_layout.addWidget(placeholder)
+            outputs = rule.get("outputs", [])
+            if outputs:
+                for output_vis in outputs:
+                    plot = pg.PlotWidget()
+                    plot.setMinimumSize(140, 110)
+                    self._render_output_condition_plot(plot, output_vis)
+                    row_layout.addWidget(plot)
+            else:
+                placeholder = QtWidgets.QLabel(self.t("NO_OUTPUT") if hasattr(self, "t") else "No outputs")
+                placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                row_layout.addWidget(placeholder)
 
-                row_layout.addStretch()
-                self.rules_layout.addWidget(row_widget)
-
-        # Insert aggregated section after rule rows (second element overall)
-        self.rules_layout.insertWidget(self._aggregated_index(), self.aggregated_section)
+            row_layout.addStretch()
+            self.rules_list_layout.addWidget(row_widget)
 
     def _render_input_condition_plot(self, plot_widget: pg.PlotWidget, data: Dict[str, Any]) -> None:
         plot_widget.clear()
@@ -361,32 +401,32 @@ class RuleInterferenceTabWidget(BaseTabView):
             plot_widget.plot(x, clipped_y, pen=None, brush=brush, fillLevel=0.0)
 
     def _update_aggregated_output(self, outputs_payload: List[Dict[str, Any]]) -> None:
-        self.result_plot.clear()
-        hide_axes(self.result_plot)
-
-        if not outputs_payload:
-            self.output_label.setText("Output = --")
+        count = len(outputs_payload)
+        self._ensure_aggregated_outputs(count)
+        if count == 0:
             return
 
-        output = outputs_payload[0]
-        x = output.get("curve_x", [])
-        y = output.get("curve_y", [])
-        value = output.get("value")
-        name = output.get("variable_name", "Output")
+        for idx, (entry, output) in enumerate(zip(self._aggregated_outputs, outputs_payload)):
+            label = entry["label"]
+            plot = entry["plot"]
 
-        if x and y:
-            pen = pg.mkPen("#3773FF", width=2)
-            brush = pg.mkBrush(55, 115, 255, 80)
-            self.result_plot.plot(x, y, pen=pen)
-            self.result_plot.plot(x, y, pen=None, brush=brush, fillLevel=0.0)
+            name = output.get("variable_name") or f"Output {idx + 1}"
+            value = output.get("value")
+            if value is not None:
+                label.setText(f"{name} = {format(value, '.2f')}")
+            else:
+                label.setText(f"{name} = --")
 
-        if value is not None:
-            line = pg.InfiniteLine(pos=value, angle=90, pen=pg.mkPen("#D62728", width=2))
-            self.result_plot.addItem(line)
-            formatted_value = format(value, ".2f")
-            self.output_label.setText(f"{name} = {formatted_value}")
-        else:
-            self.output_label.setText(f"{name} = --")
+            plot.clear()
+            hide_axes(plot)
+
+            x = output.get("curve_x", [])
+            y = output.get("curve_y", [])
+            if x and y:
+                pen = pg.mkPen("#3773FF", width=2)
+                brush = pg.mkBrush(55, 115, 255, 80)
+                plot.plot(x, y, pen=pen)
+                plot.plot(x, y, pen=None, brush=brush, fillLevel=0.0)
 
     # ------------------------------------------------------------------ #
     # Interaction handlers                                               #
@@ -474,18 +514,3 @@ class RuleInterferenceTabWidget(BaseTabView):
             elif item.layout():
                 self._clear_layout(item.layout())
         layout.invalidate()
-
-    def _remove_rule_widgets(self) -> None:
-        """Remove existing rule widgets while keeping the aggregated section alive."""
-        while self.rules_layout.count():
-            item = self.rules_layout.takeAt(0)
-            widget = item.widget()
-            if widget and widget is not self.aggregated_section:
-                widget.deleteLater()
-            elif widget is self.aggregated_section:
-                # Keep reference for later re-insertion.
-                self.aggregated_section.setParent(self.rules_container)
-
-    def _aggregated_index(self) -> int:
-        """Return the index where the aggregated section should be inserted."""
-        return min(1, self.rules_layout.count())

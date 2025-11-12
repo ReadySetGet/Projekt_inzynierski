@@ -187,7 +187,10 @@ class RuleInterferenceViewModel(BaseViewModel):
             return self._normalize_outputs(converted)
 
         if isinstance(outputs, (list, tuple)):
-            return [float(value) for value in outputs]
+            flattened: List[float] = []
+            for value in outputs:
+                flattened.extend(self._normalize_outputs(value))
+            return flattened
 
         try:
             return [float(outputs)]
