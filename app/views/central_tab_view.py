@@ -360,6 +360,8 @@ class CentralTabWidget(BaseTabView):
     def _on_data_changed(self):
         """Handle data changed signal from view model."""
         self._load_mf_plots()
+        self.fillTable()
+        self._update_system_name()
 
     def _load_mf_plots(self):
         """Load and display membership function plots for the selected input or output variable."""

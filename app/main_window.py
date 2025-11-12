@@ -1,3 +1,5 @@
+import os
+
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtWidgets import QMainWindow
 
@@ -171,6 +173,7 @@ class MainWindow(QMainWindow):
 
         # Connect view models to widgets
         self._connect_view_models()
+        self._connect_actions()
 
     def retranslate_ui(self):
         """Retranslate all UI elements when language changes."""
@@ -215,3 +218,68 @@ class MainWindow(QMainWindow):
         self.browserFrame.set_view_model(self.browser_frame_view_model)
         self.upMenuTab.set_view_model(self.top_menu_view_model)
         self.editorTab.set_view_model(self.editor_tab_view_model)
+
+    def _connect_actions(self) -> None:
+        """Connect UI actions like import/export buttons."""
+        if hasattr(self, "upMenuTab"):
+            self.upMenuTab.import_clicked.connect(self._handle_import_clicked)
+            self.upMenuTab.export_clicked.connect(self._handle_export_clicked)
+
+    def _handle_import_clicked(self) -> None:
+        """Handle importing a FIS model from file."""
+        title = "Import FIS Model"
+        if self.context and self.context.translate_manager:
+            title = self.context.translate_manager.t("IMPORT")
+
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            title,
+            "",
+            "FIS Files (*.fis);;All Files (*)",
+        )
+
+        if not file_path:
+            return
+
+        success = self.top_menu_view_model.import_model(file_path)
+        if success:
+            if hasattr(self, "statusBar") and self.statusBar:
+                filename = os.path.basename(file_path)
+                self.statusBar.showMessage(f"Imported model from {filename}", 5000)
+        else:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Import Failed",
+                "The selected file could not be imported.",
+            )
+
+    def _handle_export_clicked(self) -> None:
+        """Handle exporting the current FIS model to file."""
+        title = "Export FIS Model"
+        if self.context and self.context.translate_manager:
+            title = self.context.translate_manager.t("EXPORT")
+
+        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            title,
+            "",
+            "FIS Files (*.fis);;All Files (*)",
+        )
+
+        if not file_path:
+            return
+
+        if not file_path.lower().endswith(".fis"):
+            file_path = f"{file_path}.fis"
+
+        success = self.top_menu_view_model.export_model(file_path)
+        if success:
+            if hasattr(self, "statusBar") and self.statusBar:
+                filename = os.path.basename(file_path)
+                self.statusBar.showMessage(f"Exported model to {filename}", 5000)
+        else:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Export Failed",
+                "The model could not be exported to the selected file.",
+            )

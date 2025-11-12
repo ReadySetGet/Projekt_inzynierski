@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Tuple
 
+from app.models.fis_reader_writer import FISReaderWriter
 from app.services.fis_state_manager import FISStateManager
 from app.services.fuzzy.fuzzy_inference_engine import FuzzyInferenceEngine
 from app.services.fuzzy.membership_function_manager import MembershipFunctionManager
@@ -24,6 +25,16 @@ class FuzzyCalculationService:
         self._mf_manager = MembershipFunctionManager(self._state_manager.fis_model)
         self._rule_manager = RuleManager(self._state_manager.fis_model)
         self._inference_engine = FuzzyInferenceEngine(self._state_manager.fis_model)
+        self._reader_writer = FISReaderWriter(self._state_manager.fis_model)
+
+    def _refresh_managers(self) -> None:
+        """Recreate service managers to use the current FIS model."""
+        model = self._state_manager.fis_model
+        self._variable_manager = VariableManager(model)
+        self._mf_manager = MembershipFunctionManager(model)
+        self._rule_manager = RuleManager(model)
+        self._inference_engine = FuzzyInferenceEngine(model)
+        self._reader_writer.model = model
 
     # FIS Model Access
     @property
@@ -311,6 +322,26 @@ class FuzzyCalculationService:
     def clear_selection(self) -> None:
         """Clear all variable selections."""
         self._state_manager.clear_selection()
+
+    # Import/Export Management
+    def import_model(self, path: str) -> bool:
+        """Import a FIS model from the given file path."""
+        result = self._reader_writer.read_fis(path)
+        if result != 1 or self._reader_writer.model is None:
+            return False
+
+        self._state_manager.set_fis_model(self._reader_writer.model)
+        self._refresh_managers()
+        return True
+
+    def export_model(self, path: str) -> bool:
+        """Export the current FIS model to the given file path."""
+        if self._state_manager.fis_model is None:
+            return False
+
+        self._reader_writer.model = self._state_manager.fis_model
+        result = self._reader_writer.write_fis(path)
+        return result == 1
 
     def get_selected_input_name(self) -> str:
         """Get the currently selected input name.

@@ -70,6 +70,18 @@ class TopMenuViewModel(BaseViewModel):
             if success:
                 self.notify_data_changed.emit()
 
+    def import_model(self, file_path: str) -> bool:
+        """Import a FIS model from file."""
+        success = self.fuzzy_service.import_model(file_path)
+        if success:
+            self.notify_data_changed.emit()
+        return success
+
+    def export_model(self, file_path: str) -> bool:
+        """Export the current FIS model to file."""
+        success = self.fuzzy_service.export_model(file_path)
+        return success
+
     def can_delete_input(self) -> bool:
         """Check if input can be deleted."""
         return self.fuzzy_service.get_input_count() > 0
