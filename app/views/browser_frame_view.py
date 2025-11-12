@@ -1,25 +1,6 @@
 from PyQt6 import QtCore, QtWidgets
 
 from app.views.base_frame_view import BaseFrameView
-from app.views.in_output import InOutput
-from app.views.mf import MembershipFunction
-from app.views.rule import Rule
-
-
-def populate_inoutputs(data_inoutputs, tree_parent):
-    """Populate tree widget with input/output data.
-
-    Args:
-        data_inoutputs: List of input/output objects.
-        tree_parent: Parent tree widget item.
-    """
-    for inout in data_inoutputs:
-        tree_child_inp = QtWidgets.QTreeWidgetItem([inout.GetName()])
-        mfs = inout.GetMfs()
-        for mf in mfs:
-            mf_child_inp = QtWidgets.QTreeWidgetItem(["MF"])
-            tree_child_inp.addChild(mf_child_inp)
-        tree_parent.addChild(tree_child_inp)
 
 
 class BrowserFrameWidget(BaseFrameView):
@@ -27,43 +8,6 @@ class BrowserFrameWidget(BaseFrameView):
 
     Displays the system browser in the left window of the program.
     """
-
-    mf1 = MembershipFunction(1, 1)
-    mf2 = MembershipFunction(2, 2)
-    mfs = [mf1, mf2]
-    inoutput = InOutput(name="Input 1", mfs=mfs)
-    inoutputs = [inoutput]
-    rule1 = Rule(
-        "Input1",
-        "MF1",
-        "1",
-        "Input2",
-        "MF2",
-        "2",
-        "Output",
-        "MF3",
-        "if",
-        "1",
-        "and",
-        "1",
-        "Rule 1",
-    )
-    rule2 = Rule(
-        "Input1",
-        "MF1",
-        "3",
-        "Input2",
-        "MF2",
-        "1",
-        "Output",
-        "MF3",
-        "2",
-        "if",
-        "and",
-        "1",
-        "Rule 2",
-    )
-    rules = [rule1, rule2]
 
     del_inputs = QtCore.pyqtSignal()
     del_outputs = QtCore.pyqtSignal()
@@ -78,8 +22,25 @@ class BrowserFrameWidget(BaseFrameView):
         super().__init__(parent=parent)
         self.setObjectName("browserFrane")
         self.status_bar = status_bar
+        self._system_items = []
+        self._design_items = []
+        self._input_item_map = {}
+        self._output_item_map = {}
         self._setup_ui()
         self._retranslate_ui()
+
+    def set_view_model(self, view_model) -> None:
+        """Set the view model and subscribe to its signals."""
+        super().set_view_model(view_model)
+        if not view_model:
+            return
+
+        view_model.system_browser_updated.connect(self._populate_system_items)
+        view_model.design_browser_updated.connect(self._populate_design_items)
+        view_model.system_item_selected.connect(self._on_system_item_selected)
+        view_model.design_item_selected.connect(self._on_design_item_selected)
+
+        view_model.refresh_browser()
 
     def _setup_ui(self):
         self.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
@@ -112,15 +73,11 @@ class BrowserFrameWidget(BaseFrameView):
         # Add tree items
         self.tree_data_input = QtWidgets.QTreeWidgetItem(["Inputs"])
         self.tree.insertTopLevelItem(0, self.tree_data_input)
-        populate_inoutputs(data_inoutputs=self.inoutputs, tree_parent=self.tree_data_input)
-
         self.tree_data_output = QtWidgets.QTreeWidgetItem(["Outputs"])
         self.tree.insertTopLevelItem(1, self.tree_data_output)
-        populate_inoutputs(data_inoutputs=self.inoutputs, tree_parent=self.tree_data_output)
 
         self.tree_data_rules = QtWidgets.QTreeWidgetItem(["Rules"])
         self.tree.insertTopLevelItem(2, self.tree_data_rules)
-        self.populate_rules(self.rules)
 
         # Add tree to layout
         main_layout.addWidget(self.tree)
@@ -146,21 +103,22 @@ class BrowserFrameWidget(BaseFrameView):
         self.delete_all_outputs_button.setText(self.t("CLEAR_OUTPUTS"))
         self.design_browser_label.setText(self.t("DESIGN_BROWSER"))
 
-    def populate_rules(self, rules):
-        """Populate tree widget with rules.
-
-        Args:
-            rules: List of rule objects.
-        """
-        for rule in rules:
-            rule_child = QtWidgets.QTreeWidgetItem([rule.getName()])
-            self.tree_data_rules.addChild(rule_child)
-
     def selection_changed(self):
         """Handle selection change in the tree widget."""
         items = self.tree.selectedItems()
         if len(items) != 0:
-            self.status_bar.showMessage(f"Last action: selected item {items[0].text(0)}")
+            item = items[0]
+            payload = item.data(0, QtCore.Qt.ItemDataRole.UserRole)
+            if isinstance(payload, dict):
+                category = payload.get("category")
+                name = payload.get("name", item.text(0))
+                data = payload.get("data", {})
+                if self.view_model:
+                    if category == "system":
+                        self.view_model.select_system_item(name, data)
+                    elif category == "design":
+                        self.view_model.select_design_item(name, data)
+            self.status_bar.showMessage(f"Last action: selected item {item.text(0)}")
 
     def clear_inputs(self):
         """Clear all inputs from the tree widget."""
@@ -173,3 +131,121 @@ class BrowserFrameWidget(BaseFrameView):
         for i in range(self.tree_data_output.childCount()):
             self.tree_data_output.removeChild(self.tree_data_output.child(0))
         self.del_outputs.emit()
+
+    def _populate_system_items(self, items: list) -> None:
+        """Populate tree with system-level items."""
+        self._system_items = items or []
+        self._input_item_map = {}
+        self._output_item_map = {}
+        self._clear_children(self.tree_data_input)
+        self._clear_children(self.tree_data_output)
+        self._clear_children(self.tree_data_rules)
+
+        for entry in self._system_items:
+            item_type = entry.get("type")
+            name = entry.get("name", "")
+            tree_item = QtWidgets.QTreeWidgetItem([name])
+            tree_item.setData(
+                0,
+                QtCore.Qt.ItemDataRole.UserRole,
+                {"category": "system", "name": name, "data": entry},
+            )
+
+            if item_type == "input":
+                self.tree_data_input.addChild(tree_item)
+                self._input_item_map[name] = tree_item
+            elif item_type == "output":
+                self.tree_data_output.addChild(tree_item)
+                self._output_item_map[name] = tree_item
+            elif item_type == "rule":
+                self.tree_data_rules.addChild(tree_item)
+
+        self.tree.expandAll()
+
+    def _populate_design_items(self, items: list) -> None:
+        """Populate tree with design items (membership functions)."""
+        self._design_items = items or []
+
+        for parent in self._input_item_map.values():
+            self._clear_children(parent)
+        for parent in self._output_item_map.values():
+            self._clear_children(parent)
+
+        for entry in self._design_items:
+            item_type = entry.get("type")
+            name = entry.get("name", "")
+            variable_name = entry.get("variable_name", "")
+            parent_item = None
+
+            if item_type == "input_mf":
+                parent_item = self._input_item_map.get(variable_name)
+            elif item_type == "output_mf":
+                parent_item = self._output_item_map.get(variable_name)
+
+            if not parent_item:
+                continue
+
+            display_name = name
+            tree_item = QtWidgets.QTreeWidgetItem([display_name])
+            tree_item.setData(
+                0,
+                QtCore.Qt.ItemDataRole.UserRole,
+                {"category": "design", "name": name, "data": entry},
+            )
+            parent_item.addChild(tree_item)
+
+        self.tree.expandAll()
+
+    def _clear_children(self, parent_item: QtWidgets.QTreeWidgetItem) -> None:
+        """Remove all children from the given tree item."""
+        while parent_item.childCount():
+            child = parent_item.child(0)
+            parent_item.removeChild(child)
+            del child
+
+    def _on_system_item_selected(self, item_name: str, item_data: dict) -> None:
+        """Highlight a system item based on view-model selection."""
+        self._select_item_by_name(self.tree_data_input, item_name)
+        self._select_item_by_name(self.tree_data_output, item_name)
+        self._select_item_by_name(self.tree_data_rules, item_name)
+
+    def _on_design_item_selected(self, item_name: str, item_data: dict) -> None:
+        """Highlight a design item based on view-model selection."""
+        if not isinstance(item_data, dict):
+            return
+
+        variable_name = item_data.get("variable_name")
+        item_type = item_data.get("type")
+
+        parent_item = None
+        if item_type == "input_mf":
+            parent_item = self._input_item_map.get(variable_name)
+        elif item_type == "output_mf":
+            parent_item = self._output_item_map.get(variable_name)
+
+        if parent_item:
+            child = self._find_child_by_name(parent_item, item_name)
+            if child:
+                self.tree.setCurrentItem(child)
+
+    def _find_child_by_name(
+        self, parent_item: QtWidgets.QTreeWidgetItem, name: str
+    ) -> QtWidgets.QTreeWidgetItem | None:
+        """Return the first direct child whose label matches the given name."""
+        for i in range(parent_item.childCount()):
+            child = parent_item.child(i)
+            if child.text(0) == name:
+                return child
+        return None
+
+    def _select_item_by_name(self, parent_item: QtWidgets.QTreeWidgetItem, name: str) -> bool:
+        """Select the first child whose label contains the provided name."""
+        for i in range(parent_item.childCount()):
+            child = parent_item.child(i)
+            text = child.text(0)
+            if name in text:
+                self.tree.setCurrentItem(child)
+                return True
+            if self._select_item_by_name(child, name):
+                return True
+        return False

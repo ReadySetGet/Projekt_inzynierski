@@ -59,6 +59,7 @@ class BrowserFrameViewModel(BaseViewModel):
                     "index": i,
                     "range": input_var.get("range", [0, 1]),
                     "mf_count": len(input_var.get("membership_functions", [])),
+                    "membership_functions": input_var.get("membership_functions", []),
                 }
             )
 
@@ -71,6 +72,7 @@ class BrowserFrameViewModel(BaseViewModel):
                     "index": i,
                     "range": output_var.get("range", [0, 1]),
                     "mf_count": len(output_var.get("membership_functions", [])),
+                    "membership_functions": output_var.get("membership_functions", []),
                 }
             )
 

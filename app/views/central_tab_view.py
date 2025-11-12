@@ -191,14 +191,13 @@ class CentralTabWidget(BaseTabView):
 
     def _update_system_name(self):
         """Update system name labels from fuzzy service."""
+        system_name = ""
         if self.view_model and self.view_model.fuzzy_service:
             system_name = self.view_model.fuzzy_service.get_system_name()
-            system_text = f"{self.t('SYSTEM')}: {system_name}"
-        else:
-            system_text = self.t("SYSTEM_PLACEHOLDER_NAME")
 
-        self.system_name_label.setText(system_text)
-        self.system_label_2.setText(system_text)
+        display_text = f"{self.t('SYSTEM')}: {system_name}"
+        self.system_name_label.setText(display_text)
+        self.system_label_2.setText(display_text)
 
     # Placeholder bo nie mam danych z back endu jak to generować
     def generateRules(self):
