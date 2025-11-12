@@ -4,4 +4,5 @@ Modules:
 
     evalfis_ext.py: extension of 'evalfis.py' module
     fisrule_ext.py: extension of 'fisrule' class
+    readfis_ext.py: extension of 'readfis.py' module
 """

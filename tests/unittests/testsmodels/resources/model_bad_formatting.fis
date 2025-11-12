@@ -1,0 +1,41 @@
+[System]
+Name='fis'
+Type='mamdani'
+Version=2.0
+NumInputs=2
+NumOutputs=2
+NumRules=3
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='input0'
+Range=[0 1]
+NumMFs=1
+MF1='mf0':'trimf',[0 0.5 1]
+
+[Input2]
+Name='input1'
+Range=[0 1]
+NumMFs=1
+MF1='mf0':'trimf',[0 0.5 1]
+
+[Output1]
+Name='output0'
+Range=[0 1]
+NumMFs=1
+MF1='mf0':'trimf',[0 0.5 1]
+
+[Output2]
+Name='output1'
+Range=[0 1]
+NumMFs=1
+MF1='mf0':'trimf',[0 0.5 1]
+
+[Rules]
+1 1, 1 1 (0.4000) : 0 ; 1 1 1 1 : rule0
+1 0, 0 1 (0.3000) : 1 ; 1 0 1 0 ; rule1
+1 1, 1 0 (1) : 0 ; 0 0 0 1 ; rule2
