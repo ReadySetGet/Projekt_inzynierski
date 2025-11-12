@@ -22,6 +22,7 @@ def tested_widget(qtbot, app):
 def test_widget_initial_state(tested_widget):
     assert isinstance(tested_widget, QtWidgets.QTabWidget)
     assert tested_widget.import_button.text() == "Import"
+    assert tested_widget.export_button.text() == "Export"
 
 
 def test_tabs_structure(tested_widget):
@@ -32,15 +33,17 @@ def test_tabs_structure(tested_widget):
     assert tested_widget.widget(1).objectName() == "tuningTab"
 
 
-def test_scroll_area_widgets(tested_widget):
-    files_area = tested_widget.findChild(QtWidgets.QScrollArea, "files_management_button_area")
-    assert isinstance(files_area, QtWidgets.QScrollArea)
-
-    import_button = files_area.findChild(QtWidgets.QToolButton, "import_button")
-    assert isinstance(import_button, QtWidgets.QToolButton)
-    assert import_button.text() == "Import"
+def test_buttons_exist(tested_widget):
+    assert tested_widget.findChild(QtWidgets.QToolButton, "new_button") is tested_widget.new_button
+    assert tested_widget.findChild(QtWidgets.QToolButton, "import_button") is tested_widget.import_button
+    assert tested_widget.findChild(QtWidgets.QToolButton, "export_button") is tested_widget.export_button
 
 
 def test_import_clicked_emit(qtbot, tested_widget):
     with qtbot.waitSignal(tested_widget.import_clicked, timeout=1000):
         qtbot.mouseClick(tested_widget.import_button, Qt.MouseButton.LeftButton)
+
+
+def test_export_clicked_emit(qtbot, tested_widget):
+    with qtbot.waitSignal(tested_widget.export_clicked, timeout=1000):
+        qtbot.mouseClick(tested_widget.export_button, Qt.MouseButton.LeftButton)
