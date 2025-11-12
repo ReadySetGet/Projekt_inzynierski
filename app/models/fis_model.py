@@ -4,11 +4,10 @@ This module handles type, variables, membership functions (mf) and rules.
 
 Classes:
 
-    FISModel: data model class for a fis system.
+    FISModel: data model class for a fis system
 """
 
 import fuzzylab as fl
-from fuzzylab.FuzzyInferenceSystem import FuzzyInferenceSystem
 
 from .modelsresources.fisrule_ext import FisRuleEx
 
@@ -91,18 +90,26 @@ class FISModel:
         update_rule(int, list[int], list[int]) -> int: Update a given rule.
     """
 
-    _fis: FuzzyInferenceSystem
+    _fis: fl.mamfis | fl.sugfis
     """The contained fis system."""
 
-    def __init__(self, fis: FuzzyInferenceSystem = None):
-        """Initialize a new class instance.
+    def __init__(self, fis: fl.mamfis | fl.sugfis = None, fis_name: str = "fis", fis_type: str = None):
+        """Initialize a new class instance with the given fuzzy system.
 
         Args:
-            fis (FuzzyInferenceSystem, optional): The fis system to be used. If None,
-                a new Mamdani system will be generated. Defaults to None.
+            fis: The fuzzy inference system to be used. If None, a new Mamdani
+                system will be generated.
+            fis_name: Name of the fuzzy inference system.
+            fis_type: Type of the new fuzzy inference system, either
+                ``"mamdani"`` or ``"sugeno"``.
         """
-        if fis is None:
-            self._fis = fl.mamfis("fis")
+        if fis_type is not None:
+            if fis_type == "sugeno":
+                self._fis = fl.sugfis(fis_name)
+            if fis_type == "mamdani":
+                self._fis = fl.mamfis(fis_name)
+        elif fis is None:
+            self._fis = fl.mamfis(fis_name)
         else:
             self._fis = fis
 

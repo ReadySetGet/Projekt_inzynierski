@@ -7,6 +7,7 @@ This package contains:
 Modules:
     counter_model.py: basic counter model
     fis_model.py: main fis data model with means of its edition
+    fis_reader_writer.py: reader/writer of fis files
 
 Subpackages:
     modelsresources: necessary extensions of the 'fuzzylab' library
