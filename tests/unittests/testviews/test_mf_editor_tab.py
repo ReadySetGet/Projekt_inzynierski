@@ -25,6 +25,10 @@ def test_initial_state(tested_widget):
 
     assert tested_widget.mf_range_label.text() == "Range"
 
+    assert tested_widget.mf_name_edit.text() == "Placeholder"
+
+    assert tested_widget.mf_range_edit.text() == tested_widget.default_parameters
+
     assert tested_widget.mf_table.rowCount() == 1
     assert tested_widget.mf_table.columnCount() == 3
     assert tested_widget.mf_table.horizontalHeaderItem(0).text() == "Name"
@@ -46,6 +50,7 @@ def test_object_names(tested_widget):
     assert tested_widget.property_editor_label.objectName() == "property_editor_label"
     assert tested_widget.mf_name_label.objectName() == "mf_name_label"
     assert tested_widget.mf_range_label.objectName() == "mf_range_label"
+    assert tested_widget.mf_name_edit.objectName() == "mf_name_edit"
     assert tested_widget.mf_table.objectName() == "mf_table"
     assert tested_widget.shape_select_dropdown.objectName() == "shape_select_dropdown"
     assert tested_widget.number_of_mf_label.objectName() == "number_of_mf_label"
@@ -57,6 +62,8 @@ def test_types(tested_widget):
     assert isinstance(tested_widget.property_editor_label, QtWidgets.QLabel)
     assert isinstance(tested_widget.mf_name_label, QtWidgets.QLabel)
     assert isinstance(tested_widget.mf_range_label, QtWidgets.QLabel)
+    assert isinstance(tested_widget.mf_name_edit, QtWidgets.QLineEdit)
+    assert isinstance(tested_widget.mf_range_edit, QtWidgets.QLineEdit)
     assert isinstance(tested_widget.mf_table, QtWidgets.QTableWidget)
     assert isinstance(tested_widget.shape_select_dropdown, QtWidgets.QComboBox)
     assert isinstance(tested_widget.number_of_mf_label, QtWidgets.QLabel)
@@ -88,3 +95,10 @@ def test_shape_select_dropdown(tested_widget):
     assert shape_select.currentIndex() == 0
     assert shape_select.currentText() == "Triangle"
 
+
+def test_change_name(tested_widget):
+    tested_widget.mf_table.selectRow(0)
+    new_name = "Test Name"
+    tested_widget.mf_name_edit.setText(new_name)
+
+    assert tested_widget.mf_table.item(0, 0).text() == new_name
