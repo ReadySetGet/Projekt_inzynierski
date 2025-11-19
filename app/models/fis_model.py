@@ -108,6 +108,9 @@ NR_OF_INTERPOLATION_POINTS_MAX = 1000
 DEFAULT_INTERPOLATION_POINTS_NUMBER = 100
 """Default number of function interpolation points."""
 
+RESOLUTION_OF_VARIABLE_RANGE = 0.01
+"""Acceptable resolution of variable range values."""
+
 
 class FISModel:
     """A class containing a fuzzy inference system (fis) and means of its
@@ -564,6 +567,7 @@ class FISModel:
         self._fis.Rules.insert(rule_idx, new_rule)
         return 1
 
+<<<<<<< HEAD
     def update_logic_methods(self, and_method: str = "", or_method: str = "",
                              imp_method: str = "",
                              agg_method: str = "") -> int:
@@ -737,6 +741,50 @@ class FISModel:
     def get_interpolation_points(self) -> int:
         """Get the function interpolation points number."""
         return self._interpolation_points_nr
+
+    def change_variable_range(self, io_variable_name: str,
+                              input_or_output: str,
+                              new_range: list[float]) -> int:
+        """Change the domain range of a given input/output variable.
+
+        Parameters:
+
+            io_variable_name (str): name of the variable
+            input_or_output (str): "input" if the variable is an input,
+                "output" if else
+            new_range (list[int]): new range for the variable, in the form of
+                [min, max]
+
+        Returns:
+
+            1 - range changed successfully
+
+            -1 - provided min is higher than provided max
+
+            -2 - range values are stricter than acceptable resolution
+        """
+        if new_range[0] >= new_range[1]:
+            return -1
+
+        if round(new_range[0]/RESOLUTION_OF_VARIABLE_RANGE) \
+                - new_range[0]/RESOLUTION_OF_VARIABLE_RANGE != 0:
+            return -2
+
+        if round(new_range[1] / RESOLUTION_OF_VARIABLE_RANGE) \
+                - new_range[1] / RESOLUTION_OF_VARIABLE_RANGE != 0:
+            return -2
+
+        [io_variable, io_idx] = self._find_variable(io_variable_name,
+                                                    input_or_output)
+        if input_or_output == "input":
+            self._fis.Inputs.pop(io_idx)
+            io_variable.Range = new_range
+            self._fis.Inputs.insert(io_idx, io_variable)
+        else:
+            self._fis.Outputs.pop(io_idx)
+            io_variable.Range = new_range
+            self._fis.Outputs.insert(io_idx, io_variable)
+        return 1
 
     def _find_variable(self, io_variable_name: str,
                        input_or_output: str) -> [fl.fisvar, int]:
