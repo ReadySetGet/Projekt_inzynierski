@@ -64,6 +64,22 @@ DEFAULT_VARIABLE_TO_MF_MAPPING_BEHAVIOUR = 1
 (mu(x) = 1 - mf(x)).
 """
 
+AVAILABLE_LOGIC_METHODS_MAMDANI: dict[str, list[str]] = {
+    "AndMethod": ["min", "prod"],
+    "OrMethod": ["max", "probor", "sum"],
+    "ImplicationMethod": ["min", "prod"],
+    "AggregationMethod": ["max", "probor", "sum"],
+}
+"""Available logic methods for certain functions of Mamdani fis."""
+
+AVAILABLE_LOGIC_METHODS_SUGENO: dict[str, list[str]] = {
+    "AndMethod": ["min", "prod"],
+    "OrMethod": ["max", "probor", "sum"],
+    "ImplicationMethod": ["prod"],
+    "AggregationMethod": ["sum"],
+}
+"""Available logic methods for certain functions of Sugeno fis."""
+
 
 class FISModel:
     """A class containing a fuzzy inference system (fis) and means of its
@@ -102,19 +118,29 @@ class FISModel:
             Update a given rule.
     """
 
-    _fis: FuzzyInferenceSystem
+    _fis: fl.mamfis | fl.sugfis
     """The contained fis system."""
 
-    def __init__(self, fis: FuzzyInferenceSystem = None):
-        """Initialize a new class instance.
+    def __init__(self, fis: fl.mamfis | fl.sugfis = None,
+                 fis_name: str = "fis", fis_type: str = None):
+        """Initialize a new class instance, with the given fis system. If
+        "fis_type" is provided, a new 2-input-1-output (with 3 mfs each) fis of
+        the given type will be initiated.
 
         Parameters:
 
             fis (FuzzyInferenceSystem): The fis system to be used. If None,
                 a new Mamdani system will be generated.
+            fis_name (str): Name of the fis system.
+            fis_type (str): Type of the new fis system, "mamdani" or "sugeno".
         """
-        if fis is None:
-            self._fis = fl.mamfis("fis")
+        if fis_type is not None:
+            if fis_type == "sugeno":
+                self._fis = fl.sugfis(fis_name)
+            if fis_type == "mamdani":
+                self._fis = fl.mamfis(fis_name)
+        elif fis is None:
+            self._fis = fl.mamfis(fis_name)
         else:
             self._fis = fis
 
@@ -499,6 +525,51 @@ class FISModel:
         new_rule = FisRuleEx(new_rule_is_mf, new_rule_name, [new_rule_data],
                              len(self._fis.Inputs))
         self._fis.Rules.insert(rule_idx, new_rule)
+        return 1
+
+    def update_logic_methods(self, and_method: str = "", or_method: str = "",
+                             imp_method: str = "",
+                             agg_method: str = "") -> int:
+        """Update the logic methods (and, or, implication, aggregation) of the
+        fis used. Pass only those methods you want changed.
+
+        Parameters:
+
+            and_method (str): new and method
+            or_method (str): new or method
+            imp_method (str): new implication method
+            agg_method (str): new aggregation method
+
+        Returns:
+
+            1 - updates made successfully
+
+            -1 - new method provided not available for the fis type used or
+                incorrect
+        """
+        methods_list = []
+        if type(self._fis) is fl.mamfis:
+            methods_list = AVAILABLE_LOGIC_METHODS_MAMDANI
+        if type(self._fis) is fl.sugfis:
+            methods_list = AVAILABLE_LOGIC_METHODS_SUGENO
+
+        if and_method != "":
+            if and_method not in methods_list["AndMethod"]:
+                return -1
+            self._fis.AndMethod = and_method
+        if or_method != "":
+            if or_method not in methods_list["OrMethod"]:
+                return -1
+            self._fis.OrMethod = or_method
+        if imp_method != "":
+            if imp_method not in methods_list["ImplicationMethod"]:
+                return -1
+            self._fis.ImplicationMethod = imp_method
+        if agg_method != "":
+            if agg_method not in methods_list["AggregationMethod"]:
+                return -1
+            self._fis.AggregationMethod = agg_method
+
         return 1
 
     def _find_variable(self, io_variable_name: str,
