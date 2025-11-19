@@ -567,7 +567,6 @@ class FISModel:
         self._fis.Rules.insert(rule_idx, new_rule)
         return 1
 
-<<<<<<< HEAD
     def update_logic_methods(self, and_method: str = "", or_method: str = "",
                              imp_method: str = "",
                              agg_method: str = "") -> int:

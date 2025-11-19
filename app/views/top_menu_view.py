@@ -11,13 +11,15 @@ class TopMenu(QtWidgets.QTabWidget):
         Allows user interaction via QPushButton and QToolButton GUI elements .
 
         Methods:
-            __init__(QtWidgets.*): create an instance of TopMenu and bind it to the parent widget.
+            __init__(parent): create an instance of TopMenu and bind it to the parent window.
 
         Attributes:
             spinbox_changed: pyqtSignal which gets emitted to backend whenever the amount of interpolation
             points is changed.
+            new_clicked: pyqtSignal which gets emitted to back end when new_button is clicked.
     """
     spinbox_changed = QtCore.pyqtSignal()
+    new_clicked = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         """Initialize a new class instance.
@@ -46,6 +48,23 @@ class TopMenu(QtWidgets.QTabWidget):
         self.interpolation_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.interpolation_label.setObjectName("interpolation_label")
 
+        self.files_management_button_area = QtWidgets.QScrollArea(parent=self.designTab)
+        self.files_management_button_area.setGeometry(QtCore.QRect(0, 0, 271, 131))
+        self.files_management_button_area.setWidgetResizable(True)
+        self.files_management_button_area.setObjectName("files_management_button_area")
+
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 269, 129))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+
+        self.new_button = QtWidgets.QToolButton(parent=self.scrollAreaWidgetContents)
+        self.new_button.setGeometry(QtCore.QRect(10, 40, 81, 41))
+        self.new_button.setObjectName("new_button")
+
+        self.new_button.clicked.connect(self._new_button_clicked)
+
+        self.files_management_button_area.setWidget(self.scrollAreaWidgetContents)
+
         self.addTab(self.designTab, "")
 
         self.tuningTab = QtWidgets.QWidget()
@@ -55,6 +74,7 @@ class TopMenu(QtWidgets.QTabWidget):
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
         _translate = QtCore.QCoreApplication.translate
+        self.new_button.setText(_translate("MainWindow", "New"))
         self.setTabText(self.indexOf(self.designTab), _translate("MainWindow", "Design"))
         self.setTabText(self.indexOf(self.tuningTab), _translate("MainWindow", "Tuning"))
         self.interpolation_label.setText(_translate("MainWindow", "Interpolation Points"))
@@ -62,3 +82,7 @@ class TopMenu(QtWidgets.QTabWidget):
     def _interpolation_value_changed(self):
         """Emit a signal to the back end that new amount of interpolation points has been set."""
         self.spinbox_changed.emit()
+
+    def _new_button_clicked(self):
+        """Emit a signal that new system is supposed to get created."""
+        self.new_clicked.emit()
