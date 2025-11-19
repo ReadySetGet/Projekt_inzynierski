@@ -99,6 +99,15 @@ MF_PARAMETER_LENGTH_PER_TYPE: dict[str, int] = {
 }
 """Parameter list length for each given mf type."""
 
+NR_OF_INTERPOLATION_POINTS_MIN = 10
+"""Default minimum number of function interpolation points."""
+
+NR_OF_INTERPOLATION_POINTS_MAX = 1000
+"""Default maximum number of function interpolation points."""
+
+DEFAULT_INTERPOLATION_POINTS_NUMBER = 100
+"""Default number of function interpolation points."""
+
 
 class FISModel:
     """A class containing a fuzzy inference system (fis) and means of its
@@ -139,9 +148,12 @@ class FISModel:
 
     _fis: fl.mamfis | fl.sugfis
     """The contained fis system."""
+    _interpolation_points_nr: int
+    """Nr of function interpolation points."""
 
     def __init__(self, fis: fl.mamfis | fl.sugfis = None,
-                 fis_name: str = "fis", fis_type: str = None):
+                 fis_name: str = "fis", fis_type: str = None,
+                 int_points: int = DEFAULT_INTERPOLATION_POINTS_NUMBER):
         """Initialize a new class instance, with the given fis system. If
         "fis_type" is provided, a new 2-input-1-output (with 3 mfs each) fis of
         the given type will be initiated.
@@ -152,7 +164,11 @@ class FISModel:
                 a new Mamdani system will be generated.
             fis_name (str): Name of the fis system.
             fis_type (str): Type of the new fis system, "mamdani" or "sugeno".
+            int_points (int): Number of function interpolation points, by
+                default 100.
         """
+        self._interpolation_points_nr = int_points
+
         if fis_type is not None:
             if fis_type == "sugeno":
                 self._fis = fl.sugfis(fis_name)
@@ -697,6 +713,30 @@ class FISModel:
 
         io_variable.MembershipFunctions[mf_idx].Parameters = new_mf_parameters
         return 1
+
+    def set_interpolation_points(self, new_val: int) -> int:
+        """Set the number of function interpolation points.
+
+        Parameters:
+
+            new_val(int): new nr of function interpolation points
+
+        Returns:
+
+            1 - value changed successfully
+
+            -1 - value lower or higher than set border values
+        """
+        if new_val < NR_OF_INTERPOLATION_POINTS_MIN or \
+                new_val > NR_OF_INTERPOLATION_POINTS_MAX:
+            return -1
+
+        self._interpolation_points_nr = new_val
+        return 1
+
+    def get_interpolation_points(self) -> int:
+        """Get the function interpolation points number."""
+        return self._interpolation_points_nr
 
     def _find_variable(self, io_variable_name: str,
                        input_or_output: str) -> [fl.fisvar, int]:

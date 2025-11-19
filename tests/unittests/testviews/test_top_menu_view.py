@@ -1,0 +1,49 @@
+import pytest
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import Qt
+from app.views.top_menu_view import TopMenu
+
+
+@pytest.fixture
+def app():
+    if QtWidgets.QApplication.instance() is None:
+        return QtWidgets.QApplication([])
+    return QtWidgets.QApplication.instance()
+
+
+@pytest.fixture
+def tested_widget(qtbot, app):
+    widget = TopMenu()
+    qtbot.addWidget(widget)
+    return widget
+
+
+def test_widget_initial_state(tested_widget):
+    assert isinstance(tested_widget, QtWidgets.QTabWidget)
+    assert tested_widget.interpolation_spinbox.value() == 15
+
+
+def test_tabs_structure(tested_widget):
+    assert tested_widget.count() == 2
+    assert tested_widget.tabText(0) == "Design"
+    assert tested_widget.tabText(1) == "Tuning"
+    assert tested_widget.widget(0).objectName() == "designTab"
+    assert tested_widget.widget(1).objectName() == "tuningTab"
+
+
+def test_spinbox_interaction_valid(qtbot, tested_widget):
+    interpolation_spinbox = tested_widget.findChild(QtWidgets.QSpinBox, "interpolation_spinbox")
+    assert isinstance(interpolation_spinbox, QtWidgets.QSpinBox)
+
+    with qtbot.waitSignal(tested_widget.spinbox_changed, raising=True, timeout=10000):
+        interpolation_spinbox.setValue(20)
+    assert interpolation_spinbox.value() == 20
+
+
+def test_spinbox_interaction_invalid(qtbot, tested_widget):
+    interpolation_spinbox = tested_widget.findChild(QtWidgets.QSpinBox, "interpolation_spinbox")
+    assert isinstance(interpolation_spinbox, QtWidgets.QSpinBox)
+
+    with qtbot.waitSignal(tested_widget.spinbox_changed, raising=True, timeout=10000):
+        interpolation_spinbox.setValue(-10)
+    assert interpolation_spinbox.value() == 0
