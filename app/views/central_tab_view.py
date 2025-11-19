@@ -11,6 +11,7 @@ from app.views.triangle_plot import TrianglePlot
 from app.views.trapezoid_plot import TrapezoidPlot
 from app.views.gauss_plot import GaussPlot
 from app.views.bell_plot import BellPlot
+from app.views.rule import Rule
 
 
 class CentralTabWidget(QtWidgets.QTabWidget):
@@ -27,12 +28,17 @@ class CentralTabWidget(QtWidgets.QTabWidget):
 
             Methods:
                 __init__(QtWidget.*): create an instance of CentralTabWidget and bind it to the parent widget.
+                set_rules(list[Rule]): set a new list of rules in the system.
 
             Attributes:
                 plots: list of plots added to the system
+                fill_table_clicked: pyqtSignal which gets emitted when add_all_rules_button is clicked
+                rules: list of rules present in the system
                 placeholder attributes for testing purposes
     """
     plots = []
+    fill_table_clicked = QtCore.pyqtSignal()
+    rules = []
 
     tri_x = [-100.0, 25, 50, 75, 200]
     tri_y = [0.0, 0, 1, 0, 0]
@@ -123,6 +129,31 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.system_label_2.setGeometry(QtCore.QRect(0, 10, 211, 16))
         self.system_label_2.setObjectName("system_label_2")
 
+        self.table_widget = QtWidgets.QTableWidget(parent=self.rule_editor)
+        self.table_widget.setGeometry(QtCore.QRect(20, 100, 431, 491))
+        self.table_widget.setObjectName("table_widget")
+        self.table_widget.setRowCount(1)
+        self.table_widget.setColumnCount(3)
+        self.table_widget.setColumnWidth(0, 314)
+        self.table_widget.setColumnWidth(1, 50)
+        self.table_widget.setColumnWidth(2, 50)
+        self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
+
+        rule1 = Rule("In1", "Mf1", "In2", "Mf2", "Out",
+                     "Mf3", "is", "and", "1", "Rule 1")
+        rule2 = Rule("In1", "Mf1", "In2", "Mf2", "Out",
+                     "Mf3", "is", "and", "1", "Rule 2")
+        rule3 = Rule("In1", "Mf1", "In2", "Mf2", "Out",
+                     "Mf3", "is", "and", "1", "Rule 3")
+        self.rules.append(rule1)
+        self.rules.append(rule2)
+        self.rules.append(rule3)
+
+        self.add_all_rules_button = QtWidgets.QPushButton(parent=self.rule_editor)
+        self.add_all_rules_button.setGeometry(QtCore.QRect(20, 60, 140, 28))
+        self.add_all_rules_button.setObjectName("add_all_rules")
+        self.add_all_rules_button.clicked.connect(self._fill_table)
+
         self.addTab(self.rule_editor, "")
 
         self.rule_interference = QtWidgets.QWidget(parent=self)
@@ -139,6 +170,7 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         self.system_label_2.setText(_translate("MainWindow", "System: Placeholder Name"))
         self.setTabText(self.indexOf(self.rule_editor), _translate("MainWindow", "Rule Editor"))
         self.setTabText(self.indexOf(self.rule_interference), _translate("MainWindow", "Rule Interference"))
+        self.add_all_rules_button.setText(_translate("MainWindow", "Add All Possible Rules"))
 
     def add_triangle_plot(self, x, y, color) -> None:
         """
@@ -214,3 +246,16 @@ class CentralTabWidget(QtWidgets.QTabWidget):
         ))
         self.plots.append(bell)
 
+    def _fill_table(self):
+        """Fill the table with all the rules, emit the signal."""
+        self.fill_table_clicked.emit()
+        rule_numb = len(self.rules)
+        self.table_widget.setRowCount(rule_numb)
+        for i in range(rule_numb):
+            self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(self.rules[i].getRule()))
+            self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(self.rules[i].getWeight()))
+            self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(self.rules[i].getName()))
+
+    def set_rules(self, rules):
+        """Set new rules for the system."""
+        self.rules = rules
