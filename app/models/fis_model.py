@@ -15,7 +15,6 @@ DEFAULT_MF_PARAMS: dict[str, list] = {
     "dzwonowa": [0.5, 3, 4],
     "trojkatna": [0, 0.5, 1],
     "trapezoidalna": [1, 3, 4, 4.5],
-    "stala": 0.5,
 }
 """Default parameters for certain types of membership functions."""
 
@@ -86,6 +85,19 @@ AVAILABLE_DEFUZZIFICATION_METHODS = ["centroid", "bisector", "mom", "som",
 
 AVAILABLE_DEFUZZIFICATION_METHODS_SUGENO = ["wtaver"]
 """Available defuzzification methods for Sugeno inference."""
+
+MF_NAME_MAX_LENGTH: int = 100
+"""Max length of a membership function's name."""
+
+MF_PARAMETER_LENGTH_PER_TYPE: dict[str, int] = {
+    "gaussmf": 2,
+    "gbellmf": 3,
+    "trimf": 3,
+    "trapmf": 4,
+    "constant": 1,
+    "linear": 3,
+}
+"""Parameter list length for each given mf type."""
 
 
 class FISModel:
@@ -189,7 +201,7 @@ class FISModel:
                     .count(0)
                 nr_of_not_none_variables = len(self._fis.Rules[rule_idx]
                                                .Antecedent) \
-                                               - nr_of_none_variables
+                                           - nr_of_none_variables
                 if nr_of_not_none_variables > 1:
                     self._fis.Rules[rule_idx].Antecedent.pop(input_idx)
                     self._fis.Rules[rule_idx].numInputs -= 1
@@ -236,7 +248,7 @@ class FISModel:
                     .count(0)
                 nr_of_not_none_variables = len(self._fis.Rules[rule_idx]
                                                .Consequent) \
-                                               - nr_of_none_variables
+                                           - nr_of_none_variables
                 if nr_of_not_none_variables > 1:
                     self._fis.Rules[rule_idx].Consequent.pop(output_idx)
                 else:
@@ -276,8 +288,9 @@ class FISModel:
         next_mf_number = self._find_available_element_number("mf", io_variable)
         mf_name = "mf" + str(next_mf_number)
 
-        mf_adding_validity_check = self._check_if_new_mf_type_is_valid(input_or_output,
-                                                                       mf_type)
+        mf_adding_validity_check = self._check_if_new_mf_type_is_valid(
+            input_or_output,
+            mf_type)
         if not mf_adding_validity_check[0]:
             return -2
 
@@ -370,8 +383,9 @@ class FISModel:
         if mf_idx >= len(io_variable.MembershipFunctions):
             return -1
 
-        mf_changing_validity_check = self._check_if_new_mf_type_is_valid(input_or_output,
-                                                                         new_mf_type)
+        mf_changing_validity_check = self._check_if_new_mf_type_is_valid(
+            input_or_output,
+            new_mf_type)
         if not mf_changing_validity_check[0]:
             return -3
 
@@ -516,10 +530,10 @@ class FISModel:
             return -2
 
         if len(new_rule_is_mf) != len(self._fis.Inputs) \
-            + len(self._fis.Outputs):
+                + len(self._fis.Outputs):
             return -3
         if len(new_rule_data) != len(self._fis.Inputs) \
-            + len(self._fis.Outputs) + 2:
+                + len(self._fis.Outputs) + 2:
             return -3
 
         if not self._check_if_is_behaviour_list_is_valid(new_rule_is_mf):
@@ -602,6 +616,86 @@ class FISModel:
                 return -1
 
         self._fis.DefuzzificationMethod = new_method
+        return 1
+
+    def change_mf_name(self, io_variable_name: str, input_or_output: str,
+                       mf_idx: int, new_mf_name: str) -> int:
+        """Change the name of the given membership function.
+
+        Parameters:
+
+            io_variable_name (str): name of the variable containing the mf
+            input_or_output (str): "input" if the variable is an input,
+                "output" if else
+            mf_idx (int): index of the mf to be changed
+            new_mf_name (str): new name of the mf
+
+        Returns:
+
+            1 - mf name changed correctly
+
+            -1 - mf with the given index does not exist
+
+            -2 - no io variable with a given name found
+
+            -3 - mf name too long
+        """
+        if len(new_mf_name) > MF_NAME_MAX_LENGTH:
+            return -3
+
+        [io_variable, _] = self._find_variable(io_variable_name,
+                                               input_or_output)
+        if io_variable is None:
+            return -2
+
+        if mf_idx >= len(io_variable.MembershipFunctions):
+            return -1
+
+        io_variable.MembershipFunctions[mf_idx].Name = new_mf_name
+        return 1
+
+    def change_mf_parameters(self, io_variable_name: str, input_or_output: str,
+                             mf_idx: int,
+                             new_mf_parameters: list[float] | int) -> int:
+        """Change the parameters of the given membership function.
+
+        Parameters:
+
+            io_variable_name (str): name of the variable containing the mf
+            input_or_output (str): "input" if the variable is an input,
+                "output" if else
+            mf_idx (int): index of the mf to be changed
+            new_mf_parameters (str): new parameters of the mf
+
+        Returns:
+
+            1 - mf name changed correctly
+
+            -1 - mf with the given index does not exist
+
+            -2 - no io variable with a given name found
+
+            -3 - parameter list is too long or too short for the mf type used,
+                or parameters for constant used for other mf type
+        """
+        [io_variable, _] = self._find_variable(io_variable_name,
+                                               input_or_output)
+        if io_variable is None:
+            return -2
+
+        if mf_idx >= len(io_variable.MembershipFunctions):
+            return -1
+
+        if type(new_mf_parameters) is list:
+            if len(new_mf_parameters) != MF_PARAMETER_LENGTH_PER_TYPE[
+                    io_variable.MembershipFunctions[mf_idx].Type] or \
+                    io_variable.MembershipFunctions[mf_idx].Type == "constant":
+                return -3
+        else:
+            if io_variable.MembershipFunctions[mf_idx].Type != "constant":
+                return -3
+
+        io_variable.MembershipFunctions[mf_idx].Parameters = new_mf_parameters
         return 1
 
     def _find_variable(self, io_variable_name: str,
