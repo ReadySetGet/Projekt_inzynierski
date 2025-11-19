@@ -80,6 +80,13 @@ AVAILABLE_LOGIC_METHODS_SUGENO: dict[str, list[str]] = {
 }
 """Available logic methods for certain functions of Sugeno fis."""
 
+AVAILABLE_DEFUZZIFICATION_METHODS = ["centroid", "bisector", "mom", "som",
+                                     "lom"]
+"""Available defuzzification methods."""
+
+AVAILABLE_DEFUZZIFICATION_METHODS_SUGENO = ["wtaver"]
+"""Available defuzzification methods for Sugeno inference."""
+
 
 class FISModel:
     """A class containing a fuzzy inference system (fis) and means of its
@@ -570,6 +577,31 @@ class FISModel:
                 return -1
             self._fis.AggregationMethod = agg_method
 
+        return 1
+
+    def change_defuzzification_method(self, new_method: str) -> int:
+        """Change defuzzification method used.
+
+        Parameters:
+
+            new_method (str): new defuzzification method to be used. Available
+                options: centroid, bisector, mom, som, lom, wtaver
+
+        Returns:
+
+            1 - method changed successfully
+
+            -1 - new method provided not in available methods
+        """
+        if type(self._fis) is fl.mamfis:
+            if new_method not in AVAILABLE_DEFUZZIFICATION_METHODS:
+                return -1
+
+        if type(self._fis) is fl.sugfis:
+            if new_method not in AVAILABLE_DEFUZZIFICATION_METHODS_SUGENO:
+                return -1
+
+        self._fis.DefuzzificationMethod = new_method
         return 1
 
     def _find_variable(self, io_variable_name: str,
