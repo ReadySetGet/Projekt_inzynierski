@@ -21,6 +21,7 @@ def tested_widget(qtbot, app):
 def test_widget_initial_state(tested_widget):
     assert isinstance(tested_widget, QtWidgets.QTabWidget)
     assert tested_widget.interpolation_spinbox.value() == 15
+    assert tested_widget.new_button.text() == "New"
 
 
 def test_tabs_structure(tested_widget):
@@ -47,3 +48,8 @@ def test_spinbox_interaction_invalid(qtbot, tested_widget):
     with qtbot.waitSignal(tested_widget.spinbox_changed, raising=True, timeout=10000):
         interpolation_spinbox.setValue(-10)
     assert interpolation_spinbox.value() == 0
+
+
+def test_new_signal_emit(qtbot, tested_widget):
+    with qtbot.waitSignal(tested_widget.new_clicked, timeout=1000):
+        qtbot.mouseClick(tested_widget.new_button, Qt.MouseButton.LeftButton)
