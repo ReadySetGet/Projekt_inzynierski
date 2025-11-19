@@ -22,6 +22,8 @@ def test_widget_initial_state(tested_widget):
     assert isinstance(tested_widget, QtWidgets.QTabWidget)
     assert tested_widget.interpolation_spinbox.value() == 15
     assert tested_widget.new_button.text() == "New"
+    assert tested_widget.system_type == "Mamdani"
+    assert tested_widget.conversion_button.text() == "Mamdani to Sugeno"
 
 
 def test_tabs_structure(tested_widget):
@@ -53,3 +55,17 @@ def test_spinbox_interaction_invalid(qtbot, tested_widget):
 def test_new_signal_emit(qtbot, tested_widget):
     with qtbot.waitSignal(tested_widget.new_clicked, timeout=1000):
         qtbot.mouseClick(tested_widget.new_button, Qt.MouseButton.LeftButton)
+
+
+def test_conversion_signal_emit(qtbot, tested_widget):
+    with qtbot.waitSignal(tested_widget.conversion_clicked, timeout=1000):
+        qtbot.mouseClick(tested_widget.conversion_button, Qt.MouseButton.LeftButton)
+
+    assert tested_widget.conversion_button.text() == "Sugeno to Mamdani"
+    assert tested_widget.system_type == "Sugeno"
+
+    with qtbot.waitSignal(tested_widget.conversion_clicked, timeout=1000):
+        qtbot.mouseClick(tested_widget.conversion_button, Qt.MouseButton.LeftButton)
+
+    assert tested_widget.conversion_button.text() == "Mamdani to Sugeno"
+    assert tested_widget.system_type == "Mamdani"

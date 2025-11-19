@@ -17,9 +17,12 @@ class TopMenu(QtWidgets.QTabWidget):
             spinbox_changed: pyqtSignal which gets emitted to backend whenever the amount of interpolation
             points is changed.
             new_clicked: pyqtSignal which gets emitted to back end when new_button is clicked.
+            conversion_clicked: pyqtSignal which gets emitted to back end when conversion_button is clicked.
+            system_type: stores data about current fis system type.
     """
     spinbox_changed = QtCore.pyqtSignal()
     new_clicked = QtCore.pyqtSignal()
+    conversion_clicked = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         """Initialize a new class instance.
@@ -29,6 +32,7 @@ class TopMenu(QtWidgets.QTabWidget):
         """
         super().__init__(parent)
         self.setObjectName("topMenu")
+        self.system_type = "Mamdani"
         self._setup_ui()
         self._retranslate_ui()
 
@@ -65,6 +69,11 @@ class TopMenu(QtWidgets.QTabWidget):
 
         self.files_management_button_area.setWidget(self.scrollAreaWidgetContents)
 
+        self.conversion_button = QtWidgets.QPushButton(parent=self.designTab)
+        self.conversion_button.setGeometry(QtCore.QRect(530, 30, 131, 61))
+        self.conversion_button.setObjectName("conversion_button")
+        self.conversion_button.clicked.connect(self._conversion_button_clicked)
+
         self.addTab(self.designTab, "")
 
         self.tuningTab = QtWidgets.QWidget()
@@ -75,6 +84,12 @@ class TopMenu(QtWidgets.QTabWidget):
         """Add text to all the respective GUI elements."""
         _translate = QtCore.QCoreApplication.translate
         self.new_button.setText(_translate("MainWindow", "New"))
+        if self.system_type == 'Mamdani':
+            self.conversion_button.setText(_translate("MainWindow", "Mamdani to Sugeno"))
+        elif self.system_type == 'Sugeno':
+            self.conversion_button.setText(_translate("MainWindow", "Sugeno to Mamdani"))
+        else:
+            self.conversion_button.setText(_translate("MainWindow", "Error"))
         self.setTabText(self.indexOf(self.designTab), _translate("MainWindow", "Design"))
         self.setTabText(self.indexOf(self.tuningTab), _translate("MainWindow", "Tuning"))
         self.interpolation_label.setText(_translate("MainWindow", "Interpolation Points"))
@@ -86,3 +101,16 @@ class TopMenu(QtWidgets.QTabWidget):
     def _new_button_clicked(self):
         """Emit a signal that new system is supposed to get created."""
         self.new_clicked.emit()
+
+    def _conversion_button_clicked(self):
+        """Converts system from mamdani to sugeno and vice versa.
+        Updates the text on the button to indicate the change.
+        Emits a signal to the backend to convert the system.
+        """
+        if self.system_type == "Mamdani":
+            self.system_type = "Sugeno"
+            self.conversion_button.setText("Sugeno to Mamdani")
+        else:
+            self.system_type = "Mamdani"
+            self.conversion_button.setText("Mamdani to Sugeno")
+        self.conversion_clicked.emit()
