@@ -13,18 +13,19 @@ class MFPropertiesWidget(QtWidgets.QWidget):
       The current membership functions in the system are displayed within the table.
 
           Methods:
-             __init__(QTWidget.*): create an instance of MFPropertiesWidget and bind it to the parent QTWidget
-             or None if the widget is standalone.
+             __init__(parent): create an instance of MFPropertiesWidget and bind it to the parent window.
              get_mf_name(): get the name of the mf from the line edit.
 
           Attributes:
                  shape_changed: pyqtSignal which gets emitted to backend when shape_select_dropdown selected
                     item is changed.
                  name_changed: pyqtSignal which gets emitted to backend when mf_name_edit value is changed.
+                 range_changed: pyqtSignal which gets emitted to backend when mf_range_submit_button is clicked.
                  default_parameters: default parameters of a new function.
       """
     shape_changed = QtCore.pyqtSignal()
     name_changed = QtCore.pyqtSignal()
+    range_changed = QtCore.pyqtSignal()
     default_parameters = "[0, 0.5, 1]"
 
     def __init__(self, parent=None):
@@ -68,6 +69,9 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.mf_range_edit.setObjectName("mf_range_edit")
         self.mf_range_edit.setText(self.default_parameters)
 
+        self.mf_range_submit_button = QtWidgets.QPushButton(parent=self.editor_frame)
+        self.mf_range_submit_button.setGeometry(QtCore.QRect(190, 90, 80, 31))
+        self.mf_range_submit_button.clicked.connect(self._set_new_range)
         self.mf_table = QtWidgets.QTableWidget(parent=self.editor_frame)
         self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
         self.mf_table.setObjectName("mf_table")
@@ -102,6 +106,7 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         self.mf_name_label.setText(_translate("MainWindow", "Name"))
         self.mf_range_label.setText(_translate("MainWindow", "Range"))
         self.mf_name_edit.setText(_translate("MainWindow", "Placeholder"))
+        self.mf_range_submit_button.setText(_translate("MainWindow", "Submit"))
         self.mf_range_edit.setText(_translate("MainWindow", self.default_parameters))
         self.number_of_mf_label.setText(_translate("MainWindow", "Number of MF:"))
 
@@ -126,3 +131,31 @@ class MFPropertiesWidget(QtWidgets.QWidget):
         label.setText(self.mf_name_edit.text())
         self.mf_table.setItem(selected_row, 0, label)
         self.name_changed.emit()
+
+    def _set_new_range(self):
+        """Sets new range according to what's inside Line Edit.
+        Returns if there is no selected table row.
+        The range is valid if all the numbers are in ascending order.
+        If the selected range is invalid then it restores default parameters.
+        """
+        row = self.mf_table.currentRow()
+        if row == -1:
+            return
+        s = self.mf_range_edit.text()
+        newstr = ''.join((ch if ch in '0123456789.-' else ' ') for ch in s)
+        new_params = [float(i) for i in newstr.split()]
+        print(new_params)
+        text_param = "["
+        if all(new_params[i] <= new_params[i + 1] for i in range(len(new_params) - 1)):
+            for j in range(len(new_params)):
+                text_param += str(new_params[j])
+                if j < len(new_params) - 1:
+                    text_param += ", "
+            text_param += "]"
+        else:
+            text_param = self.default_parameters
+        self.mf_range_edit.setText(text_param)
+        item = self.mf_table.item(row, 2)
+        item.setText(text_param)
+        self.range_changed.emit()
+
