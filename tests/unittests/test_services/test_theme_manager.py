@@ -1,10 +1,4 @@
-import json
-import os
-from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
-
 import pytest
-from PyQt6.QtWidgets import QApplication
 
 from app.services.theme_manager import ThemeManager
 

@@ -1,6 +1,3 @@
-from unittest.mock import Mock
-
-import numpy as np
 import pytest
 
 from app.view_models.area_plot_view_model import AreaPlotViewModel
