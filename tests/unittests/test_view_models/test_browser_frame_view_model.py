@@ -1,5 +1,3 @@
-from unittest.mock import Mock
-
 import pytest
 
 from app.view_models.browser_frame_view_model import BrowserFrameViewModel
@@ -7,8 +5,7 @@ from app.view_models.browser_frame_view_model import BrowserFrameViewModel
 
 @pytest.fixture
 def browser_frame_view_model(setup_base_view_model_context, mock_fuzzy_service):
-    vm = BrowserFrameViewModel()
-    return vm
+    return BrowserFrameViewModel()
 
 
 def test_browser_frame_view_model_initialization(browser_frame_view_model):

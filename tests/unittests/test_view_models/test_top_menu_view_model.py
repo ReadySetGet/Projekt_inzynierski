@@ -1,5 +1,3 @@
-from unittest.mock import Mock, patch
-
 import pytest
 
 from app.view_models.top_menu_view_model import TopMenuViewModel
@@ -7,8 +5,7 @@ from app.view_models.top_menu_view_model import TopMenuViewModel
 
 @pytest.fixture
 def top_menu_view_model(setup_base_view_model_context, mock_fuzzy_service):
-    vm = TopMenuViewModel()
-    return vm
+    return TopMenuViewModel()
 
 
 def test_top_menu_view_model_initialization(top_menu_view_model):

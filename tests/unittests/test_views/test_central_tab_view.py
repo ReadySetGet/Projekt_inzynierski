@@ -2,13 +2,7 @@ import numpy as np
 import pyqtgraph as pg
 import pytest
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import Qt
-
-from app.views.bell_plot import BellPlot
 from app.views.central_tab_view import CentralTabWidget
-from app.views.gauss_plot import GaussPlot
-from app.views.trapezoid_plot import TrapezoidPlot
-from app.views.triangle_plot import TrianglePlot
 
 
 @pytest.fixture

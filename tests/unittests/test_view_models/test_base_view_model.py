@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from PyQt6.QtCore import QObject
@@ -23,8 +23,7 @@ def mock_context():
 def view_model(mock_context):
     with patch.object(BaseViewModel, "_context_provider", return_value=mock_context):
         BaseViewModel.set_context_provider(lambda: mock_context)
-        vm = BaseViewModel()
-        return vm
+        return BaseViewModel()
 
 
 def test_base_view_model_initialization(view_model, mock_context):
@@ -106,7 +105,7 @@ def test_base_view_model_registers_with_event_bus(mock_context):
 def test_base_view_model_connects_theme_changed(mock_context):
     with patch.object(BaseViewModel, "_context_provider", return_value=mock_context):
         BaseViewModel.set_context_provider(lambda: mock_context)
-        vm = BaseViewModel()
+        BaseViewModel()
         mock_context.theme_manager.theme_changed.connect.assert_called()
 
 

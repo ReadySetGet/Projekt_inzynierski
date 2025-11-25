@@ -1,5 +1,3 @@
-from unittest.mock import Mock
-
 import pytest
 
 from app.view_models.fis_tab_view_model import FisTabViewModel
@@ -7,8 +5,7 @@ from app.view_models.fis_tab_view_model import FisTabViewModel
 
 @pytest.fixture
 def fis_tab_view_model(setup_base_view_model_context, mock_fuzzy_service):
-    vm = FisTabViewModel()
-    return vm
+    return FisTabViewModel()
 
 
 def test_fis_tab_view_model_initialization(fis_tab_view_model, mock_fuzzy_service):

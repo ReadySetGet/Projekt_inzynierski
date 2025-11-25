@@ -1,5 +1,3 @@
-from unittest.mock import Mock
-
 import pytest
 
 from app.view_models.editor_tab_view_model import EditorTabViewModel
@@ -7,8 +5,7 @@ from app.view_models.editor_tab_view_model import EditorTabViewModel
 
 @pytest.fixture
 def editor_tab_view_model(setup_base_view_model_context, mock_fuzzy_service):
-    vm = EditorTabViewModel()
-    return vm
+    return EditorTabViewModel()
 
 
 def test_editor_tab_view_model_initialization(editor_tab_view_model):
