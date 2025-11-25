@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from PyQt6 import QtWidgets
@@ -143,6 +144,9 @@ class AreaPlot(BaseWidgetView):
         self.z_combobox.currentIndexChanged.connect(self._on_control_changed)
         self.x_spinbox.valueChanged.connect(self._on_control_changed)
         self.y_spinbox.valueChanged.connect(self._on_control_changed)
+
+        if hasattr(self.view_model, "notify_data_changed"):
+            self.view_model.notify_data_changed.connect(self._on_data_changed)
 
     def _populate_controls(self):
         if not self.view_model or not self.view_model.fuzzy_service:
@@ -314,7 +318,13 @@ class AreaPlot(BaseWidgetView):
         error = surface_data.get("error")
         if error == "system_not_ready":
             self.ax.clear()
-            self.line_edit.setText(self.t("SYSTEM_NOT_READY"))
+            missing = surface_data.get("missing", [])
+            if missing:
+                missing_str = ", ".join(missing)
+                error_msg = f"System not ready. Missing: {missing_str}"
+            else:
+                error_msg = self.t("SYSTEM_NOT_READY") if hasattr(self, "t") else "System not ready"
+            self.line_edit.setText(error_msg)
             self.canvas.draw_idle()
             return
 
@@ -329,11 +339,33 @@ class AreaPlot(BaseWidgetView):
         Y = surface_data["Y"]
         Z = surface_data["Z"]
 
+        output_var_info = next((var for var in self._output_variables if var.get("name") == output_var), None)
+        output_range = output_var_info.get("range", [0, 1]) if output_var_info else [0, 1]
+
+        z_min = surface_data.get("z_min")
+        z_max = surface_data.get("z_max")
+
+        if z_min is None or z_max is None or np.isnan(z_min) or np.isnan(z_max):
+            z_min = np.nanmin(Z) if not np.isnan(Z).all() else output_range[0]
+            z_max = np.nanmax(Z) if not np.isnan(Z).all() else output_range[1]
+
+        if z_min == z_max or abs(z_max - z_min) < 1e-6:
+            z_min = output_range[0]
+            z_max = output_range[1]
+            if z_min == z_max:
+                z_min -= 0.1
+                z_max += 0.1
+        else:
+            padding = (z_max - z_min) * 0.1
+            z_min = max(z_min - padding, output_range[0])
+            z_max = min(z_max + padding, output_range[1])
+
         self.ax.clear()
         self.ax.plot_surface(X, Y, Z, cmap="viridis", edgecolor="none")
         self.ax.set_xlabel(x_var)
         self.ax.set_ylabel(y_var)
         self.ax.set_zlabel(output_var)
+        self.ax.set_zlim(z_min, z_max)
 
         if self._other_input_widgets:
             reference_text = [
@@ -344,3 +376,7 @@ class AreaPlot(BaseWidgetView):
             self.line_edit.setText(self.t("NO_ADDITIONAL_INPUTS"))
 
         self.canvas.draw_idle()
+
+    def _on_data_changed(self):
+        """Handle data changed signal from view model."""
+        self._populate_controls()

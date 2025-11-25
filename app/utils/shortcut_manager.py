@@ -1,5 +1,6 @@
 from typing import Callable, Dict, List, Optional, Tuple
 
+from PyQt6 import QtCore
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import QWidget
 
@@ -35,6 +36,7 @@ class ShortcutManager:
         if key_sequence in self._shortcuts:
             return False  # Conflict
         shortcut = QShortcut(QKeySequence(key_sequence), self.parent)
+        shortcut.setContext(QtCore.Qt.ShortcutContext.WindowShortcut)
         shortcut.activated.connect(action)
         self._shortcuts[key_sequence] = shortcut
         self._actions[key_sequence] = action

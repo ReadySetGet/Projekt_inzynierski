@@ -42,6 +42,13 @@ class RuleInterferenceTabWidget(BaseTabView):
         self._input_value_labels: List[QtWidgets.QLabel] = []
         self._input_ranges: List[Tuple[float, float]] = []
         self._latest_payload: Dict[str, Any] = {"inputs": [], "rules": [], "outputs": []}
+        self._update_timer = QtCore.QTimer()
+        self._update_timer.setSingleShot(True)
+        self._update_timer.timeout.connect(self._delayed_refresh)
+        self._pending_refresh = False
+        self._last_rules_count = 0
+        self._last_rules_indices = set()
+        self._rule_row_widgets: List[Dict[str, Any]] = []
 
         self._setup_ui()
         self._connect_view_model_signals()
@@ -88,7 +95,7 @@ class RuleInterferenceTabWidget(BaseTabView):
         self.input_values_edit = QtWidgets.QLineEdit(parent=self)
         self.input_values_edit.setObjectName("input_values_edit")
         self.input_values_edit.setFixedWidth(220)
-        self.input_values_edit.textChanged.connect(self._update_from_editor_field)
+        self.input_values_edit.editingFinished.connect(self._update_from_editor_field)
         input_row.addWidget(self.input_values_edit)
         input_row.addStretch()
 
@@ -171,13 +178,25 @@ class RuleInterferenceTabWidget(BaseTabView):
     # Slots                                                              #
     # ------------------------------------------------------------------ #
     def _on_data_changed(self, *_args) -> None:
-        self._refresh_visualization()
+        self._pending_refresh = True
+        self._update_timer.start(150)
+
+    def _delayed_refresh(self) -> None:
+        if self._pending_refresh:
+            self._pending_refresh = False
+            self._refresh_visualization()
 
     # ------------------------------------------------------------------ #
     # Data-driven UI updates                                             #
     # ------------------------------------------------------------------ #
     def _refresh_visualization(self) -> None:
         payload = self.view_model.build_visualization_payload()
+        if payload:
+            self._latest_payload = payload
+            self._apply_payload(payload)
+
+    def _apply_payload(self, payload: Dict[str, Any]) -> None:
+        """Apply visualization payload to UI."""
         self._latest_payload = payload
 
         inputs_payload = payload.get("inputs", [])
@@ -194,7 +213,17 @@ class RuleInterferenceTabWidget(BaseTabView):
         self._update_input_labels_text(inputs_payload)
         self._update_input_controls_from_values()
 
-        self._rebuild_rule_rows(payload.get("rules", []))
+        rules_payload = payload.get("rules", [])
+        current_rules_count = len(rules_payload)
+        current_rules_indices = {r.get("index", 0) for r in rules_payload}
+
+        if current_rules_count != self._last_rules_count or current_rules_indices != self._last_rules_indices:
+            self._rebuild_rule_rows(rules_payload)
+            self._last_rules_count = current_rules_count
+            self._last_rules_indices = current_rules_indices
+        else:
+            self._update_rule_rows_incremental(rules_payload)
+
         self._update_aggregated_output(outputs_payload)
 
     def _update_input_controls_from_values(self) -> None:
@@ -308,6 +337,7 @@ class RuleInterferenceTabWidget(BaseTabView):
 
     def _rebuild_rule_rows(self, rules_payload: List[Dict[str, Any]]) -> None:
         self._clear_layout(self.rules_list_layout)
+        self._rule_row_widgets.clear()
 
         if not rules_payload:
             empty_label = QtWidgets.QLabel(self.t("NO_RULES_DEFINED") if hasattr(self, "t") else "No rules defined.")
@@ -325,6 +355,7 @@ class RuleInterferenceTabWidget(BaseTabView):
             row_layout.setContentsMargins(0, 0, 0, 0)
             row_layout.setSpacing(12)
 
+            input_plots = []
             inputs = rule.get("inputs", [])
             if inputs:
                 for input_vis in inputs:
@@ -332,6 +363,7 @@ class RuleInterferenceTabWidget(BaseTabView):
                     plot.setMinimumSize(140, 110)
                     self._render_input_condition_plot(plot, input_vis)
                     row_layout.addWidget(plot)
+                    input_plots.append(plot)
             else:
                 placeholder = QtWidgets.QLabel(self.t("NO_INPUT_CONDITIONS") if hasattr(self, "t") else "No inputs")
                 placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -342,6 +374,7 @@ class RuleInterferenceTabWidget(BaseTabView):
             connection_label.setMinimumWidth(70)
             row_layout.addWidget(connection_label)
 
+            output_plots = []
             outputs = rule.get("outputs", [])
             if outputs:
                 for output_vis in outputs:
@@ -349,6 +382,7 @@ class RuleInterferenceTabWidget(BaseTabView):
                     plot.setMinimumSize(140, 110)
                     self._render_output_condition_plot(plot, output_vis)
                     row_layout.addWidget(plot)
+                    output_plots.append(plot)
             else:
                 placeholder = QtWidgets.QLabel(self.t("NO_OUTPUT") if hasattr(self, "t") else "No outputs")
                 placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -356,6 +390,16 @@ class RuleInterferenceTabWidget(BaseTabView):
 
             row_layout.addStretch()
             self.rules_list_layout.addWidget(row_widget)
+
+            rule_widget_data = {
+                "index": rule.get("index", 0),
+                "title_label": title_label,
+                "row_widget": row_widget,
+                "input_plots": input_plots,
+                "output_plots": output_plots,
+                "connection_label": connection_label,
+            }
+            self._rule_row_widgets.append(rule_widget_data)
 
     def _render_input_condition_plot(self, plot_widget: pg.PlotWidget, data: Dict[str, Any]) -> None:
         plot_widget.clear()
@@ -428,6 +472,34 @@ class RuleInterferenceTabWidget(BaseTabView):
                 plot.plot(x, y, pen=pen)
                 plot.plot(x, y, pen=None, brush=brush, fillLevel=0.0)
 
+            if value is not None:
+                vert_pen = pg.mkPen("#FF8C00", width=2)
+                plot.addItem(pg.InfiniteLine(pos=value, angle=90, pen=vert_pen))
+
+    def _update_rule_rows_incremental(self, rules_payload: List[Dict[str, Any]]) -> None:
+        """Update rule rows incrementally without rebuilding the entire UI."""
+        for rule in rules_payload:
+            rule_index = rule.get("index", 0)
+            rule_widget = next((w for w in self._rule_row_widgets if w["index"] == rule_index), None)
+            if not rule_widget:
+                continue
+
+            inputs = rule.get("inputs", [])
+            input_plots = rule_widget.get("input_plots", [])
+            for idx, input_vis in enumerate(inputs):
+                if idx < len(input_plots):
+                    self._render_input_condition_plot(input_plots[idx], input_vis)
+
+            connection_label = rule_widget.get("connection_label")
+            if connection_label:
+                connection_label.setText(rule.get("connection_label", ""))
+
+            outputs = rule.get("outputs", [])
+            output_plots = rule_widget.get("output_plots", [])
+            for idx, output_vis in enumerate(outputs):
+                if idx < len(output_plots):
+                    self._render_output_condition_plot(output_plots[idx], output_vis)
+
     # ------------------------------------------------------------------ #
     # Interaction handlers                                               #
     # ------------------------------------------------------------------ #
@@ -445,7 +517,9 @@ class RuleInterferenceTabWidget(BaseTabView):
             new_values.append(value)
 
         if self.view_model.set_input_values(new_values):
-            self._show_status_message("Updated inference inputs via sliders.")
+            self._update_timer.stop()
+            self._pending_refresh = True
+            self._update_timer.start(100)
 
     def _update_from_editor_field(self) -> None:
         if self._updating_controls or not self._input_ranges:

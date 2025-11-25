@@ -7,6 +7,9 @@ Classes:
     FISModel: data model class for a fis system
 """
 
+import itertools
+from typing import Self
+
 import fuzzylab as fl
 
 from .modelsresources.fisrule_ext import FisRuleEx
@@ -16,7 +19,6 @@ DEFAULT_MF_PARAMS: dict[str, list] = {
     "dzwonowa": [0.5, 3, 4],
     "trojkatna": [0, 0.5, 1],
     "trapezoidalna": [1, 3, 4, 4.5],
-    "stala": 0.5,
 }
 """Default parameters for certain types of membership functions."""
 
@@ -65,6 +67,53 @@ DEFAULT_VARIABLE_TO_MF_MAPPING_BEHAVIOUR = 1
 (mu(x) = 1 - mf(x)).
 """
 
+AVAILABLE_LOGIC_METHODS_MAMDANI: dict[str, list[str]] = {
+    "AndMethod": ["min", "prod"],
+    "OrMethod": ["max", "probor", "sum"],
+    "ImplicationMethod": ["min", "prod"],
+    "AggregationMethod": ["max", "probor", "sum"],
+}
+"""Available logic methods for certain functions of Mamdani fis."""
+
+AVAILABLE_LOGIC_METHODS_SUGENO: dict[str, list[str]] = {
+    "AndMethod": ["min", "prod"],
+    "OrMethod": ["max", "probor", "sum"],
+    "ImplicationMethod": ["prod"],
+    "AggregationMethod": ["sum"],
+}
+"""Available logic methods for certain functions of Sugeno fis."""
+
+AVAILABLE_DEFUZZIFICATION_METHODS = ["centroid", "bisector", "mom", "som", "lom"]
+"""Available defuzzification methods."""
+
+AVAILABLE_DEFUZZIFICATION_METHODS_SUGENO = ["wtaver"]
+"""Available defuzzification methods for Sugeno inference."""
+
+MF_NAME_MAX_LENGTH: int = 100
+"""Max length of a membership function's name."""
+
+MF_PARAMETER_LENGTH_PER_TYPE: dict[str, int] = {
+    "gaussmf": 2,
+    "gbellmf": 3,
+    "trimf": 3,
+    "trapmf": 4,
+    "constant": 1,
+    "linear": 3,
+}
+"""Parameter list length for each given mf type."""
+
+NR_OF_INTERPOLATION_POINTS_MIN = 10
+"""Default minimum number of function interpolation points."""
+
+NR_OF_INTERPOLATION_POINTS_MAX = 1000
+"""Default maximum number of function interpolation points."""
+
+DEFAULT_INTERPOLATION_POINTS_NUMBER = 100
+"""Default number of function interpolation points."""
+
+RESOLUTION_OF_VARIABLE_RANGE = 0.01
+"""Acceptable resolution of variable range values."""
+
 
 class FISModel:
     """A class containing a fuzzy inference system (fis) and means of its edition.
@@ -92,8 +141,16 @@ class FISModel:
 
     _fis: fl.mamfis | fl.sugfis
     """The contained fis system."""
+    _interpolation_points_nr: int
+    """Nr of function interpolation points."""
 
-    def __init__(self, fis: fl.mamfis | fl.sugfis = None, fis_name: str = "fis", fis_type: str = None):
+    def __init__(
+        self,
+        fis: fl.mamfis | fl.sugfis = None,
+        fis_name: str = "fis",
+        fis_type: str = None,
+        int_points: int = DEFAULT_INTERPOLATION_POINTS_NUMBER,
+    ):
         """Initialize the model with an existing or freshly created FIS.
 
         Parameters
@@ -107,7 +164,10 @@ class FISModel:
             Type of system to create when ``fis`` is ``None``. Accepted values
             are ``"mamdani"`` and ``"sugeno"``. When omitted a Mamdani system
             is created by default.
+        int_points : int
+            Number of function interpolation points, by default 100.
         """
+        self._interpolation_points_nr = int_points
         if fis_type is not None:
             if fis_type == "sugeno":
                 self._fis = fl.sugfis(fis_name)
@@ -257,22 +317,29 @@ class FISModel:
         io_variable.MembershipFunctions.pop(mf_idx)
 
         rules_to_be_deleted_idx = []
-        search_list = []
         for rule_idx in range(len(self._fis.Rules)):
+            search_list = None
             if input_or_output == "input":
                 search_list = self._fis.Rules[rule_idx].Antecedent
-            if input_or_output == "output":
+            elif input_or_output == "output":
                 search_list = self._fis.Rules[rule_idx].Consequent
 
-            if search_list[io_variable_idx] == mf_idx:
+            if search_list is None or io_variable_idx >= len(search_list):
+                continue
+
+            current_mf_ref = search_list[io_variable_idx]
+
+            if current_mf_ref == mf_idx:
                 nr_of_none_variables = search_list.count(0)
                 nr_of_not_none_variables = len(search_list) - nr_of_none_variables
                 if nr_of_not_none_variables > 1:
-                    search_list.pop(io_variable_idx)
+                    search_list[io_variable_idx] = 0
                 else:
                     rules_to_be_deleted_idx.append(rule_idx)
+            elif current_mf_ref > mf_idx:
+                search_list[io_variable_idx] = current_mf_ref - 1
 
-        for rule_idx in rules_to_be_deleted_idx:
+        for rule_idx in sorted(rules_to_be_deleted_idx, reverse=True):
             self._fis.Rules.pop(rule_idx)
 
         return 1
@@ -409,6 +476,7 @@ class FISModel:
         if rule_idx >= len(self._fis.Rules):
             return -1
         self._fis.Rules.pop(rule_idx)
+        return 1
 
     def clear_all_rules(self) -> None:
         """Delete all rules."""
@@ -453,11 +521,307 @@ class FISModel:
         if not self._check_if_is_behaviour_list_is_valid(new_rule_is_mf):
             return -4
 
+        old_rule = self._fis.Rules[rule_idx]
+        old_rule_name = old_rule.Name if hasattr(old_rule, "Name") else "rule" + str(rule_idx)
         self._fis.Rules.pop(rule_idx)
 
-        new_rule_name = "rule" + str(self._find_available_element_number("rule"))
-        new_rule = FisRuleEx(new_rule_is_mf, new_rule_name, [new_rule_data], len(self._fis.Inputs))
+        new_rule = FisRuleEx(new_rule_is_mf, old_rule_name, [new_rule_data], len(self._fis.Inputs))
         self._fis.Rules.insert(rule_idx, new_rule)
+        return 1
+
+    def update_logic_methods(
+        self, and_method: str = "", or_method: str = "", imp_method: str = "", agg_method: str = ""
+    ) -> int:
+        """Update the logic methods (and, or, implication, aggregation) of the fis used.
+
+        Pass only those methods you want changed.
+
+        Args:
+            and_method (str): New AND method to use.
+            or_method (str): New OR method to use.
+            imp_method (str): New implication method to use.
+            agg_method (str): New aggregation method to use.
+
+        Returns:
+            int: 1 if updates made successfully, -1 if new method provided not available
+                for the fis type used or incorrect.
+        """
+        methods_list = []
+        if type(self._fis) is fl.mamfis:
+            methods_list = AVAILABLE_LOGIC_METHODS_MAMDANI
+        if type(self._fis) is fl.sugfis:
+            methods_list = AVAILABLE_LOGIC_METHODS_SUGENO
+
+        if and_method != "":
+            if and_method not in methods_list["AndMethod"]:
+                return -1
+            self._fis.AndMethod = and_method
+        if or_method != "":
+            if or_method not in methods_list["OrMethod"]:
+                return -1
+            self._fis.OrMethod = or_method
+        if imp_method != "":
+            if imp_method not in methods_list["ImplicationMethod"]:
+                return -1
+            self._fis.ImplicationMethod = imp_method
+        if agg_method != "":
+            if agg_method not in methods_list["AggregationMethod"]:
+                return -1
+            self._fis.AggregationMethod = agg_method
+
+        return 1
+
+    def change_defuzzification_method(self, new_method: str) -> int:
+        """Change defuzzification method used.
+
+        Args:
+            new_method (str): New defuzzification method to be used. Available
+                options: centroid, bisector, mom, som, lom, wtaver.
+
+        Returns:
+            int: 1 if method changed successfully, -1 if new method provided not in
+                available methods.
+        """
+        if type(self._fis) is fl.mamfis:
+            if new_method not in AVAILABLE_DEFUZZIFICATION_METHODS:
+                return -1
+
+        if type(self._fis) is fl.sugfis:
+            if new_method not in AVAILABLE_DEFUZZIFICATION_METHODS_SUGENO:
+                return -1
+
+        self._fis.DefuzzificationMethod = new_method
+        return 1
+
+    def change_mf_name(self, io_variable_name: str, input_or_output: str, mf_idx: int, new_mf_name: str) -> int:
+        """Change the name of the given membership function.
+
+        Args:
+            io_variable_name (str): Name of the variable containing the mf.
+            input_or_output (str): "input" if the variable is an input, "output" if else.
+            mf_idx (int): Index of the mf to be changed.
+            new_mf_name (str): New name of the mf.
+
+        Returns:
+            int: 1 if mf name changed correctly, -1 if mf with the given index does not exist,
+                -2 if no io variable with a given name found, -3 if mf name too long.
+        """
+        if len(new_mf_name) > MF_NAME_MAX_LENGTH:
+            return -3
+
+        [io_variable, _] = self._find_variable(io_variable_name, input_or_output)
+        if io_variable is None:
+            return -2
+
+        if mf_idx >= len(io_variable.MembershipFunctions):
+            return -1
+
+        io_variable.MembershipFunctions[mf_idx].Name = new_mf_name
+        return 1
+
+    def change_mf_parameters(
+        self, io_variable_name: str, input_or_output: str, mf_idx: int, new_mf_parameters: list[float] | int
+    ) -> int:
+        """Change the parameters of the given membership function.
+
+        Args:
+            io_variable_name (str): Name of the variable containing the mf.
+            input_or_output (str): "input" if the variable is an input, "output" if else.
+            mf_idx (int): Index of the mf to be changed.
+            new_mf_parameters (list[float] | int): New parameters of the mf.
+
+        Returns:
+            int: 1 if mf parameters changed correctly, -1 if mf with the given index does not exist,
+                -2 if no io variable with a given name found, -3 if parameter list is too long or
+                too short for the mf type used, or parameters for constant used for other mf type.
+        """
+        [io_variable, _] = self._find_variable(io_variable_name, input_or_output)
+        if io_variable is None:
+            return -2
+
+        if mf_idx >= len(io_variable.MembershipFunctions):
+            return -1
+
+        if type(new_mf_parameters) is list:
+            if (
+                len(new_mf_parameters) != MF_PARAMETER_LENGTH_PER_TYPE[io_variable.MembershipFunctions[mf_idx].Type]
+                or io_variable.MembershipFunctions[mf_idx].Type == "constant"
+            ):
+                return -3
+        else:
+            if io_variable.MembershipFunctions[mf_idx].Type != "constant":
+                return -3
+
+        io_variable.MembershipFunctions[mf_idx].Parameters = new_mf_parameters
+        return 1
+
+    def set_interpolation_points(self, new_val: int) -> int:
+        """Set the number of function interpolation points.
+
+        Args:
+            new_val (int): New number of function interpolation points.
+
+        Returns:
+            int: 1 if value changed successfully, -1 if value lower or higher than set border values.
+        """
+        if new_val < NR_OF_INTERPOLATION_POINTS_MIN or new_val > NR_OF_INTERPOLATION_POINTS_MAX:
+            return -1
+
+        self._interpolation_points_nr = new_val
+        return 1
+
+    def get_interpolation_points(self) -> int:
+        """Get the function interpolation points number."""
+        return self._interpolation_points_nr
+
+    def change_variable_range(self, io_variable_name: str, input_or_output: str, new_range: list[float]) -> int:
+        """Change the domain range of a given input/output variable.
+
+        Args:
+            io_variable_name (str): Name of the variable.
+            input_or_output (str): "input" if the variable is an input, "output" if else.
+            new_range (list[float]): New range for the variable, in the form of [min, max].
+
+        Returns:
+            int: 1 if range changed successfully, -1 if provided min is higher than provided max,
+                -2 if range values are stricter than acceptable resolution.
+        """
+        if new_range[0] >= new_range[1]:
+            return -1
+
+        if round(new_range[0] / RESOLUTION_OF_VARIABLE_RANGE) - new_range[0] / RESOLUTION_OF_VARIABLE_RANGE != 0:
+            return -2
+
+        if round(new_range[1] / RESOLUTION_OF_VARIABLE_RANGE) - new_range[1] / RESOLUTION_OF_VARIABLE_RANGE != 0:
+            return -2
+
+        [io_variable, io_idx] = self._find_variable(io_variable_name, input_or_output)
+        if input_or_output == "input":
+            self._fis.Inputs.pop(io_idx)
+            io_variable.Range = new_range
+            self._fis.Inputs.insert(io_idx, io_variable)
+        else:
+            self._fis.Outputs.pop(io_idx)
+            io_variable.Range = new_range
+            self._fis.Outputs.insert(io_idx, io_variable)
+        return 1
+
+    def get_current_inference_type(self) -> fl.mamfis | fl.sugfis:
+        """Get the type of inference system currently in use."""
+        return type(self._fis)
+
+    def convert_inference_system(self, new_fis_name: str) -> Self:
+        """Converts fis to the other type of inference system.
+
+        Args:
+            new_fis_name (str): Name for the new fis.
+
+        Returns:
+            Self: New instance of FISModel class, with converted inference system.
+        """
+        if type(self._fis) is fl.mamfis:
+            new_fis_model = FISModel(fis_type="sugeno", fis_name=new_fis_name, int_points=self._interpolation_points_nr)
+            new_fis_model._fis.Inputs = self._fis.Inputs
+            new_fis_model._fis.Outputs = self._fis.Outputs
+
+            for output in new_fis_model._fis.Outputs:
+                for mf in output.MembershipFunctions:
+                    old_params = mf.Parameters
+                    if isinstance(old_params, list) and len(old_params) > 0:
+                        avg_value = sum(old_params) / len(old_params)
+                    else:
+                        avg_value = 0.5
+                    mf.Type = "constant"
+                    mf.Parameters = avg_value
+
+            new_fis_model._fis.Rules = self._fis.Rules
+            for rule in new_fis_model._fis.Rules:
+                for idx in range(len(rule.IsMFOutput)):
+                    if rule.IsMFOutput[idx] != 1:
+                        rule.IsMFOutput[idx] = 1
+
+            new_fis_model._fis.AndMethod = "prod"
+            new_fis_model._fis.OrMethod = "probor"
+            new_fis_model._fis.ImplicationMethod = "prod"
+            new_fis_model._fis.AggregationMethod = "sum"
+            new_fis_model._fis.DefuzzificationMethod = "wtaver"
+            return new_fis_model
+
+        if type(self._fis) is fl.sugfis:
+            new_fis_model = FISModel(
+                fis_type="mamdani", fis_name=new_fis_name, int_points=self._interpolation_points_nr
+            )
+            new_fis_model._fis.Inputs = self._fis.Inputs
+            new_fis_model._fis.Outputs = self._fis.Outputs
+
+            for output in new_fis_model._fis.Outputs:
+                for mf in output.MembershipFunctions:
+                    old_params = mf.Parameters
+                    if isinstance(old_params, (int, float)):
+                        center_value = old_params
+                    elif isinstance(old_params, list) and len(old_params) > 0:
+                        center_value = sum(old_params) / len(old_params)
+                    else:
+                        center_value = 0.5
+
+                    mf.Type = "trimf"
+                    output_range = output.Range
+                    range_min = output_range[0] if output_range else 0
+                    range_max = output_range[1] if output_range else 1
+                    mf.Parameters = [
+                        max(range_min, center_value - 0.4),
+                        center_value,
+                        min(range_max, center_value + 0.4),
+                    ]
+
+            new_fis_model._fis.Rules = self._fis.Rules
+
+            new_fis_model._fis.AndMethod = "min"
+            new_fis_model._fis.OrMethod = "max"
+            new_fis_model._fis.ImplicationMethod = "min"
+            new_fis_model._fis.AggregationMethod = "max"
+            new_fis_model._fis.DefuzzificationMethod = "centroid"
+            return new_fis_model
+
+    def generate_all_rules(self):
+        """Generate all possible rules, based on current input/output/mf configuration.
+
+        If some rules are already present, generate only the missing ones.
+
+        To stay compatible with Matlab, this function does not generate rules
+        with input mfs being null. Also, it does not override such rules if
+        they were added manually, instead appending a new, full rule.
+
+        Output variations, like in Matlab, are not considered, for time
+        complexity's sake.
+
+        Returns:
+            int: 1 if rules added successfully, -1 if there are no outputs and/or inputs,
+                rules can't be generated, -2 if one or more variables do not have mfs defined,
+                rules can't be generated.
+        """
+        if len(self._fis.Outputs) == 0 or len(self._fis.Inputs) == 0:
+            return -1
+
+        if not self._check_if_every_variable_has_mf():
+            return -2
+
+        output_mfs = [1 for _ in range(len(self._fis.Outputs))]
+        mfs_per_input = []
+        for input_nr in range(len(self._fis.Inputs)):
+            mfs_per_input.append([])
+            for mf_nr in range(1, len(self._fis.Inputs[input_nr].MembershipFunctions) + 1):
+                mfs_per_input[input_nr].append(mf_nr)
+
+        rule_combinations_tuple = list(itertools.product(*mfs_per_input))
+        rule_combinations = [list(tup) for tup in rule_combinations_tuple]
+
+        rules_input_part = [rule.Antecedent for rule in self._fis.Rules]
+        for potential_rule in rule_combinations:
+            if potential_rule not in rules_input_part:
+                potential_rule_ext = [*potential_rule, *output_mfs, 1, 1]
+                self.add_rule(None, potential_rule_ext)
+
         return 1
 
     def _find_variable(self, io_variable_name: str, input_or_output: str) -> [fl.fisvar, int]:

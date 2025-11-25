@@ -41,7 +41,7 @@ class TopMenuViewModel(BaseViewModel):
     def add_input(self) -> None:
         """Handle add input button click."""
         input_count = self.fuzzy_service.get_input_count()
-        success = self.fuzzy_service.add_input_variable(f"input{input_count + 1}", 0.0, 10.0)
+        success = self.fuzzy_service.add_input_variable(f"input{input_count + 1}", 0.0, 1.0)
         if success:
             self.notify_data_changed.emit()
 
@@ -57,7 +57,7 @@ class TopMenuViewModel(BaseViewModel):
     def add_output(self) -> None:
         """Handle add output button click."""
         output_count = self.fuzzy_service.get_output_count()
-        success = self.fuzzy_service.add_output_variable(f"output{output_count}", 0.0, 10.0)
+        success = self.fuzzy_service.add_output_variable(f"output{output_count + 1}", 0.0, 1.0)
         if success:
             self.notify_data_changed.emit()
 
@@ -102,3 +102,25 @@ class TopMenuViewModel(BaseViewModel):
         """Refresh all data from the model - only updates logic, no signal emission."""
         # TopMenuViewModel doesn't need to refresh data as it's mostly action-based
         pass
+
+    def convert_inference_system(self) -> bool:
+        """Convert the FIS system from Mamdani to Sugeno or vice versa."""
+        success = self.fuzzy_service.convert_inference_system()
+        if success:
+            self.notify_data_changed.emit()
+        return success
+
+    def get_fis_type(self) -> str:
+        """Get the current FIS type (mamdani or sugeno)."""
+        return self.fuzzy_service.get_fis_type()
+
+    def get_interpolation_points(self) -> int:
+        """Get the current number of interpolation points."""
+        return self.fuzzy_service.get_interpolation_points()
+
+    def set_interpolation_points(self, points: int) -> bool:
+        """Set the number of interpolation points."""
+        success = self.fuzzy_service.set_interpolation_points(points)
+        if success:
+            self.notify_data_changed.emit()
+        return success

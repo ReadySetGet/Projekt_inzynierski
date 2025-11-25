@@ -61,11 +61,31 @@ class MFEditorViewModel(BaseViewModel):
     @property
     def available_mf_types(self) -> List[str]:
         """Get the available membership function types."""
+        # Check if this is a Sugeno system output
+        is_sugeno_output = False
+        if self._model and hasattr(self._model, "_fis"):
+            from fuzzylab import sugfis
+
+            if isinstance(self._model._fis, sugfis) and self._selected_variable_type == "output":
+                is_sugeno_output = True
+
+        if is_sugeno_output:
+            return ["Constant", "Linear"]
         return self._available_mf_types
 
     @property
     def default_parameters(self) -> str:
         """Get the default parameters string."""
+        # Check if this is a Sugeno system output
+        is_sugeno_output = False
+        if self._model and hasattr(self._model, "_fis"):
+            from fuzzylab import sugfis
+
+            if isinstance(self._model._fis, sugfis) and self._selected_variable_type == "output":
+                is_sugeno_output = True
+
+        if is_sugeno_output:
+            return "0.5"  # Default constant value for Sugeno
         return self._default_parameters
 
     def _update_mf_list(self) -> None:
@@ -93,6 +113,14 @@ class MFEditorViewModel(BaseViewModel):
                 break
 
         if selected_var:
+            # Check if this is a Sugeno system output
+            is_sugeno_output = False
+            if self._model and hasattr(self._model, "_fis"):
+                from fuzzylab import sugfis
+
+                if isinstance(self._model._fis, sugfis) and self._selected_variable_type == "output":
+                    is_sugeno_output = True
+
             library_to_ui_mapping = {
                 "trimf": "Triangle",
                 "trapmf": "Trapezoid",
@@ -100,8 +128,26 @@ class MFEditorViewModel(BaseViewModel):
                 "gbellmf": "Bell",
             }
 
+            # Sugeno output MF types
+            if is_sugeno_output:
+                library_to_ui_mapping.update(
+                    {
+                        "constant": "Constant",
+                        "linear": "Linear",
+                    }
+                )
+
             for i, mf in enumerate(selected_var.MembershipFunctions):
                 ui_type = library_to_ui_mapping.get(mf.Type, "Triangle")
+                # Handle constant type - parameters might be a single float
+                params = mf.Parameters
+                if mf.Type == "constant" and isinstance(params, (int, float)):
+                    params = [float(params)]  # Convert to list for consistency
+                elif mf.Type == "constant" and isinstance(params, list) and len(params) == 1:
+                    params = params  # Already a list
+                elif mf.Type == "constant":
+                    params = [0.5]  # Default fallback
+
                 mf_list.append(
                     {
                         "variable_name": selected_var.Name,
@@ -109,7 +155,7 @@ class MFEditorViewModel(BaseViewModel):
                         "mf_index": i,
                         "mf_name": mf.Name,
                         "mf_type": ui_type,
-                        "parameters": mf.Parameters,
+                        "parameters": params,
                     }
                 )
 
@@ -120,6 +166,7 @@ class MFEditorViewModel(BaseViewModel):
         self._selected_variable = variable_name
         self._selected_variable_type = variable_type
         self.variable_selected.emit(variable_name, variable_type)
+        # Update MF list after variable selection to ensure table is redrawn
         self._update_mf_list()
 
     def select_mf(self, variable_name: str, mf_index: int) -> None:
@@ -138,14 +185,28 @@ class MFEditorViewModel(BaseViewModel):
         if not self._selected_variable_type:
             return False
 
-        type_mapping = {
-            "Triangle": "trojkatna",
-            "Trapezoid": "trapezoidalna",
-            "Gauss": "gaussowska",
-            "Bell": "dzwonowa",
-        }
+        # Check if this is a Sugeno system output
+        is_sugeno_output = False
+        if self._model and hasattr(self._model, "_fis"):
+            from fuzzylab import sugfis
 
-        model_type = type_mapping.get(mf_type, "trojkatna")
+            if isinstance(self._model._fis, sugfis) and self._selected_variable_type == "output":
+                is_sugeno_output = True
+
+        if is_sugeno_output:
+            type_mapping = {
+                "Constant": "stala",
+                "Linear": "liniowa",
+            }
+            model_type = type_mapping.get(mf_type, "stala")
+        else:
+            type_mapping = {
+                "Triangle": "trojkatna",
+                "Trapezoid": "trapezoidalna",
+                "Gauss": "gaussowska",
+                "Bell": "dzwonowa",
+            }
+            model_type = type_mapping.get(mf_type, "trojkatna")
 
         if mf_parameters is None:
             mf_parameters = self._default_parameters
@@ -173,12 +234,13 @@ class MFEditorViewModel(BaseViewModel):
         if not self._selected_variable_type:
             return False
 
-        success = self._fuzzy_service.delete_membership_function(variable_name, mf_index)
+        success = self._fuzzy_service.delete_membership_function(variable_name, mf_index, self._selected_variable_type)
 
         if success:
+            if self._fuzzy_service and hasattr(self._fuzzy_service, "get_fis_model"):
+                self._model = self._fuzzy_service.get_fis_model()
             self.mf_deleted.emit(variable_name, mf_index)
             self._update_mf_list()
-            # Notify other components of data change
             self.notify_data_changed.emit()
             return True
 
@@ -202,14 +264,28 @@ class MFEditorViewModel(BaseViewModel):
                 self._emit_system_changed()
             return True
 
-        type_mapping = {
-            "Triangle": "trojkatna",
-            "Trapezoid": "trapezoidalna",
-            "Gauss": "gaussowska",
-            "Bell": "dzwonowa",
-        }
+        # Check if this is a Sugeno system output
+        is_sugeno_output = False
+        if self._model and hasattr(self._model, "_fis"):
+            from fuzzylab import sugfis
 
-        model_type = type_mapping.get(new_type, "trojkatna")
+            if isinstance(self._model._fis, sugfis) and self._selected_variable_type == "output":
+                is_sugeno_output = True
+
+        if is_sugeno_output:
+            type_mapping = {
+                "Constant": "stala",
+                "Linear": "liniowa",
+            }
+            model_type = type_mapping.get(new_type, "stala")
+        else:
+            type_mapping = {
+                "Triangle": "trojkatna",
+                "Trapezoid": "trapezoidalna",
+                "Gauss": "gaussowska",
+                "Bell": "dzwonowa",
+            }
+            model_type = type_mapping.get(new_type, "trojkatna")
 
         success = self._fuzzy_service.change_membership_function_type(
             variable_name, self._selected_variable_type, mf_index, model_type
@@ -236,7 +312,18 @@ class MFEditorViewModel(BaseViewModel):
 
         for var in search_list:
             if var.Name == variable_name and 0 <= mf_index < len(var.MembershipFunctions):
-                var.MembershipFunctions[mf_index].Parameters = new_parameters
+                mf = var.MembershipFunctions[mf_index]
+                # Handle Sugeno constant type - needs single float, not list
+                if mf.Type == "constant":
+                    if isinstance(new_parameters, list) and len(new_parameters) > 0:
+                        mf.Parameters = float(new_parameters[0])
+                    elif isinstance(new_parameters, (int, float)):
+                        mf.Parameters = float(new_parameters)
+                    else:
+                        mf.Parameters = 0.5  # Default fallback
+                else:
+                    mf.Parameters = new_parameters
+
                 self.mf_parameters_changed.emit(variable_name, mf_index, new_parameters)
                 self._emit_system_changed()
                 # Notify other components of data change
@@ -256,18 +343,45 @@ class MFEditorViewModel(BaseViewModel):
         for var in search_list:
             if var.Name == variable_name and 0 <= mf_index < len(var.MembershipFunctions):
                 mf = var.MembershipFunctions[mf_index]
+
+                # Check if this is a Sugeno system output
+                is_sugeno_output = False
+                if hasattr(fis, "__class__"):
+                    from fuzzylab import sugfis
+
+                    if isinstance(fis, sugfis) and self._selected_variable_type == "output":
+                        is_sugeno_output = True
+
                 library_to_ui_mapping = {
                     "trimf": "Triangle",
                     "trapmf": "Trapezoid",
                     "gaussmf": "Gauss",
                     "gbellmf": "Bell",
                 }
+
+                if is_sugeno_output:
+                    library_to_ui_mapping.update(
+                        {
+                            "constant": "Constant",
+                            "linear": "Linear",
+                        }
+                    )
+
                 ui_type = library_to_ui_mapping.get(mf.Type, "Triangle")
+
+                # Handle constant type - parameters might be a single float
+                params = mf.Parameters
+                if mf.Type == "constant" and isinstance(params, (int, float)):
+                    params = [float(params)]  # Convert to list for consistency
+                elif mf.Type == "constant" and isinstance(params, list) and len(params) == 1:
+                    params = params  # Already a list
+                elif mf.Type == "constant":
+                    params = [0.5]  # Default fallback
 
                 return {
                     "name": mf.Name,
                     "type": ui_type,
-                    "parameters": mf.Parameters,
+                    "parameters": params,
                     "variable_name": variable_name,
                     "variable_type": self._selected_variable_type,
                 }
@@ -360,6 +474,14 @@ class MFEditorViewModel(BaseViewModel):
         range_min, range_max = var_range[0], var_range[1]
         range_span = range_max - range_min
 
+        # Check if this is a Sugeno system output
+        is_sugeno_output = False
+        if self._model and hasattr(self._model, "_fis"):
+            from fuzzylab import sugfis
+
+            if isinstance(self._model._fis, sugfis) and self._selected_variable_type == "output":
+                is_sugeno_output = True
+
         # Default parameters in normalized [0, 1] space
         defaults_normalized = {
             "Triangle": [0, 0.5, 1],  # 3 parameters: a, b, c
@@ -367,6 +489,18 @@ class MFEditorViewModel(BaseViewModel):
             "Gauss": [0.2, 0.5],  # 2 parameters: sigma, mu (order matters!)
             "Bell": [0.2, 3, 0.5],  # 3 parameters: a (width), b (slope), c (center)
         }
+
+        # Sugeno output types
+        if is_sugeno_output:
+            if mf_type == "Constant":
+                # Constant type: single float value
+                return [0.5]  # Return as list for consistency
+            elif mf_type == "Linear":
+                # Linear type: coefficients for inputs + constant term
+                # For n inputs: [coeff1, coeff2, ..., coeffn, constant]
+                input_count = len(self._model._fis.Inputs) if self._model and hasattr(self._model, "_fis") else 2
+                # Default: all coefficients 0, constant 0.5
+                return [0.0] * input_count + [0.5]
 
         normalized = defaults_normalized.get(mf_type, [0, 0.5, 1])
 

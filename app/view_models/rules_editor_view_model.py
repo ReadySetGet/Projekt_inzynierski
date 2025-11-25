@@ -203,19 +203,15 @@ class RulesEditorViewModel(BaseViewModel):
             return False
 
         if self.fuzzy_service:
-            current_rule = self._rules[rule_index]
-            result = self.fuzzy_service.update_rule(
-                rule_index,
-                current_rule["antecedent"],
-                current_rule["consequent"],
-                current_rule["weight"],
-                current_rule["connection"],
-                current_rule["is_mf"],
-            )
+            if hasattr(self.fuzzy_service, "_rule_manager"):
+                result = self.fuzzy_service._rule_manager.update_rule_name(rule_index, new_name)
+            else:
+                return False
             if result:
                 self._rules[rule_index]["name"] = new_name
                 self.rule_name_changed.emit(rule_index, new_name)
                 self._update_rules()
+                self.notify_data_changed.emit()
                 return True
 
         return False
@@ -239,6 +235,7 @@ class RulesEditorViewModel(BaseViewModel):
                 self._rules[rule_index]["weight"] = new_weight
                 self.rule_weight_changed.emit(rule_index, new_weight)
                 self._update_rules()
+                self.notify_data_changed.emit()
                 return True
 
         return False
@@ -262,6 +259,7 @@ class RulesEditorViewModel(BaseViewModel):
                 self._rules[rule_index]["connection"] = new_connection
                 self.rule_connection_changed.emit(rule_index, new_connection)
                 self._update_rules()
+                self.notify_data_changed.emit()
                 return True
 
         return False
@@ -292,9 +290,11 @@ class RulesEditorViewModel(BaseViewModel):
     def clear_all_rules(self) -> bool:
         """Clear all rules."""
         if self.fuzzy_service:
-            self.fuzzy_service.clear_all_rules()
-            self._update_rules()
-            return True
+            result = self.fuzzy_service.clear_all_rules()
+            if result:
+                self._update_rules()
+                self.notify_data_changed.emit()
+                return True
         return False
 
     def update_data(self) -> None:

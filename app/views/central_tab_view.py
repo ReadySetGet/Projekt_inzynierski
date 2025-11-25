@@ -131,10 +131,10 @@ class CentralTabWidget(BaseTabView):
         self.table_widget.setObjectName("table_widget")
         self.table_widget.setRowCount(1)
         self.table_widget.setColumnCount(3)
-        self.table_widget.setColumnWidth(0, 314)
-        self.table_widget.setColumnWidth(1, 50)
-        self.table_widget.setColumnWidth(2, 50)
-        self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
+        self.table_widget.setColumnWidth(0, 100)
+        self.table_widget.setColumnWidth(1, 60)
+        self.table_widget.setColumnWidth(2, 271)
+        self.table_widget.setHorizontalHeaderLabels(["Name", "Weight", "Rule"])
 
         self.clear_rules_button = QtWidgets.QPushButton(parent=self.rule_editor)
         self.clear_rules_button.setGeometry(QtCore.QRect(180, 60, 100, 28))
@@ -236,13 +236,24 @@ class CentralTabWidget(BaseTabView):
             if not rule_text:
                 rule_text = f"Rule {i+1} (no text available)"
 
+            rules_data = fuzzy_service.get_rules()
+            if i < len(rules_data):
+                rule_data = rules_data[i]
+                name_str = rule_data.get("name", f"Rule{i+1}")
+                weight_str = str(rule_data.get("weight", 1.0))
+                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(name_str))
+                self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(weight_str))
+            else:
+                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(""))
+                self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(""))
+
             if display_type == "Symbolic":
                 pattern = r"\b({})\b".format("|".join(sorted(re.escape(k) for k in self._symbols)))
                 symbolic_rule = re.sub(pattern, lambda m: self._symbols.get(m.group(0)), rule_text)
                 symbolic_rule = re.sub(r"(=>)(.*)", _regex_func, symbolic_rule)
                 if not symbolic_rule or symbolic_rule == rule_text:
                     symbolic_rule = rule_text
-                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(symbolic_rule))
+                self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(symbolic_rule))
             elif display_type == "Indexed":
                 rules_data = fuzzy_service.get_rules()
                 if i < len(rules_data):
@@ -252,19 +263,11 @@ class CentralTabWidget(BaseTabView):
                     weight = rule_data.get("weight", 1.0)
                     connection = rule_data.get("connection", 1)
                     indexed_rule = f"{antecedent}, {consequent}, ({weight}) : {connection}"
-                    self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(indexed_rule))
+                    self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(indexed_rule))
                 else:
-                    self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(""))
+                    self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(""))
             else:
-                self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(rule_text))
-
-            rules_data = fuzzy_service.get_rules()
-            if i < len(rules_data):
-                rule_data = rules_data[i]
-                weight_str = str(rule_data.get("weight", 1.0))
-                name_str = rule_data.get("name", f"Rule{i+1}")
-                self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(weight_str))
-                self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(name_str))
+                self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(rule_text))
 
     def clearTable(self):
         """Clear the rule table and delete rules present in the system.
@@ -278,7 +281,7 @@ class CentralTabWidget(BaseTabView):
                 self.view_model.notify_data_changed.emit()
 
         self.table_widget.clear()
-        self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
+        self.table_widget.setHorizontalHeaderLabels(["Name", "Weight", "Rule"])
         self.table_widget.setRowCount(1)
         self.table_widget.setColumnCount(3)
         self.status_bar.showMessage("Last action: cleared all rules.")
@@ -345,7 +348,7 @@ class CentralTabWidget(BaseTabView):
 
     def _update_rule_style(self):
         self.table_widget.clear()
-        self.table_widget.setHorizontalHeaderLabels(["Rule", "Weight", "Name"])
+        self.table_widget.setHorizontalHeaderLabels(["Name", "Weight", "Rule"])
         self.table_widget.setColumnCount(3)
         self.fillTable()
 
@@ -487,7 +490,9 @@ class CentralTabWidget(BaseTabView):
             elif mf_type == "gaussmf" and len(mf_params) >= 2:
                 # Gaussian MF: [sigma, mu]
                 sigma, mu = mf_params[0], mf_params[1]
-                x_data = np.linspace(var_range[0], var_range[1], 400)
+                fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+                interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
+                x_data = np.linspace(var_range[0], var_range[1], interpolation_points)
                 y_data = np.exp(-(1 / 2) * ((x_data - mu) / sigma) ** 2)
 
                 plot = GaussPlot(
@@ -504,7 +509,9 @@ class CentralTabWidget(BaseTabView):
             elif mf_type == "gbellmf" and len(mf_params) >= 3:
                 # Bell MF: [a, b, c]
                 a, b, c = mf_params[0], mf_params[1], mf_params[2]
-                x_data = np.linspace(var_range[0], var_range[1], 200)
+                fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+                interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
+                x_data = np.linspace(var_range[0], var_range[1], interpolation_points)
                 y_data = 1 / (1 + np.abs((x_data - c) / a) ** (2 * b))
 
                 plot = BellPlot(

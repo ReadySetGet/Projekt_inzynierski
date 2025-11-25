@@ -55,6 +55,7 @@ class RulesEditorTab(BaseWidgetView):
         self.add_all_rules_button.clicked.connect(self._on_add_all_rules_clicked)
         self.clear_rules_button.clicked.connect(self._on_clear_rules_clicked)
         self.add_rule_button.clicked.connect(self._on_add_rule_clicked)
+        self.update_rule_button.clicked.connect(self._on_update_rule_clicked)
         self.delete_rule_button.clicked.connect(self._on_delete_rule_clicked)
 
         self.rules_list.itemSelectionChanged.connect(self._on_rule_selected)
@@ -160,8 +161,11 @@ class RulesEditorTab(BaseWidgetView):
 
         rule_buttons_layout = QtWidgets.QHBoxLayout()
         self.add_rule_button = QtWidgets.QPushButton(self.t("ADD_RULE"), parent=self)
+        self.update_rule_button = QtWidgets.QPushButton(self.t("UPDATE_RULE"), parent=self)
+        self.update_rule_button.setVisible(False)
         self.delete_rule_button = QtWidgets.QPushButton(self.t("DELETE_RULE"), parent=self)
         rule_buttons_layout.addWidget(self.add_rule_button)
+        rule_buttons_layout.addWidget(self.update_rule_button)
         rule_buttons_layout.addWidget(self.delete_rule_button)
         editor_layout.addLayout(rule_buttons_layout)
 
@@ -198,6 +202,7 @@ class RulesEditorTab(BaseWidgetView):
 
             is_dropdown = QtWidgets.QComboBox(parent=self)
             is_dropdown.addItems(["is", "is not"])
+            is_dropdown.currentTextChanged.connect(self._on_antecedent_changed)
             row_layout.addWidget(is_dropdown)
             self.input_is_dropdowns.append(is_dropdown)
 
@@ -205,6 +210,7 @@ class RulesEditorTab(BaseWidgetView):
             mf_dropdown.addItem("None", 0)
             for mf in mfs:
                 mf_dropdown.addItem(mf.get("name", ""), mf.get("index", 0) + 1)
+            mf_dropdown.currentIndexChanged.connect(self._on_antecedent_changed)
             row_layout.addWidget(mf_dropdown)
             self.input_dropdowns.append(mf_dropdown)
 
@@ -223,6 +229,7 @@ class RulesEditorTab(BaseWidgetView):
 
             is_dropdown = QtWidgets.QComboBox(parent=self)
             is_dropdown.addItems(["is", "is not"])
+            is_dropdown.currentTextChanged.connect(self._on_consequent_changed)
             row_layout.addWidget(is_dropdown)
             self.output_is_dropdowns.append(is_dropdown)
 
@@ -230,6 +237,7 @@ class RulesEditorTab(BaseWidgetView):
             mf_dropdown.addItem("None", 0)
             for mf in mfs:
                 mf_dropdown.addItem(mf.get("name", ""), mf.get("index", 0) + 1)
+            mf_dropdown.currentIndexChanged.connect(self._on_consequent_changed)
             row_layout.addWidget(mf_dropdown)
             self.output_dropdowns.append(mf_dropdown)
 
@@ -355,7 +363,10 @@ class RulesEditorTab(BaseWidgetView):
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             success = self.view_model.delete_rule(rule_index)
             if success:
+                self._current_rule_index = -1
+                self.rules_list.clearSelection()
                 self._clear_rule_editor()
+                self._update_button_states()
 
     def _on_rule_selected(self):
         """Handle rule selection from list."""
@@ -391,24 +402,33 @@ class RulesEditorTab(BaseWidgetView):
 
         for i, mf_idx in enumerate(antecedent):
             if i < len(self.input_dropdowns):
+                self.input_dropdowns[i].blockSignals(True)
                 index = self.input_dropdowns[i].findData(mf_idx)
                 if index >= 0:
                     self.input_dropdowns[i].setCurrentIndex(index)
+                self.input_dropdowns[i].blockSignals(False)
 
                 if i < len(is_mf):
+                    self.input_is_dropdowns[i].blockSignals(True)
                     self.input_is_dropdowns[i].setCurrentText("is" if is_mf[i] == 1 else "is not")
+                    self.input_is_dropdowns[i].blockSignals(False)
 
         for i, mf_idx in enumerate(consequent):
             if i < len(self.output_dropdowns):
+                self.output_dropdowns[i].blockSignals(True)
                 index = self.output_dropdowns[i].findData(mf_idx)
                 if index >= 0:
                     self.output_dropdowns[i].setCurrentIndex(index)
+                self.output_dropdowns[i].blockSignals(False)
 
                 out_is_idx = i + len(antecedent)
                 if out_is_idx < len(is_mf):
+                    self.output_is_dropdowns[i].blockSignals(True)
                     self.output_is_dropdowns[i].setCurrentText("is" if is_mf[out_is_idx] == 1 else "is not")
+                    self.output_is_dropdowns[i].blockSignals(False)
 
         self._updating_rule = False
+        self._update_button_states()
 
     def _clear_rule_editor(self):
         """Clear the rule editor fields."""
@@ -420,15 +440,24 @@ class RulesEditorTab(BaseWidgetView):
         self.and_radio_button.setChecked(True)
 
         for dropdown in self.input_dropdowns:
+            dropdown.blockSignals(True)
             dropdown.setCurrentIndex(0)
+            dropdown.blockSignals(False)
         for dropdown in self.input_is_dropdowns:
+            dropdown.blockSignals(True)
             dropdown.setCurrentIndex(0)
+            dropdown.blockSignals(False)
         for dropdown in self.output_dropdowns:
+            dropdown.blockSignals(True)
             dropdown.setCurrentIndex(0)
+            dropdown.blockSignals(False)
         for dropdown in self.output_is_dropdowns:
+            dropdown.blockSignals(True)
             dropdown.setCurrentIndex(0)
+            dropdown.blockSignals(False)
 
         self._updating_rule = False
+        self._update_button_states()
 
     def _on_rule_name_changed(self):
         """Handle rule name change."""
@@ -460,3 +489,68 @@ class RulesEditorTab(BaseWidgetView):
     def _on_display_mode_changed(self, mode):
         """Handle display mode change."""
         self._update_rules_list(self.view_model.rules)
+
+    def _update_button_states(self):
+        """Update button visibility based on whether we're editing or adding."""
+        is_editing = self._current_rule_index >= 0
+        self.add_rule_button.setVisible(not is_editing)
+        self.update_rule_button.setVisible(is_editing)
+
+    def _on_update_rule_clicked(self):
+        """Handle Update Rule button click."""
+        if not self.view_model or self._current_rule_index < 0:
+            return
+
+        current_rule = self.view_model.rules[self._current_rule_index]
+        current_name = current_rule.get("name", "")
+
+        rule_name = self.rule_name_edit.text().strip()
+        if not rule_name:
+            rule_name = current_name
+
+        try:
+            weight = float(self.rule_weight_edit.text())
+        except ValueError:
+            weight = 1.0
+
+        connection = 1 if self.and_radio_button.isChecked() else 0
+
+        antecedent = []
+        is_mf = []
+
+        for i, dropdown in enumerate(self.input_dropdowns):
+            mf_index = dropdown.currentData()
+            antecedent.append(mf_index if mf_index is not None else 0)
+            is_not = 1 if self.input_is_dropdowns[i].currentText() == "is" else -1
+            is_mf.append(is_not)
+
+        consequent = []
+        for i, dropdown in enumerate(self.output_dropdowns):
+            mf_index = dropdown.currentData()
+            consequent.append(mf_index if mf_index is not None else 0)
+            is_not = 1 if self.output_is_dropdowns[i].currentText() == "is" else -1
+            is_mf.append(is_not)
+
+        success = self.view_model.update_rule(
+            self._current_rule_index,
+            antecedent,
+            consequent,
+            weight,
+            connection,
+            is_mf,
+        )
+
+        if success and rule_name != current_name:
+            self.view_model.update_rule_name(self._current_rule_index, rule_name)
+
+    def _on_antecedent_changed(self):
+        """Handle antecedent dropdown changes."""
+        if self._updating_rule or self._current_rule_index < 0:
+            return
+        self._on_update_rule_clicked()
+
+    def _on_consequent_changed(self):
+        """Handle consequent dropdown changes."""
+        if self._updating_rule or self._current_rule_index < 0:
+            return
+        self._on_update_rule_clicked()

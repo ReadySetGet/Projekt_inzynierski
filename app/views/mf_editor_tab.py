@@ -129,11 +129,15 @@ class MFPropertiesWidget(BaseWidgetView):
         self.mf_range_edit.setObjectName("mf_range_edit")
         self.mf_range_edit.setText(self.view_model.default_parameters)
 
+        # Connect to update label when variable changes
+        self.view_model.variable_selected.connect(self._update_parameter_label)
+
         self.mf_table = QtWidgets.QTableWidget(parent=self.editor_frame)
         self.mf_table.setGeometry(QtCore.QRect(10, 238, 281, 421))
         self.mf_table.setObjectName("mf_table")
 
         self.mf_table.setRowCount(0)  # Start with empty table
+        # Column count will be set dynamically in _update_table_from_model based on FIS type
         self.mf_table.setColumnCount(3)
         self.mf_table.setColumnWidth(0, 80)
         self.mf_table.setColumnWidth(1, 80)
@@ -180,6 +184,7 @@ class MFPropertiesWidget(BaseWidgetView):
         self.mf_range_edit.setText(self.view_model.default_parameters)
 
         self._populate_variable_dropdown()
+        self._update_parameter_label()
 
     def _set_number_of_mf(self, count: int):
         """Update the label text to reflect current mf count."""
@@ -189,12 +194,18 @@ class MFPropertiesWidget(BaseWidgetView):
         """Remove the selected membership function using the view model."""
         current_row = self.mf_table.currentRow()
 
+        if current_row < 0:
+            return
+
         success = self.view_model.delete_mf_from_selection(current_row)
 
         if success:
             self.remove_mf_clicked.emit()
-        else:
-            pass
+            if self.mf_table.rowCount() > 0:
+                if current_row >= self.mf_table.rowCount():
+                    self.mf_table.setCurrentCell(self.mf_table.rowCount() - 1, 0)
+                else:
+                    self.mf_table.setCurrentCell(current_row, 0)
 
     def _add_mf(self):
         """Add a new membership function using the view model."""
@@ -213,6 +224,33 @@ class MFPropertiesWidget(BaseWidgetView):
 
     def _update_table_from_model(self, mf_list):
         """Update the table based on view model data."""
+        # Check if this is a Sugeno output
+        is_sugeno_output = False
+        if self.view_model._model and hasattr(self.view_model._model, "_fis"):
+            from fuzzylab import sugfis
+
+            if isinstance(self.view_model._model._fis, sugfis) and self.view_model.selected_variable_type == "output":
+                is_sugeno_output = True
+
+        # Clear existing widgets first to avoid conflicts
+        for row in range(self.mf_table.rowCount()):
+            widget = self.mf_table.cellWidget(row, 1)
+            if widget:
+                widget.setParent(None)
+
+        # Set column count and headers based on system type
+        if is_sugeno_output:
+            self.mf_table.setColumnCount(2)
+            self.mf_table.setColumnWidth(0, 120)
+            self.mf_table.setColumnWidth(1, 150)
+            self.mf_table.setHorizontalHeaderLabels(["Name", "Parameters"])
+        else:
+            self.mf_table.setColumnCount(3)
+            self.mf_table.setColumnWidth(0, 80)
+            self.mf_table.setColumnWidth(1, 80)
+            self.mf_table.setColumnWidth(2, 100)
+            self.mf_table.setHorizontalHeaderLabels(["Name", "Type", "Parameters"])
+
         current_selections = {}
         if not self._updating_type:
             for row in range(self.mf_table.rowCount()):
@@ -225,40 +263,51 @@ class MFPropertiesWidget(BaseWidgetView):
         for row, mf_data in enumerate(mf_list):
             self.mf_table.setItem(row, 0, QtWidgets.QTableWidgetItem(mf_data["mf_name"]))
 
-            type_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
-            type_dropdown.addItems(self.view_model.available_mf_types)
+            # Only show Type column for non-Sugeno outputs
+            if not is_sugeno_output:
+                type_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
+                type_dropdown.addItems(self.view_model.available_mf_types)
 
-            # Block signals while setting initial value to avoid triggering change handler
-            type_dropdown.blockSignals(True)
-            if row in self._desired_types:
-                type_dropdown.setCurrentText(self._desired_types[row])
-            elif row in current_selections and not self._updating_type:
-                type_dropdown.setCurrentText(current_selections[row])
+                # Block signals while setting initial value to avoid triggering change handler
+                type_dropdown.blockSignals(True)
+                if row in self._desired_types:
+                    type_dropdown.setCurrentText(self._desired_types[row])
+                elif row in current_selections and not self._updating_type:
+                    type_dropdown.setCurrentText(current_selections[row])
+                else:
+                    type_dropdown.setCurrentText(mf_data["mf_type"])
+                type_dropdown.blockSignals(False)
+
+                def make_type_change_handler(row_num, dropdown_ref):
+                    def handler(index):
+                        print(f"DEBUG: Signal fired! index={index}, row={row_num}")
+                        new_text = dropdown_ref.currentText()
+                        print(f"DEBUG: Current text: {new_text}")
+                        self._on_mf_type_changed(row_num, new_text)
+
+                    return handler
+
+                handler = make_type_change_handler(row, type_dropdown)
+                type_dropdown.currentIndexChanged.connect(handler)
+
+                self.mf_table.setCellWidget(row, 1, type_dropdown)
+
+            # Format parameters display - for constant type, show just the value
+            params = mf_data["parameters"]
+            mf_type = mf_data.get("mf_type", "")
+
+            if mf_type == "Constant" and isinstance(params, list) and len(params) == 1:
+                params_str = str(params[0])
+            elif mf_type == "Constant" and isinstance(params, (int, float)):
+                params_str = str(params)
             else:
-                type_dropdown.setCurrentText(mf_data["mf_type"])
-            type_dropdown.blockSignals(False)
+                params_str = str(params) if isinstance(params, list) else str(params)
 
-            def make_type_change_handler(row_num, dropdown_ref):
-                def handler(index):
-                    print(f"DEBUG: Signal fired! index={index}, row={row_num}")
-                    new_text = dropdown_ref.currentText()
-                    print(f"DEBUG: Current text: {new_text}")
-                    self._on_mf_type_changed(row_num, new_text)
-
-                return handler
-
-            handler = make_type_change_handler(row, type_dropdown)
-            type_dropdown.currentIndexChanged.connect(handler)
-            print(f"DEBUG: Connected handler for row {row}, current text: {type_dropdown.currentText()}")
-
-            self.mf_table.setCellWidget(row, 1, type_dropdown)
-
-            params_str = (
-                str(mf_data["parameters"]) if isinstance(mf_data["parameters"], list) else mf_data["parameters"]
-            )
             params_item = QtWidgets.QTableWidgetItem(params_str)
             params_item.setFlags(params_item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
-            self.mf_table.setItem(row, 2, params_item)
+            # Parameters column index depends on whether Type column is shown
+            params_col = 1 if is_sugeno_output else 2
+            self.mf_table.setItem(row, params_col, params_item)
 
         self._set_number_of_mf(len(mf_list))
 
@@ -287,7 +336,11 @@ class MFPropertiesWidget(BaseWidgetView):
 
     def _on_variable_selected_from_model(self, variable_name, variable_type):
         """Handle variable selected signal from view model."""
-        pass
+        # When variable changes, force table update to redraw with correct columns
+        # Clear the table first to ensure clean redraw
+        self.mf_table.setRowCount(0)
+        # Trigger MF list update which will redraw the table with correct columns
+        self.view_model._update_mf_list()
 
     def _on_mf_selected(self):
         """Handle membership function selection from table."""
@@ -295,8 +348,19 @@ class MFPropertiesWidget(BaseWidgetView):
         if current_row >= 0:
             mf_info = self.view_model.get_mf_info(self.view_model.selected_variable, current_row)
             if mf_info:
-                params_str = str(mf_info["parameters"]).replace(" ", "")
+                # For Sugeno constant type, show just the value, not as a list
+                params = mf_info["parameters"]
+                mf_type = mf_info.get("type", "")
+
+                if mf_type == "Constant" and isinstance(params, list) and len(params) == 1:
+                    params_str = str(params[0])
+                elif mf_type == "Constant" and isinstance(params, (int, float)):
+                    params_str = str(params)
+                else:
+                    params_str = str(params).replace(" ", "")
+
                 self.mf_range_edit.setText(params_str)
+                self._update_parameter_label()
 
     def _on_mf_type_changed(self, row, new_type):
         """Handle membership function type change."""
@@ -336,7 +400,18 @@ class MFPropertiesWidget(BaseWidgetView):
             return  # Empty parameters
 
         try:
-            params = self.view_model._parse_parameters(params_text)
+            # Check if this is a Sugeno constant type
+            mf_info = self.view_model.get_mf_info(self.view_model.selected_variable, current_row)
+            is_constant = mf_info and mf_info.get("type") == "Constant"
+
+            if is_constant:
+                # For constant, parse as single value
+                try:
+                    params = [float(params_text)]
+                except ValueError:
+                    return
+            else:
+                params = self.view_model._parse_parameters(params_text)
 
             success = self.view_model.update_mf_parameters(self.view_model.selected_variable, current_row, params)
 
@@ -345,33 +420,94 @@ class MFPropertiesWidget(BaseWidgetView):
         except Exception:
             pass
 
+    def _update_parameter_label(self):
+        """Update the parameter label based on selected variable and MF type."""
+        # Check if this is a Sugeno output
+        is_sugeno_output = False
+        if self.view_model._model and hasattr(self.view_model._model, "_fis"):
+            from fuzzylab import sugfis
+
+            if isinstance(self.view_model._model._fis, sugfis) and self.view_model.selected_variable_type == "output":
+                is_sugeno_output = True
+
+        if is_sugeno_output:
+            # Check current MF type
+            current_row = self.mf_table.currentRow()
+            if current_row >= 0:
+                mf_info = self.view_model.get_mf_info(self.view_model.selected_variable, current_row)
+                if mf_info:
+                    mf_type = mf_info.get("type", "")
+                    if mf_type == "Constant":
+                        self.mf_range_label.setText(self.t("VALUE"))
+                    elif mf_type == "Linear":
+                        self.mf_range_label.setText(self.t("COEFFICIENTS"))
+                    else:
+                        self.mf_range_label.setText(self.t("RANGE"))
+                else:
+                    self.mf_range_label.setText(self.t("RANGE"))
+            else:
+                self.mf_range_label.setText(self.t("RANGE"))
+        else:
+            self.mf_range_label.setText(self.t("RANGE"))
+
     def _on_table_item_changed(self, item):
         """Handle table item changes (for inline editing)."""
-        # Handle table item changes
+        # Check if this is a Sugeno output to determine parameter column index
+        is_sugeno_output = False
+        if self.view_model._model and hasattr(self.view_model._model, "_fis"):
+            from fuzzylab import sugfis
 
-        # Only handle parameter column (column 2)
-        if item.column() != 2:
+            if isinstance(self.view_model._model._fis, sugfis) and self.view_model.selected_variable_type == "output":
+                is_sugeno_output = True
+
+        # Parameter column index depends on whether Type column is shown
+        params_col = 1 if is_sugeno_output else 2
+        if item.column() != params_col:
             return
 
         row = item.row()
         params_text = item.text().strip()
-        # Handle inline parameter edit
 
         if not params_text:
             return
 
         try:
-            params = self.view_model._parse_parameters(params_text)
+            # Check if this is a Sugeno constant type
+            mf_info = self.view_model.get_mf_info(self.view_model.selected_variable, row)
+            is_constant = mf_info and mf_info.get("type") == "Constant"
+
+            if is_constant:
+                # For constant, parse as single value
+                try:
+                    params = [float(params_text)]
+                except ValueError:
+                    # Restore original value
+                    current_params = mf_info.get("parameters", [0.5])
+                    if isinstance(current_params, list) and len(current_params) == 1:
+                        item.setText(str(current_params[0]))
+                    else:
+                        item.setText(str(current_params))
+                    return
+            else:
+                params = self.view_model._parse_parameters(params_text)
 
             success = self.view_model.update_mf_parameters(self.view_model.selected_variable, row, params)
 
             if success:
                 self.mf_range_edit.setText(params_text)
+                self._update_parameter_label()
         except Exception:
             try:
                 mf_info = self.view_model.get_mf_info(self.view_model.selected_variable, row)
                 if mf_info:
                     current_params = mf_info.get("parameters", [])
-                    item.setText(str(current_params))
+                    mf_type = mf_info.get("type", "")
+                    # Format for display
+                    if mf_type == "Constant" and isinstance(current_params, list) and len(current_params) == 1:
+                        item.setText(str(current_params[0]))
+                    elif mf_type == "Constant" and isinstance(current_params, (int, float)):
+                        item.setText(str(current_params))
+                    else:
+                        item.setText(str(current_params))
             except Exception:
                 item.setText("")

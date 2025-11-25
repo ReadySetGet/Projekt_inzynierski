@@ -264,6 +264,16 @@ class FuzzyCalculationService:
         """Validate input values for inference."""
         return self._inference_engine.validate_inputs(inputs)
 
+    # Interpolation Points Management
+    def get_interpolation_points(self) -> int:
+        """Get the number of interpolation points."""
+        return self._state_manager.fis_model.get_interpolation_points()
+
+    def set_interpolation_points(self, points: int) -> bool:
+        """Set the number of interpolation points."""
+        result = self._state_manager.fis_model.set_interpolation_points(points)
+        return result == 1
+
     # FIS Type Management
     def get_fis_type(self) -> str:
         """Get the current FIS type."""
@@ -284,6 +294,43 @@ class FuzzyCalculationService:
     def switch_to_sugeno(self) -> bool:
         """Switch to Sugeno FIS system."""
         return self._state_manager.switch_to_sugeno()
+
+    def convert_inference_system(self) -> bool:
+        """Convert the current FIS system from Mamdani to Sugeno or vice versa.
+
+        Returns:
+            bool: True if conversion was successful, False otherwise.
+        """
+        try:
+            fis_name = self.get_system_name()
+
+            new_fis_model = self._state_manager.fis_model.convert_inference_system(fis_name)
+
+            if new_fis_model is None:
+                return False
+
+            self._state_manager.set_fis_model(new_fis_model)
+            self._refresh_managers()
+
+            return True
+        except Exception as e:
+            print(f"Conversion error: {e}")
+            return False
+
+    def get_defuzzification_method(self) -> str:
+        """Get the current defuzzification method."""
+        fis_model = self.get_fis_model()
+        if fis_model and hasattr(fis_model, "_fis"):
+            return fis_model._fis.DefuzzificationMethod
+        return "centroid"
+
+    def set_defuzzification_method(self, method: str) -> bool:
+        """Set the defuzzification method."""
+        fis_model = self.get_fis_model()
+        if fis_model:
+            result = fis_model.change_defuzzification_method(method)
+            return result == 1
+        return False
 
     # Legacy compatibility methods
     def get_input_count(self) -> int:

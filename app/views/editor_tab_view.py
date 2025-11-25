@@ -1,4 +1,6 @@
-from PyQt6 import QtCore, QtGui, QtWidgets
+import re
+
+from PyQt6 import QtCore, QtWidgets
 
 from app.views.base_tab_view import BaseTabView
 from app.views.fis_properties_tab_view import FisPropertiesTabView
@@ -34,65 +36,7 @@ class EditorTabWidget(BaseTabView):
     def _setup_ui(self):
         self.fis_properties_tab = FisPropertiesTabView(parent=self)
         self.fis_properties_tab.setObjectName("fis_properties_tab")
-
-        # Create layout for FIS properties tab
-        fis_layout = QtWidgets.QVBoxLayout(self.fis_properties_tab)
-        fis_layout.setContentsMargins(10, 10, 10, 10)
-        fis_layout.setSpacing(10)
-
-        # System type section
-        system_type_layout = QtWidgets.QHBoxLayout()
-        self.system_type_label_1 = QtWidgets.QLabel()
-        self.system_type_label_1.setObjectName("system_type_label_1")
-        system_type_layout.addWidget(self.system_type_label_1)
-
-        self.system_type_label_2 = QtWidgets.QLabel()
-        self.system_type_label_2.setObjectName("system_type_label_2")
-        system_type_layout.addWidget(self.system_type_label_2)
-        system_type_layout.addStretch()
-        fis_layout.addLayout(system_type_layout)
-
-        # System name section
-        self.system_name_label = QtWidgets.QLabel()
-        self.system_name_label.setObjectName("system_name_label")
-        fis_layout.addWidget(self.system_name_label)
-
-        # Method labels
-        self.and_method_label = QtWidgets.QLabel()
-        self.and_method_label.setObjectName("and_method_label")
-        fis_layout.addWidget(self.and_method_label)
-
-        self.or_method_label = QtWidgets.QLabel()
-        self.or_method_label.setObjectName("or_method_label")
-        fis_layout.addWidget(self.or_method_label)
-
-        self.implication_method_label = QtWidgets.QLabel()
-        self.implication_method_label.setObjectName("implication_method_label")
-        fis_layout.addWidget(self.implication_method_label)
-
-        self.aggregation_method_label = QtWidgets.QLabel()
-        self.aggregation_method_label.setObjectName("aggregation_method_label")
-        fis_layout.addWidget(self.aggregation_method_label)
-
-        # Defuzzification section
-        defuzz_layout = QtWidgets.QHBoxLayout()
-        self.defuzzification_method_label = QtWidgets.QLabel()
-        self.defuzzification_method_label.setObjectName("defuzzification_method_label")
-        defuzz_layout.addWidget(self.defuzzification_method_label)
-
-        self.defuzzification_dropdown = QtWidgets.QComboBox()
-        self.defuzzification_dropdown.setObjectName("defuzzification_dropdown")
-        self.defuzzification_dropdown.addItem("")
-        self.defuzzification_dropdown.addItem("")
-        self.defuzzification_dropdown.currentTextChanged.connect(self.defuzzification_changed)
-        defuzz_layout.addWidget(self.defuzzification_dropdown)
-        defuzz_layout.addStretch()
-        fis_layout.addLayout(defuzz_layout)
-
-        # Add stretch to push everything to the top
-        fis_layout.addStretch()
-
-        self.addTab(self.fis_properties_tab, "fis_properties_tab")
+        self.addTab(self.fis_properties_tab, "")
 
         self.mf_properties_tab = QtWidgets.QWidget()
         self.mf_properties_tab.setObjectName("fis_properties_tab")
@@ -159,120 +103,11 @@ class EditorTabWidget(BaseTabView):
         self.number_of_mf_label.setGeometry(QtCore.QRect(20, 150, 151, 16))
         self.number_of_mf_label.setObjectName("number_of_mf_label")
 
-        self.addTab(self.mf_properties_tab, "mf_properties_tab")
+        self.addTab(self.mf_properties_tab, "")
 
         self.rule_editor_tab = RulesEditorTab(parent=self)
         self.rule_editor_tab.setObjectName("rule_editor_tab")
-
-        self.rule_name_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.rule_name_label.setGeometry(QtCore.QRect(10, 50, 55, 16))
-        self.rule_name_label.setObjectName("rule_name_label")
-
-        self.rule_weight_edit = QtWidgets.QLineEdit(parent=self.rule_editor_tab)
-        self.rule_weight_edit.setGeometry(QtCore.QRect(100, 90, 161, 31))
-        self.rule_weight_edit.setObjectName("rule_weight_edit")
-
-        self.rule_weight_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.rule_weight_label.setGeometry(QtCore.QRect(10, 100, 55, 16))
-        self.rule_weight_label.setObjectName("rule_weight_label")
-
-        self.rule_name_edit = QtWidgets.QLineEdit(parent=self.rule_editor_tab)
-        self.rule_name_edit.setGeometry(QtCore.QRect(100, 40, 161, 31))
-        self.rule_name_edit.setObjectName("rule_name_edit")
-
-        self.rule_editor_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.rule_editor_label.setGeometry(QtCore.QRect(0, 0, 121, 31))
-        self.rule_editor_label.setObjectName("rule_editor_label")
-
-        self.if_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.if_label.setGeometry(QtCore.QRect(10, 180, 51, 21))
-        self.if_label.setObjectName("if_label")
-
-        self.if_line = QtWidgets.QFrame(parent=self.rule_editor_tab)
-        self.if_line.setGeometry(QtCore.QRect(10, 200, 241, 20))
-        self.if_line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        self.if_line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
-        self.if_line.setObjectName("if_line")
-
-        self.then_line = QtWidgets.QFrame(parent=self.rule_editor_tab)
-        self.then_line.setGeometry(QtCore.QRect(10, 440, 241, 20))
-        self.then_line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        self.then_line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
-        self.then_line.setObjectName("then_line")
-
-        self.then_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.then_label.setGeometry(QtCore.QRect(10, 420, 51, 21))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.then_label.setFont(font)
-        self.then_label.setObjectName("then_label")
-
-        self.first_input_rule_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.first_input_rule_label.setGeometry(QtCore.QRect(10, 240, 51, 16))
-        self.first_input_rule_label.setObjectName("first_input_rule_label")
-
-        self.first_input_is_isnt_dropdown = QtWidgets.QComboBox(parent=self.rule_editor_tab)
-        self.first_input_is_isnt_dropdown.addItems(["Is", "Isn't"])
-        self.first_input_is_isnt_dropdown.setGeometry(QtCore.QRect(70, 230, 71, 31))
-        self.first_input_is_isnt_dropdown.setObjectName("first_input_is_isnt_dropdown")
-        self.first_input_is_isnt_dropdown.currentTextChanged.connect(self.is_dropdown_changed)
-
-        self.first_input_mf_dropdown = QtWidgets.QComboBox(parent=self.rule_editor_tab)
-        self.first_input_mf_dropdown.addItems(["MF1", "MF2", "MF3"])
-        self.first_input_mf_dropdown.setGeometry(QtCore.QRect(150, 230, 61, 31))
-        self.first_input_mf_dropdown.setObjectName("first_input_mf_dropdown")
-        self.first_input_mf_dropdown.currentTextChanged.connect(self.mf_changed)
-
-        self.and_or_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.and_or_label.setGeometry(QtCore.QRect(220, 240, 55, 16))
-        self.and_or_label.setObjectName("and_or_label")
-
-        self.final_input_mf_dropdown = QtWidgets.QComboBox(parent=self.rule_editor_tab)
-        self.final_input_mf_dropdown.setGeometry(QtCore.QRect(150, 270, 61, 31))
-        self.final_input_mf_dropdown.setObjectName("final_input_mf_dropdown")
-        self.final_input_mf_dropdown.currentTextChanged.connect(self.mf_changed)
-
-        self.final_input_is_isnt_dropdown = QtWidgets.QComboBox(parent=self.rule_editor_tab)
-        self.final_input_is_isnt_dropdown.addItems(["Is", "Isn't"])
-        self.final_input_is_isnt_dropdown.setGeometry(QtCore.QRect(70, 270, 71, 31))
-        self.final_input_is_isnt_dropdown.setObjectName("final_input_is_isnt_dropdown")
-        self.final_input_is_isnt_dropdown.currentTextChanged.connect(self.is_dropdown_changed)
-
-        self.final_input_rule_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.final_input_rule_label.setGeometry(QtCore.QRect(10, 280, 51, 16))
-        self.final_input_rule_label.setObjectName("final_input_rule_label")
-
-        self.connection_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.connection_label.setGeometry(QtCore.QRect(10, 150, 91, 16))
-        self.connection_label.setObjectName("connection_label")
-
-        self.and_radio_button = QtWidgets.QRadioButton(parent=self.rule_editor_tab)
-        self.and_radio_button.setGeometry(QtCore.QRect(100, 150, 61, 20))
-        self.and_radio_button.setObjectName("and_radio_button")
-        self.and_radio_button.clicked.connect(self.radio_button_clicked)
-
-        self.or_radio_button = QtWidgets.QRadioButton(parent=self.rule_editor_tab)
-        self.or_radio_button.setGeometry(QtCore.QRect(170, 150, 61, 20))
-        self.or_radio_button.setObjectName("or_radio_button")
-        self.or_radio_button.clicked.connect(self.radio_button_clicked)
-
-        self.output_rule_label = QtWidgets.QLabel(parent=self.rule_editor_tab)
-        self.output_rule_label.setGeometry(QtCore.QRect(10, 470, 51, 16))
-        self.output_rule_label.setObjectName("output_rule_label")
-
-        self.output_is_isnt_dropdown = QtWidgets.QComboBox(parent=self.rule_editor_tab)
-        self.output_is_isnt_dropdown.addItems(["Is", "Isn't"])
-        self.output_is_isnt_dropdown.setGeometry(QtCore.QRect(70, 460, 71, 31))
-        self.output_is_isnt_dropdown.setObjectName("output_is_isnt_dropdown")
-        self.output_is_isnt_dropdown.currentTextChanged.connect(self.is_dropdown_changed)
-
-        self.output_mf_dropdown = QtWidgets.QComboBox(parent=self.rule_editor_tab)
-        self.output_mf_dropdown.setGeometry(QtCore.QRect(150, 460, 61, 31))
-        self.output_mf_dropdown.setObjectName("output_mf_dropdown")
-        self.output_mf_dropdown.currentTextChanged.connect(self.mf_changed)
-        self.addTab(self.rule_editor_tab, "rule_editor_tab")
+        self.addTab(self.rule_editor_tab, "")
 
     def set_view_model(self, view_model) -> None:
         """Set the view model and initialize Property Editor."""
@@ -287,16 +122,6 @@ class EditorTabWidget(BaseTabView):
         self._retranslate_ui()
 
     def _retranslate_ui(self):
-        self.system_type_label_1.setText(self.t("TYPE"))
-        self.system_name_label.setText(self.t("NAME"))
-        self.and_method_label.setText(self.t("AND_METHOD"))
-        self.or_method_label.setText(self.t("OR_METHOD"))
-        self.implication_method_label.setText(self.t("IMPLICATION_METHOD"))
-        self.aggregation_method_label.setText(self.t("AGGREGATION_METHOD"))
-        self.defuzzification_method_label.setText(self.t("DEFUZZIFICATION_METHOD"))
-        self.defuzzification_dropdown.setItemText(0, self.t("CENTROID"))
-        self.defuzzification_dropdown.setItemText(1, self.t("BISECTOR"))
-        self.system_type_label_2.setText(self.t("SYSTEM_TYPE"))
         self.setTabText(
             self.indexOf(self.fis_properties_tab),
             self.t("FIS_PROPERTIES_TAB"),
@@ -306,24 +131,12 @@ class EditorTabWidget(BaseTabView):
         self.mf_range_label.setText(self.t("RANGE"))
         self.add_mf_button.setText(self.t("ADD_MF"))
         self.remove_mf_button.setText(self.t("REMOVE_MF"))
-        self.number_of_mf_label.setText(self.t("NUMBER_OF_MF"))
+        # Update number of MF label - preserve count if available
+        self._update_number_of_mf_label()
         self.setTabText(
             self.indexOf(self.mf_properties_tab),
             self.t("MF_PROPERTIES_TAB"),
         )
-        self.rule_name_label.setText(self.t("NAME"))
-        self.rule_weight_edit.setText(self.t("ONE"))
-        self.rule_weight_label.setText(self.t("WEIGHT"))
-        self.rule_editor_label.setText(self.t("RULE_EDITOR"))
-        self.if_label.setText(self.t("IF"))
-        self.then_label.setText(self.t("THEN"))
-        self.first_input_rule_label.setText(self.t("RULE_1"))
-        self.and_or_label.setText(self.t("AND_OR"))
-        self.final_input_rule_label.setText(self.t("RULE_2"))
-        self.connection_label.setText(self.t("CONNECTION"))
-        self.and_radio_button.setText(self.t("AND"))
-        self.or_radio_button.setText(self.t("OR"))
-        self.output_rule_label.setText(self.t("RULE_1"))
         self.setTabText(
             self.indexOf(self.rule_editor_tab),
             self.t("RULE_PROPERTIES_TAB"),
@@ -335,7 +148,31 @@ class EditorTabWidget(BaseTabView):
 
     def set_number_of_mf(self, count: int):
         """Set the number of membership functions label."""
-        self.number_of_mf_label.setText(f"Number of MF: {count}")
+        base_text = self.t("NUMBER_OF_MF")
+        self.number_of_mf_label.setText(f"{base_text} {count}")
+
+    def _update_number_of_mf_label(self):
+        """Update the number of MF label, preserving the count if available."""
+        # Try to get current count from label text
+        current_text = self.number_of_mf_label.text()
+        count = 0
+
+        # Try to extract count from current text (format: "Number of MF: X" or "NUMBER_OF_MF X")
+        if current_text:
+            # Look for a number at the end
+            match = re.search(r"(\d+)$", current_text.strip())
+            if match:
+                count = int(match.group(1))
+            else:
+                # If no count found, try to get it from the table
+                count = self.mf_table.rowCount()
+        else:
+            # If label is empty, get count from table
+            count = self.mf_table.rowCount()
+
+        # Update with base text and count
+        base_text = self.t("NUMBER_OF_MF")
+        self.number_of_mf_label.setText(f"{base_text} {count}")
 
     def set_name_table_text(self):
         """Update the MF name in the table."""
@@ -346,22 +183,6 @@ class EditorTabWidget(BaseTabView):
         """Update the MF range in the table."""
         self.mf_table.item(self.row, 2).setText(self.mf_range_edit.text())
         self.status_bar.showMessage("Last action: Edited MF range")
-
-    def defuzzification_changed(self):
-        """Handle defuzzification method change."""
-        self.status_bar.showMessage("Last action: Changed defuzzification method.")
-
-    def is_dropdown_changed(self):
-        """Handle is/is not dropdown change."""
-        self.status_bar.showMessage("Last action: Changed is or is not.")
-
-    def radio_button_clicked(self):
-        """Handle and/or radio button click."""
-        self.status_bar.showMessage("Last action: And/or radio button clicked.")
-
-    def mf_changed(self):
-        """Handle membership function selection change."""
-        self.status_bar.showMessage("Last action: Changed selected membership function.")
 
     def update_property_editor(self):
         """Update the Property Editor based on the currently selected variable."""
@@ -382,7 +203,8 @@ class EditorTabWidget(BaseTabView):
         self.mf_name_edit.setText("")
         self.mf_range_edit.setText("")
         self.mf_table.setRowCount(0)
-        self.number_of_mf_label.setText("Number of MF: 0")
+        base_text = self.t("NUMBER_OF_MF")
+        self.number_of_mf_label.setText(f"{base_text} 0")
 
     def _update_variable_display(self, var_info):
         """Update the variable name and range display."""
@@ -402,7 +224,8 @@ class EditorTabWidget(BaseTabView):
             var_data = var_info.get("data") or {}
             mfs = var_data.get("membership_functions", [])
 
-            self.number_of_mf_label.setText(f"Number of MF: {len(mfs)}")
+            base_text = self.t("NUMBER_OF_MF")
+            self.number_of_mf_label.setText(f"{base_text} {len(mfs)}")
             self.mf_table.setRowCount(len(mfs))
             type_mapping = {
                 "gaussmf": "Gauss",

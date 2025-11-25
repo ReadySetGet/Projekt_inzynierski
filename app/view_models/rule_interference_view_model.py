@@ -25,6 +25,11 @@ class RuleInterferenceViewModel(BaseViewModel):
         self._rules: List[Dict] = []
         self._current_inputs: List[float] = []
         self._current_outputs: List[float] = []
+        self._curve_cache: Dict[
+            Tuple[str, Tuple[float, ...], Tuple[float, float], int],
+            Tuple[List[float], List[float]],
+        ] = {}
+        self._last_rules_hash: int = 0
         self._connect_to_fuzzy_service()
 
     # ---------------------------------------------------------------------- #
@@ -67,6 +72,9 @@ class RuleInterferenceViewModel(BaseViewModel):
             self._reset_cache()
             self._emit_all()
             return
+
+        self._curve_cache.clear()
+        self._last_rules_hash = 0
 
         self._inputs = fuzzy_service.get_input_variables()
         self._outputs = fuzzy_service.get_output_variables()
@@ -119,6 +127,8 @@ class RuleInterferenceViewModel(BaseViewModel):
 
     def _on_system_changed(self) -> None:
         """Handle incoming system change notifications."""
+        self._curve_cache.clear()
+        self._last_rules_hash = 0
         self.refresh_data()
 
     def _reset_cache(self) -> None:
@@ -128,6 +138,8 @@ class RuleInterferenceViewModel(BaseViewModel):
         self._rules = []
         self._current_inputs = []
         self._current_outputs = []
+        self._curve_cache.clear()
+        self._last_rules_hash = 0
 
     def _default_value_for_input(self, variable: Dict) -> float:
         """Return a sensible default value within the variable range."""
@@ -211,6 +223,27 @@ class RuleInterferenceViewModel(BaseViewModel):
     # ------------------------------------------------------------------ #
     def build_visualization_payload(self) -> Dict[str, Any]:
         """Build structured data used to render the rule interference view."""
+        mf_data_hash = self._compute_mf_data_hash_from_variables()
+        rules_hash = hash(
+            tuple(
+                (
+                    r.get("index", 0),
+                    r.get("name", ""),
+                    tuple(r.get("antecedent", [])),
+                    tuple(r.get("consequent", [])),
+                    r.get("connection", 1),
+                    r.get("weight", 1.0),
+                    tuple(r.get("is_mf", [])),
+                )
+                for r in self._rules
+            )
+        )
+        combined_hash = hash((rules_hash, mf_data_hash))
+
+        if combined_hash != self._last_rules_hash:
+            self._curve_cache.clear()
+            self._last_rules_hash = combined_hash
+
         inputs_payload = self._build_inputs_payload()
         outputs_payload = self._build_outputs_payload()
 
@@ -238,9 +271,8 @@ class RuleInterferenceViewModel(BaseViewModel):
                 aggregated_curves,
             )
 
-            display_text = self.get_rule_text(rule_index)
-            if not display_text:
-                display_text = rule.get("name") or f"Rule {rule_index + 1}"
+            rule_text = self.get_rule_text(rule_index)
+            display_text = rule_text or rule.get("name") or f"Rule {rule_index + 1}"
 
             rules_payload.append(
                 {
@@ -366,7 +398,7 @@ class RuleInterferenceViewModel(BaseViewModel):
 
             mf = mfs[mf_idx - 1]
             var_range = variable_info.get("range", [0, 1])
-            curve_x, curve_y = self._generate_curve(mf.get("type", ""), mf.get("parameters", []), var_range, 400)
+            curve_x, curve_y = self._generate_curve(mf.get("type", ""), mf.get("parameters", []), var_range)
             clipped_y = [min(y, activation) for y in curve_y]
 
             # Update aggregated curve for this output
@@ -414,7 +446,7 @@ class RuleInterferenceViewModel(BaseViewModel):
         mf_type: str,
         params: Sequence[float],
         var_range: Sequence[float],
-        resolution: int = 200,
+        resolution: int = None,
     ) -> Tuple[List[float], List[float]]:
         try:
             range_min, range_max = float(var_range[0]), float(var_range[1])
@@ -424,39 +456,63 @@ class RuleInterferenceViewModel(BaseViewModel):
         if range_max <= range_min:
             range_max = range_min + 1.0
 
+        if resolution is None:
+            resolution = self.fuzzy_service.get_interpolation_points()
+
+        # Handle constant type - parameters might be a single float
+        if mf_type.lower() == "constant":
+            if isinstance(params, (int, float)):
+                params_tuple = (float(params),)
+            elif isinstance(params, (list, tuple)) and len(params) > 0:
+                params_tuple = (float(params[0]),)
+            else:
+                params_tuple = (0.5,)
+        else:
+            params_tuple = tuple(float(p) for p in params)
+        cache_key = (mf_type.lower(), params_tuple, (range_min, range_max), resolution)
+
+        if cache_key in self._curve_cache:
+            return self._curve_cache[cache_key]
+
         x_values = np.linspace(range_min, range_max, resolution)
         y_values = np.zeros_like(x_values, dtype=float)
 
         mf_type = mf_type.lower()
         if mf_type == "trimf" and len(params) >= 3:
             a, b, c = params[0], params[1], params[2]
-            for i, x in enumerate(x_values):
-                if x <= a or x >= c:
-                    y_values[i] = 0.0
-                elif a < x < b:
-                    denom = b - a if b != a else 1e-9
-                    y_values[i] = (x - a) / denom
-                elif b < x < c:
-                    denom = c - b if c != b else 1e-9
-                    y_values[i] = (c - x) / denom
-                else:
-                    y_values[i] = 1.0
+            mask_left = x_values <= a
+            mask_right = x_values >= c
+            mask_peak = x_values == b
+            mask_rising = (x_values > a) & (x_values < b)
+            mask_falling = (x_values > b) & (x_values < c)
+
+            y_values[mask_left] = 0.0
+            y_values[mask_right] = 0.0
+            y_values[mask_peak] = 1.0
+
+            denom_rising = b - a if b != a else 1e-9
+            y_values[mask_rising] = (x_values[mask_rising] - a) / denom_rising
+
+            denom_falling = c - b if c != b else 1e-9
+            y_values[mask_falling] = (c - x_values[mask_falling]) / denom_falling
 
         elif mf_type == "trapmf" and len(params) >= 4:
             a, b, c, d = params[0], params[1], params[2], params[3]
-            for i, x in enumerate(x_values):
-                if x <= a or x >= d:
-                    y_values[i] = 0.0
-                elif a < x < b:
-                    denom = b - a if b != a else 1e-9
-                    y_values[i] = (x - a) / denom
-                elif b <= x <= c:
-                    y_values[i] = 1.0
-                elif c < x < d:
-                    denom = d - c if d != c else 1e-9
-                    y_values[i] = (d - x) / denom
-                else:
-                    y_values[i] = 0.0
+            mask_left = x_values <= a
+            mask_right = x_values >= d
+            mask_plateau = (x_values >= b) & (x_values <= c)
+            mask_rising = (x_values > a) & (x_values < b)
+            mask_falling = (x_values > c) & (x_values < d)
+
+            y_values[mask_left] = 0.0
+            y_values[mask_right] = 0.0
+            y_values[mask_plateau] = 1.0
+
+            denom_rising = b - a if b != a else 1e-9
+            y_values[mask_rising] = (x_values[mask_rising] - a) / denom_rising
+
+            denom_falling = d - c if d != c else 1e-9
+            y_values[mask_falling] = (d - x_values[mask_falling]) / denom_falling
 
         elif mf_type == "gaussmf" and len(params) >= 2:
             sigma = params[0] if params[0] != 0 else 1e-9
@@ -469,11 +525,37 @@ class RuleInterferenceViewModel(BaseViewModel):
             c = params[2]
             y_values = 1.0 / (1 + np.abs((x_values - c) / a) ** (2 * b))
 
+        elif mf_type == "constant":
+            # Sugeno constant type - single value, flat line
+            if isinstance(params, (int, float)):
+                const_value = float(params)
+            elif isinstance(params, (list, tuple)) and len(params) > 0:
+                const_value = float(params[0])
+            else:
+                const_value = 0.5
+            # For visualization, show as a flat line at the constant value (clipped to [0,1])
+            y_values.fill(float(np.clip(const_value, 0.0, 1.0)))
+
+        elif mf_type == "linear":
+            # Sugeno linear type - linear function of inputs
+            # For visualization purposes, show as a line from min to max of range
+            # In actual Sugeno inference, this would use: p0*x1 + p1*x2 + ... + pn
+            if isinstance(params, (list, tuple)) and len(params) > 0:
+                # Use first parameter as baseline for visualization
+                base_value = float(params[0]) if len(params) > 0 else 0.5
+                # Create a simple linear visualization
+                y_values = np.linspace(base_value * 0.5, base_value * 1.5, len(x_values))
+            else:
+                y_values.fill(0.5)
+            y_values = np.clip(y_values, 0.0, 1.0)
+
         elif params:
             y_values.fill(float(params[0]))
 
         y_values = np.clip(y_values, 0.0, 1.0)
-        return x_values.tolist(), y_values.tolist()
+        result = (x_values.tolist(), y_values.tolist())
+        self._curve_cache[cache_key] = result
+        return result
 
     def _evaluate_membership(
         self,
@@ -523,6 +605,21 @@ class RuleInterferenceViewModel(BaseViewModel):
                 c = params[2]
                 return float(1.0 / (1 + abs((value - c) / a) ** (2 * b)))
 
+            if mf_type == "constant":
+                # Sugeno constant type - always returns the constant value (clipped to [0,1])
+                if isinstance(params, (int, float)):
+                    return float(np.clip(params, 0.0, 1.0))
+                elif isinstance(params, (list, tuple)) and len(params) > 0:
+                    return float(np.clip(params[0], 0.0, 1.0))
+                return 0.5
+
+            if mf_type == "linear":
+                # Sugeno linear type - for visualization, use first parameter
+                # In actual inference, this would be: p0*x1 + p1*x2 + ... + pn
+                if isinstance(params, (list, tuple)) and len(params) > 0:
+                    return float(np.clip(params[0], 0.0, 1.0))
+                return 0.5
+
             if params:
                 return float(params[0])
 
@@ -530,3 +627,24 @@ class RuleInterferenceViewModel(BaseViewModel):
             return 0.0
 
         return 0.0
+
+    def _compute_mf_data_hash_from_variables(self) -> int:
+        """Compute a hash of MF data from current variables to detect changes."""
+        mf_data = []
+        for var in self._inputs:
+            for mf in var.get("membership_functions", []):
+                mf_data.append(
+                    (
+                        mf.get("type", ""),
+                        tuple(mf.get("parameters", [])),
+                    )
+                )
+        for var in self._outputs:
+            for mf in var.get("membership_functions", []):
+                mf_data.append(
+                    (
+                        mf.get("type", ""),
+                        tuple(mf.get("parameters", [])),
+                    )
+                )
+        return hash(tuple(mf_data))
