@@ -1,8 +1,9 @@
-import pytest
 import json
 import os
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from app.services.translate_manager import TranslateManager
 
@@ -34,7 +35,7 @@ def test_translate_manager_initialization(translate_manager, temp_locales_dir):
 def test_translate_manager_available_languages(translate_manager, temp_locales_dir):
     pl_json = temp_locales_dir / "pl" / "app.json"
     pl_json.write_text('{"hello": "Witaj"}')
-    
+
     languages = translate_manager.available_languages()
     assert "en" in languages
     assert "pl" in languages
@@ -43,7 +44,7 @@ def test_translate_manager_available_languages(translate_manager, temp_locales_d
 def test_translate_manager_load_language(translate_manager, temp_locales_dir):
     pl_json = temp_locales_dir / "pl" / "app.json"
     pl_json.write_text('{"hello": "Witaj", "world": "Świat"}')
-    
+
     result = translate_manager.load_language("pl")
     assert result is True
     assert translate_manager.current_language == "pl"
@@ -58,7 +59,7 @@ def test_translate_manager_load_language_not_found(translate_manager):
 def test_translate_manager_set_language(translate_manager, temp_locales_dir):
     pl_json = temp_locales_dir / "pl" / "app.json"
     pl_json.write_text('{"hello": "Witaj"}')
-    
+
     result = translate_manager.set_language("pl")
     assert result is True
     assert translate_manager.current_language == "pl"
@@ -77,7 +78,6 @@ def test_translate_manager_translate_key_not_found(translate_manager):
 def test_translate_manager_language_changed_signal(qtbot, translate_manager, temp_locales_dir):
     pl_json = temp_locales_dir / "pl" / "app.json"
     pl_json.write_text('{"hello": "Witaj"}')
-    
+
     with qtbot.waitSignal(translate_manager.language_changed, timeout=1000):
         translate_manager.set_language("pl")
-

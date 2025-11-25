@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 from app.view_models.top_menu_view_model import TopMenuViewModel
 
@@ -127,4 +128,3 @@ def test_top_menu_view_model_set_interpolation_points(top_menu_view_model, mock_
     result = top_menu_view_model.set_interpolation_points(25)
     assert result is True
     mock_fuzzy_service.set_interpolation_points.assert_called_once_with(25)
-

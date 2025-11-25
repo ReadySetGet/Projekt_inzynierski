@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from app.view_models.browser_frame_view_model import BrowserFrameViewModel
 
@@ -31,7 +32,7 @@ def test_browser_frame_view_model_get_system_items(browser_frame_view_model, moc
         {"name": "output1", "range": [0, 1], "membership_functions": []}
     ]
     mock_fuzzy_service.get_rules.return_value = []
-    
+
     items = browser_frame_view_model._get_system_items()
     assert len(items) == 2
     assert items[0]["type"] == "input"
@@ -44,21 +45,19 @@ def test_browser_frame_view_model_get_system_items_with_rules(browser_frame_view
     mock_fuzzy_service.get_rules.return_value = [
         {"name": "Rule 1", "antecedent": [1], "consequent": [1], "weight": 1.0, "connection": 1}
     ]
-    
+
     items = browser_frame_view_model._get_system_items()
     assert len(items) == 1
     assert items[0]["type"] == "rule"
 
 
 def test_browser_frame_view_model_get_design_items(browser_frame_view_model, mock_fuzzy_service):
-    mock_fuzzy_service.get_input_variables.return_value = [
-        {"name": "input1", "range": [0, 1]}
-    ]
+    mock_fuzzy_service.get_input_variables.return_value = [{"name": "input1", "range": [0, 1]}]
     mock_fuzzy_service.get_output_variables.return_value = []
     mock_fuzzy_service.get_membership_functions.return_value = [
         {"name": "mf1", "type": "trimf", "parameters": [0, 0.5, 1]}
     ]
-    
+
     items = browser_frame_view_model._get_design_items()
     assert len(items) == 1
     assert items[0]["type"] == "input_mf"
@@ -81,7 +80,7 @@ def test_browser_frame_view_model_refresh_data(qtbot, browser_frame_view_model, 
     mock_fuzzy_service.get_output_variables.return_value = []
     mock_fuzzy_service.get_rules.return_value = []
     mock_fuzzy_service.get_membership_functions.return_value = []
-    
+
     with qtbot.waitSignal(browser_frame_view_model.system_browser_updated, timeout=1000):
         browser_frame_view_model.refresh_data()
 
@@ -91,17 +90,18 @@ def test_browser_frame_view_model_refresh_browser(browser_frame_view_model, mock
     mock_fuzzy_service.get_output_variables.return_value = []
     mock_fuzzy_service.get_rules.return_value = []
     mock_fuzzy_service.get_membership_functions.return_value = []
-    
+
     browser_frame_view_model.refresh_browser()
     assert True
 
 
-def test_browser_frame_view_model_update_browser_data_emits_signals(qtbot, browser_frame_view_model, mock_fuzzy_service):
+def test_browser_frame_view_model_update_browser_data_emits_signals(
+    qtbot, browser_frame_view_model, mock_fuzzy_service
+):
     mock_fuzzy_service.get_input_variables.return_value = []
     mock_fuzzy_service.get_output_variables.return_value = []
     mock_fuzzy_service.get_rules.return_value = []
     mock_fuzzy_service.get_membership_functions.return_value = []
-    
+
     with qtbot.waitSignal(browser_frame_view_model.design_browser_updated, timeout=1000):
         browser_frame_view_model._update_browser_data()
-

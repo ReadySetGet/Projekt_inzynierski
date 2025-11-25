@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from app.services.central_event_bus import CentralEventBus
 from app.view_models.base_view_model import BaseViewModel
@@ -58,4 +59,3 @@ def test_central_event_bus_notify_data_changed_triggers_refresh(event_bus, mock_
     event_bus.register_view_model(mock_view_model)
     mock_view_model.notify_data_changed.emit()
     mock_view_model.data_changed.emit.assert_called()
-

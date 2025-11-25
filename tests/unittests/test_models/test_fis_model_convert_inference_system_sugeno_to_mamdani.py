@@ -1,7 +1,8 @@
 import unittest
 
-from app.models.fis_model import FISModel
 from fuzzylab.mamfis import mamfis
+
+from app.models.fis_model import FISModel
 
 
 class ConvertInferenceSystemSugenoToMamdaniTestCase(unittest.TestCase):
@@ -23,5 +24,5 @@ class ConvertInferenceSystemSugenoToMamdaniTestCase(unittest.TestCase):
         del self.model_sugeno
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

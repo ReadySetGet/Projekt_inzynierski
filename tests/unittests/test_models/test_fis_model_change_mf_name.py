@@ -13,8 +13,7 @@ class ChangeMFNameTestCase(unittest.TestCase):
     def test_1_mf_name_changed(self) -> None:
         result = self.model.change_mf_name("output0", "output", 0, "newname")
         self.assertEqual(result, 1, "Wrong result value")
-        self.assertEqual(self.model._fis.Outputs[0].MembershipFunctions[0]
-                         .Name, "newname", "Wrong name of MF")
+        self.assertEqual(self.model._fis.Outputs[0].MembershipFunctions[0].Name, "newname", "Wrong name of MF")
 
     def test_2_mf_name_too_long(self) -> None:
         long_name = ""
@@ -27,5 +26,5 @@ class ChangeMFNameTestCase(unittest.TestCase):
         del self.model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,8 @@
+from unittest.mock import MagicMock, Mock
+
 import pytest
-from unittest.mock import Mock, MagicMock
-from PyQt6.QtWidgets import QWidget
 from PyQt6.QtGui import QKeySequence
+from PyQt6.QtWidgets import QWidget
 
 from app.utils.shortcut_manager import ShortcutManager
 
@@ -103,4 +104,3 @@ def test_shortcut_manager_clear(shortcut_manager):
     shortcut_manager.clear()
     assert len(shortcut_manager._shortcuts) == 0
     assert len(shortcut_manager._actions) == 0
-

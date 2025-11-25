@@ -1,13 +1,14 @@
-import pytest
 from unittest.mock import Mock, patch
 
-from app.services.fis_state_manager import FISStateManager
+import pytest
+
 from app.models.fis_model import FISModel
+from app.services.fis_state_manager import FISStateManager
 
 
 @pytest.fixture
 def fis_state_manager():
-    with patch('app.services.fis_state_manager.FISModel') as mock_fis_model_class:
+    with patch("app.services.fis_state_manager.FISModel") as mock_fis_model_class:
         mock_fis = Mock()
         mock_fis.Inputs = []
         mock_fis.Outputs = []
@@ -130,4 +131,3 @@ def test_fis_state_manager_switch_to_sugeno(fis_state_manager):
     result = fis_state_manager.switch_to_sugeno()
     assert result is True
     assert fis_state_manager.fis_type == "sugeno"
-

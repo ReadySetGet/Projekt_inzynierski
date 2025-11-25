@@ -1,6 +1,7 @@
 import pytest
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
+
 from app.views.mf_editor_tab import MFPropertiesWidget
 
 
@@ -37,10 +38,10 @@ def test_initial_state(tested_widget):
     assert tested_widget.mf_table.item(0, 0).text() == "Placeholder"
     assert tested_widget.mf_table.item(0, 2).text() == tested_widget.default_parameters
 
-    assert tested_widget.shape_select_dropdown.itemText(0) == 'Triangle'
-    assert tested_widget.shape_select_dropdown.itemText(1) == 'Trapezoid'
-    assert tested_widget.shape_select_dropdown.itemText(2) == 'Gauss'
-    assert tested_widget.shape_select_dropdown.itemText(3) == 'Bell'
+    assert tested_widget.shape_select_dropdown.itemText(0) == "Triangle"
+    assert tested_widget.shape_select_dropdown.itemText(1) == "Trapezoid"
+    assert tested_widget.shape_select_dropdown.itemText(2) == "Gauss"
+    assert tested_widget.shape_select_dropdown.itemText(3) == "Bell"
 
     assert tested_widget.number_of_mf_label.text() == "Number of MF:"
 

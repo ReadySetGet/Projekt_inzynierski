@@ -1,6 +1,7 @@
 import pytest
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
+
 from app.views.central_tab_view import CentralTabWidget
 from app.views.rule import Rule
 
