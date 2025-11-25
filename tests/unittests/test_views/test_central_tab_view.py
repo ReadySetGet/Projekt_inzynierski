@@ -2,6 +2,7 @@ import numpy as np
 import pyqtgraph as pg
 import pytest
 from PyQt6 import QtWidgets
+
 from app.views.central_tab_view import CentralTabWidget
 
 
