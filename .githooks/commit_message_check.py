@@ -1,10 +1,7 @@
 import re
 import sys
 
-REQUIRED_PATTERN = (
-    r"^(test|add|cut|fix|bump|make|start|stop|refactor|reformat|optimise|"
-    r"document|merge): .*$"
-)
+REQUIRED_PATTERN = r"^(test|add|cut|fix|bump|make|start|stop|refactor|reformat|optimise|" r"document|merge): .*$"
 HELP = """
 Wrong commit message format
 Please use the following format:

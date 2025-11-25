@@ -23,15 +23,11 @@ class AddInputTestCase(unittest.TestCase):
 
     def test_3_input_name(self) -> None:
         self.model.add_input()
-        self.assertEqual(
-            self.model._fis.Inputs[0].Name, "input0", "Wrong name of added input"
-        )
+        self.assertEqual(self.model._fis.Inputs[0].Name, "input0", "Wrong name of added input")
 
     def test_4_input_range(self) -> None:
         self.model.add_input()
-        self.assertEqual(
-            self.model._fis.Inputs[0].Range, [0, 1], "Wrong range of added input"
-        )
+        self.assertEqual(self.model._fis.Inputs[0].Range, [0, 1], "Wrong range of added input")
 
     def tearDown(self) -> None:
         del self.model
