@@ -36,12 +36,21 @@ class MembershipFunctionManager:
             for var in var_list:
                 if var.Name == variable_name:
                     for i, mf in enumerate(var.MembershipFunctions):
+                        # Normalize constant type parameters to list format
+                        params = mf.Parameters
+                        if mf.Type == "constant" and isinstance(params, (int, float)):
+                            params = [float(params)]
+                        elif mf.Type == "constant" and isinstance(params, list) and len(params) == 1:
+                            params = params
+                        elif mf.Type == "constant":
+                            params = [0.5]
+
                         mfs.append(
                             {
                                 "index": i,
                                 "name": mf.Name,
                                 "type": mf.Type,
-                                "parameters": mf.Parameters,
+                                "parameters": params,
                             }
                         )
                     break
@@ -83,7 +92,16 @@ class MembershipFunctionManager:
                         if len(var.MembershipFunctions) > 0:
                             new_mf = var.MembershipFunctions[-1]  # Get the last (newly added) MF
                             new_mf.Name = mf_name
-                            new_mf.Parameters = parameters
+                            # Handle Sugeno constant type - needs single float, not list
+                            if new_mf.Type == "constant":
+                                if isinstance(parameters, list) and len(parameters) > 0:
+                                    new_mf.Parameters = float(parameters[0])
+                                elif isinstance(parameters, (int, float)):
+                                    new_mf.Parameters = float(parameters)
+                                else:
+                                    new_mf.Parameters = 0.5  # Default fallback
+                            else:
+                                new_mf.Parameters = parameters
                         return True
                     return False
             return False
@@ -102,7 +120,7 @@ class MembershipFunctionManager:
             bool: True if successful, False otherwise.
         """
         try:
-            result = self._fis_model.delete_mf(variable_name, mf_index, variable_type)
+            result = self._fis_model.delete_mf(variable_name, variable_type, mf_index)
             return result == 1
         except Exception:
             return False
@@ -159,7 +177,17 @@ class MembershipFunctionManager:
             for var in var_list:
                 if var.Name == variable_name:
                     if 0 <= mf_index < len(var.MembershipFunctions):
-                        var.MembershipFunctions[mf_index].Parameters = new_parameters
+                        mf = var.MembershipFunctions[mf_index]
+                        # Handle Sugeno constant type - needs single float, not list
+                        if mf.Type == "constant":
+                            if isinstance(new_parameters, list) and len(new_parameters) > 0:
+                                mf.Parameters = float(new_parameters[0])
+                            elif isinstance(new_parameters, (int, float)):
+                                mf.Parameters = float(new_parameters)
+                            else:
+                                mf.Parameters = 0.5  # Default fallback
+                        else:
+                            mf.Parameters = new_parameters
                         return True
             return False
         except Exception:
@@ -224,10 +252,19 @@ class MembershipFunctionManager:
                 if var.Name == variable_name:
                     if 0 <= mf_index < len(var.MembershipFunctions):
                         mf = var.MembershipFunctions[mf_index]
+                        # Normalize constant type parameters to list format
+                        params = mf.Parameters
+                        if mf.Type == "constant" and isinstance(params, (int, float)):
+                            params = [float(params)]
+                        elif mf.Type == "constant" and isinstance(params, list) and len(params) == 1:
+                            params = params
+                        elif mf.Type == "constant":
+                            params = [0.5]
+
                         return {
                             "name": mf.Name,
                             "type": mf.Type,
-                            "parameters": mf.Parameters,
+                            "parameters": params,
                             "variable_name": variable_name,
                             "variable_type": variable_type,
                         }

@@ -196,8 +196,9 @@ class FisTabView(BaseTabView):
         Args:
             system_info: Dictionary containing system information
         """
-        system_type = system_info.get("type", "Mamdani")
-        self.box_system_label.setText(f"{system_type}\nType 1")
+        system_type = system_info.get("type", "mamdani")
+        system_type_capitalized = system_type.capitalize()
+        self.box_system_label.setText(f"{system_type_capitalized}\nType 1")
 
     def _redraw_all_plots(self):
         """Redraw all input and output plots."""
@@ -304,16 +305,17 @@ class FisTabView(BaseTabView):
         self.box_system_label = QtWidgets.QLabel(parent=self.graph_frame)
         self.box_system_label.setGeometry(175, 180, 140, 140)
         self.box_system_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        # Styling will be applied by theme
         self.box_system_label.setObjectName("box_system_label")
+        self.box_system_label.setWordWrap(True)
+
+        self._apply_initial_box_styling()
 
         self.remove_plots()
 
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
         _translate = QtCore.QCoreApplication.translate
-        # System display will be updated when data is loaded
-        self.box_system_label.setText(_translate("Main Window", "Loading..."))
+        self.box_system_label.setText(_translate("Main Window", "Mamdani\nType 1"))
         self.system_label.setText(_translate("MainWindow", "System:"))
         self.name_label.setText(_translate("MainWindow", "FIS System"))
 
@@ -572,13 +574,34 @@ class FisTabView(BaseTabView):
         # Apply theme to FIS-specific elements
         self._apply_fis_theme()
 
+    def _apply_initial_box_styling(self) -> None:
+        """Apply initial styling to the system type box."""
+        if not hasattr(self, "box_system_label") or self.box_system_label is None:
+            return
+        self.box_system_label.setStyleSheet(
+            "; ".join(
+                [
+                    "background-color: #ffffff",
+                    "border: 2px solid #cccccc",
+                    "color: #000000",
+                    "font-weight: bold",
+                    "font-size: 12pt",
+                ]
+            )
+        )
+
     def _apply_fis_theme(self) -> None:
         """Apply theme colors to FIS plot elements (graph frame and center box)."""
+        if not hasattr(self, "box_system_label") or self.box_system_label is None:
+            return
+
         if not self.view_model or not self.view_model.theme_manager:
+            self._apply_initial_box_styling()
             return
 
         palette = self.view_model.theme_manager.current_palette
         if not palette or "colors" not in palette:
+            self._apply_initial_box_styling()
             return
 
         colors = palette["colors"]
@@ -587,27 +610,31 @@ class FisTabView(BaseTabView):
         text_color = colors.get("text", "#000000")
 
         # Update graph frame background
-        graph_style = "; ".join(
-            [
-                f"background-color: {surface_color}",
-                f"border: 1px solid {border_color}",
-            ]
-        )
-        self.graph_frame.setStyleSheet(graph_style)
+        if hasattr(self, "graph_frame") and self.graph_frame is not None:
+            graph_style = "; ".join(
+                [
+                    f"background-color: {surface_color}",
+                    f"border: 1px solid {border_color}",
+                ]
+            )
+            self.graph_frame.setStyleSheet(graph_style)
 
         # Update center system label (Mamdani Type 1 box)
         self.box_system_label.setStyleSheet(
             "; ".join(
                 [
                     f"background-color: {surface_color}",
-                    f"border: 1px solid {border_color}",
+                    f"border: 2px solid {border_color}",
                     f"color: {text_color}",
+                    "font-weight: bold",
+                    "font-size: 12pt",
                 ]
             )
         )
 
         # Update pen color for lines
-        self.pen.setColor(QtGui.QColor(text_color))
+        if hasattr(self, "pen") and self.pen is not None:
+            self.pen.setColor(QtGui.QColor(text_color))
 
         # Update all plot styling to match theme
         self._update_plot_styling()

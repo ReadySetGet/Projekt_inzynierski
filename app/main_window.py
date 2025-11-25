@@ -42,6 +42,9 @@ class MainWindow(QMainWindow):
 
         # Initialize UI components if context is available
         if context:
+            # Shortcut Manager integration - create before setupUi so shortcuts can be registered
+            self.shortcut_manager = ShortcutManager(self)
+
             # Set up the main UI
             self.setupViewModels()
             self.setupUi()
@@ -53,8 +56,6 @@ class MainWindow(QMainWindow):
             # Translation support
             self.context.translate_manager.language_changed.connect(self.retranslate_ui)
             self.context.translate_manager.set_language("en")
-            # Shortcut Manager integration
-            self.shortcut_manager = ShortcutManager(self)
 
     def _toggle_theme(self):
         """Toggle between available themes (example logic)."""
@@ -174,6 +175,7 @@ class MainWindow(QMainWindow):
         # Connect view models to widgets
         self._connect_view_models()
         self._connect_actions()
+        self._register_shortcuts()
 
     def retranslate_ui(self):
         """Retranslate all UI elements when language changes."""
@@ -282,4 +284,13 @@ class MainWindow(QMainWindow):
                 self,
                 "Export Failed",
                 "The model could not be exported to the selected file.",
+            )
+
+    def _register_shortcuts(self) -> None:
+        """Register keyboard shortcuts."""
+        if hasattr(self, "shortcut_manager"):
+            self.shortcut_manager.register_shortcut(
+                "Ctrl+S",
+                self._handle_export_clicked,
+                description="Save/Export FIS Model",
             )

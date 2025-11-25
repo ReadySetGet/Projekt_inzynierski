@@ -34,8 +34,13 @@ class TopMenu(BaseTabView):
         self.setObjectName("topMenu")
         self.w = None
         self.status_bar = status_bar
+        self.system_type = "Mamdani"
         self._setup_ui()
         self._retranslate_ui()
+        self._update_system_type_from_model()
+
+        if self.view_model:
+            self.view_model.notify_data_changed.connect(self._on_data_changed)
 
     def _setup_ui(self):
         """Set up all the GUI sub elements."""
@@ -125,6 +130,10 @@ class TopMenu(BaseTabView):
 
         self.interpolation_spinbox = QtWidgets.QSpinBox()
         self.interpolation_spinbox.setObjectName("interpolation_spinbox")
+        self.interpolation_spinbox.setMinimum(10)
+        self.interpolation_spinbox.setMaximum(1000)
+        self.interpolation_spinbox.setValue(self.view_model.get_interpolation_points())
+        self.interpolation_spinbox.valueChanged.connect(self._interpolation_spinbox_changed)
         interpolation_layout.addWidget(self.interpolation_spinbox)
 
         control_layout.addLayout(interpolation_layout)
@@ -152,9 +161,6 @@ class TopMenu(BaseTabView):
         main_layout.addStretch()
 
         self.addTab(self.designTab, "")
-        self.tuningTab = QtWidgets.QWidget()
-        self.tuningTab.setObjectName("tuningTab")
-        self.addTab(self.tuningTab, "")
 
     def _retranslate_ui(self):
         self.add_input_button.setText(self.t("ADD_INPUT"))
@@ -162,15 +168,9 @@ class TopMenu(BaseTabView):
         self.add_output_button.setText(self.t("ADD_OUTPUT"))
         self.delete_output_button.setText(self.t("DELETE_OUTPUT"))
         self.setTabText(self.indexOf(self.designTab), self.t("DESIGN"))
-        self.setTabText(self.indexOf(self.tuningTab), self.t("TUNING"))
         self.help_button.setText(self.t("HELP"))
         self.settings_button.setText(self.t("SETTINGS"))
-        if hasattr(self, "system_type") and self.system_type == "Mamdani":
-            self.conversion_button.setText(self.t("MAMDANI_TO_SUGENO"))
-        elif hasattr(self, "system_type") and self.system_type == "Sugeno":
-            self.conversion_button.setText(self.t("SUGENO_TO_MAMDANI"))
-        else:
-            self.conversion_button.setText(self.t("ERROR"))
+        self._update_conversion_button_text()
         self.new_button.setText(self.t("NEW"))
         self.import_button.setText(self.t("IMPORT"))
         self.export_button.setText(self.t("EXPORT"))
@@ -229,16 +229,61 @@ class TopMenu(BaseTabView):
         """Convert system from Mamdani to Sugeno and vice versa."""
         if not hasattr(self, "system_type"):
             self.system_type = "Mamdani"
-        if self.system_type == "Mamdani":
-            self.system_type = "Sugeno"
-            self.conversion_button.setText("Sugeno to Mamdani")
+
+        success = self.view_model.convert_inference_system()
+        if success:
+            self._update_system_type_from_model()
+            self._update_conversion_button_text()
+            if self.status_bar:
+                self.status_bar.showMessage(
+                    f"Last action: Conversion successful. System type: {self.system_type}", 5000
+                )
         else:
-            self.system_type = "Mamdani"
-            self.conversion_button.setText("Mamdani to Sugeno")
-        if self.status_bar:
-            self.status_bar.showMessage(f"Last action: Conversion clicked. System type: {self.system_type}")
+            if self.status_bar:
+                self.status_bar.showMessage("Last action: Conversion failed", 5000)
+
         if hasattr(self, "conversion_clicked"):
             self.conversion_clicked.emit()
+
+    def _update_system_type_from_model(self):
+        """Update system_type from the FIS model."""
+        try:
+            fis_type = self.view_model.get_fis_type()
+            if fis_type.lower() == "sugeno":
+                self.system_type = "Sugeno"
+            else:
+                self.system_type = "Mamdani"
+        except Exception:
+            self.system_type = "Mamdani"
+
+    def _update_conversion_button_text(self):
+        """Update the conversion button text based on current system type."""
+        if self.system_type == "Mamdani":
+            self.conversion_button.setText(self.t("MAMDANI_TO_SUGENO"))
+        elif self.system_type == "Sugeno":
+            self.conversion_button.setText(self.t("SUGENO_TO_MAMDANI"))
+        else:
+            self.conversion_button.setText(self.t("ERROR"))
+
+    def _on_data_changed(self):
+        """Handle data changed signal from view model."""
+        self._update_system_type_from_model()
+        self._update_conversion_button_text()
+        self._update_interpolation_spinbox()
+
+    def _interpolation_spinbox_changed(self, value: int):
+        """Handle interpolation spinbox value change."""
+        self.view_model.set_interpolation_points(value)
+        if self.status_bar:
+            self.status_bar.showMessage(f"Interpolation points set to {value}", 2000)
+
+    def _update_interpolation_spinbox(self):
+        """Update interpolation spinbox value from model."""
+        current_value = self.view_model.get_interpolation_points()
+        if self.interpolation_spinbox.value() != current_value:
+            self.interpolation_spinbox.blockSignals(True)
+            self.interpolation_spinbox.setValue(current_value)
+            self.interpolation_spinbox.blockSignals(False)
 
     def _new_button_clicked(self):
         if self.status_bar:

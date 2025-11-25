@@ -123,16 +123,15 @@ class FisPropertiesViewModel(BaseViewModel):
 
     def add_input(self) -> None:
         """Add a new input variable."""
-        fis_model = self.fuzzy_service.get_fis_model()
-        if fis_model:
-            fis_model.add_input()
+        # Use fuzzy_service method to match TopMenu functionality
+        input_count = self.fuzzy_service.get_input_count()
+        success = self.fuzzy_service.add_input_variable(f"input{input_count + 1}", 0.0, 1.0)
+        if success:
             self._update_system_info()
-
-            if fis_model._fis.Inputs:
+            fis_model = self.fuzzy_service.get_fis_model()
+            if fis_model and fis_model._fis.Inputs:
                 new_input = fis_model._fis.Inputs[-1]
                 self.input_added.emit(new_input.Name, len(fis_model._fis.Inputs) - 1)
-
-            # Notify other components of data change
             self.notify_data_changed.emit()
 
     def delete_input(self, input_index: int) -> None:
@@ -148,16 +147,15 @@ class FisPropertiesViewModel(BaseViewModel):
 
     def add_output(self) -> None:
         """Add a new output variable."""
-        fis_model = self.fuzzy_service.get_fis_model()
-        if fis_model:
-            fis_model.add_output()
+        # Use fuzzy_service method to match TopMenu functionality
+        output_count = self.fuzzy_service.get_output_count()
+        success = self.fuzzy_service.add_output_variable(f"output{output_count + 1}", 0.0, 1.0)
+        if success:
             self._update_system_info()
-
-            if fis_model._fis.Outputs:
+            fis_model = self.fuzzy_service.get_fis_model()
+            if fis_model and fis_model._fis.Outputs:
                 new_output = fis_model._fis.Outputs[-1]
                 self.output_added.emit(new_output.Name, len(fis_model._fis.Outputs) - 1)
-
-            # Notify other components of data change
             self.notify_data_changed.emit()
 
     def delete_output(self, output_index: int) -> None:
@@ -218,3 +216,38 @@ class FisPropertiesViewModel(BaseViewModel):
     def refresh_data(self) -> None:
         """Refresh all data from the model."""
         self._update_system_info()
+
+    def convert_inference_system(self) -> bool:
+        """Convert the FIS system from Mamdani to Sugeno or vice versa."""
+        success = self.fuzzy_service.convert_inference_system()
+        if success:
+            self._update_system_info()
+            self.notify_data_changed.emit()
+        return success
+
+    def get_fis_type_display(self) -> str:
+        """Get the current FIS type for display (Mamdani or Sugeno)."""
+        fis_type = self.fuzzy_service.get_fis_type()
+        if fis_type == "mamdani":
+            return "Mamdani"
+        elif fis_type == "sugeno":
+            return "Sugeno"
+        return "Mamdani"  # Default
+
+    def get_defuzzification_method(self) -> str:
+        """Get the current defuzzification method."""
+        return self.fuzzy_service.get_defuzzification_method()
+
+    def set_defuzzification_method(self, method: str) -> bool:
+        """Set the defuzzification method."""
+        success = self.fuzzy_service.set_defuzzification_method(method)
+        if success:
+            self.notify_data_changed.emit()
+        return success
+
+    def get_available_defuzzification_methods(self) -> List[str]:
+        """Get available defuzzification methods based on FIS type."""
+        fis_type = self.fuzzy_service.get_fis_type()
+        if fis_type == "sugeno":
+            return ["wtaver"]
+        return ["centroid", "bisector", "mom", "som", "lom"]

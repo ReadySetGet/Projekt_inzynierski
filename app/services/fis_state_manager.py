@@ -220,14 +220,19 @@ class FISStateManager:
         self._fis_model.add_input()
         if self._fis_model._fis.Inputs:
             self._fis_model._fis.Inputs[0].Name = "input1"
-            self._fis_model._fis.Inputs[0].Range = [0, 10]
+            self._fis_model._fis.Inputs[0].Range = [0, 1]
 
-            self._add_default_input_membership_functions()
+        self._fis_model.add_input()
+        if len(self._fis_model._fis.Inputs) > 1:
+            self._fis_model._fis.Inputs[1].Name = "input2"
+            self._fis_model._fis.Inputs[1].Range = [0, 1]
+
+        self._add_default_input_membership_functions()
 
         self._fis_model.add_output()
         if self._fis_model._fis.Outputs:
             self._fis_model._fis.Outputs[0].Name = "output1"
-            self._fis_model._fis.Outputs[0].Range = [0, 10]
+            self._fis_model._fis.Outputs[0].Range = [0, 1]
 
             self._add_default_output_membership_functions()
 
@@ -235,50 +240,52 @@ class FISStateManager:
             self._selected_input_name = self._fis_model._fis.Inputs[0].Name
 
     def _add_default_input_membership_functions(self) -> None:
-        """Add default membership functions to the input variable."""
+        """Add default membership functions to all input variables."""
         try:
-            input_range = self._fis_model._fis.Inputs[0].Range if self._fis_model._fis.Inputs else [0, 10]
-            range_min, range_max = input_range[0], input_range[1]
+            for input_idx, input_var in enumerate(self._fis_model._fis.Inputs):
+                input_name = input_var.Name
+                input_range = input_var.Range if input_var.Range else [0, 1]
+                range_min, range_max = input_range[0], input_range[1]
 
-            # Low: [0, 0, 5] for range [0, 10]
-            self._fis_model.add_mf("input1", "input", "trojkatna")
-            if self._fis_model._fis.Inputs and self._fis_model._fis.Inputs[0].MembershipFunctions:
-                self._fis_model._fis.Inputs[0].MembershipFunctions[0].Parameters = [
-                    range_min,
-                    range_min,
-                    (range_min + range_max) / 2,
-                ]
-                self._fis_model._fis.Inputs[0].MembershipFunctions[0].Name = "low"
+                # Low: [0, 0, 0.5] for range [0, 1]
+                self._fis_model.add_mf(input_name, "input", "trojkatna")
+                if input_var.MembershipFunctions:
+                    input_var.MembershipFunctions[0].Parameters = [
+                        range_min,
+                        range_min,
+                        (range_min + range_max) / 2,
+                    ]
+                    input_var.MembershipFunctions[0].Name = "low"
 
-            # Medium: [0, 5, 10] for range [0, 10]
-            self._fis_model.add_mf("input1", "input", "trojkatna")
-            if self._fis_model._fis.Inputs and self._fis_model._fis.Inputs[0].MembershipFunctions:
-                self._fis_model._fis.Inputs[0].MembershipFunctions[1].Parameters = [
-                    range_min,
-                    (range_min + range_max) / 2,
-                    range_max,
-                ]
-                self._fis_model._fis.Inputs[0].MembershipFunctions[1].Name = "medium"
+                # Medium: [0, 0.5, 1] for range [0, 1]
+                self._fis_model.add_mf(input_name, "input", "trojkatna")
+                if input_var.MembershipFunctions and len(input_var.MembershipFunctions) > 1:
+                    input_var.MembershipFunctions[1].Parameters = [
+                        range_min,
+                        (range_min + range_max) / 2,
+                        range_max,
+                    ]
+                    input_var.MembershipFunctions[1].Name = "medium"
 
-            # High: [5, 10, 10] for range [0, 10]
-            self._fis_model.add_mf("input1", "input", "trojkatna")
-            if self._fis_model._fis.Inputs and self._fis_model._fis.Inputs[0].MembershipFunctions:
-                self._fis_model._fis.Inputs[0].MembershipFunctions[2].Parameters = [
-                    (range_min + range_max) / 2,
-                    range_max,
-                    range_max,
-                ]
-                self._fis_model._fis.Inputs[0].MembershipFunctions[2].Name = "high"
+                # High: [0.5, 1, 1] for range [0, 1]
+                self._fis_model.add_mf(input_name, "input", "trojkatna")
+                if input_var.MembershipFunctions and len(input_var.MembershipFunctions) > 2:
+                    input_var.MembershipFunctions[2].Parameters = [
+                        (range_min + range_max) / 2,
+                        range_max,
+                        range_max,
+                    ]
+                    input_var.MembershipFunctions[2].Name = "high"
         except Exception:
             pass
 
     def _add_default_output_membership_functions(self) -> None:
         """Add default membership functions to the output variable."""
         try:
-            output_range = self._fis_model._fis.Outputs[0].Range if self._fis_model._fis.Outputs else [0, 10]
+            output_range = self._fis_model._fis.Outputs[0].Range if self._fis_model._fis.Outputs else [0, 1]
             range_min, range_max = output_range[0], output_range[1]
 
-            # Low: [0, 0, 5] for range [0, 10]
+            # Low: [0, 0, 0.5] for range [0, 1]
             self._fis_model.add_mf("output1", "output", "trojkatna")
             if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:
                 self._fis_model._fis.Outputs[0].MembershipFunctions[0].Parameters = [
@@ -288,7 +295,7 @@ class FISStateManager:
                 ]
                 self._fis_model._fis.Outputs[0].MembershipFunctions[0].Name = "low"
 
-            # Medium: [0, 5, 10] for range [0, 10]
+            # Medium: [0, 0.5, 1] for range [0, 1]
             self._fis_model.add_mf("output1", "output", "trojkatna")
             if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:
                 self._fis_model._fis.Outputs[0].MembershipFunctions[1].Parameters = [
@@ -298,7 +305,7 @@ class FISStateManager:
                 ]
                 self._fis_model._fis.Outputs[0].MembershipFunctions[1].Name = "medium"
 
-            # High: [5, 10, 10] for range [0, 10]
+            # High: [0.5, 1, 1] for range [0, 1]
             self._fis_model.add_mf("output1", "output", "trojkatna")
             if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:
                 self._fis_model._fis.Outputs[0].MembershipFunctions[2].Parameters = [

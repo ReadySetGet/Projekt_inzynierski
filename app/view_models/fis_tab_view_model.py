@@ -23,6 +23,7 @@ class FisTabViewModel(BaseViewModel):
         self._inputs = self.fuzzy_service.get_input_variables()
         self._outputs = self.fuzzy_service.get_output_variables()
         self._system_info = self.fuzzy_service.get_system_status()
+        self.notify_data_changed.connect(self.refresh_data)
 
     @property
     def inputs(self) -> List[Dict]:
@@ -120,7 +121,8 @@ class FisTabViewModel(BaseViewModel):
         parameters = mf.get("parameters", [])
 
         x_min, x_max = var_range
-        x = [x_min + i * (x_max - x_min) / 100 for i in range(101)]
+        interpolation_points = self.fuzzy_service.get_interpolation_points()
+        x = [x_min + i * (x_max - x_min) / (interpolation_points - 1) for i in range(interpolation_points)]
 
         y = self._calculate_membership_values(x, mf_type, parameters)
 

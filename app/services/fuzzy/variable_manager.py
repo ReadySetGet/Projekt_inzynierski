@@ -26,12 +26,21 @@ class VariableManager:
         for i, input_var in enumerate(self._fis_model._fis.Inputs):
             mfs = []
             for j, mf in enumerate(input_var.MembershipFunctions):
+                # Normalize constant type parameters to list format
+                params = mf.Parameters
+                if mf.Type == "constant" and isinstance(params, (int, float)):
+                    params = [float(params)]
+                elif mf.Type == "constant" and isinstance(params, list) and len(params) == 1:
+                    params = params
+                elif mf.Type == "constant":
+                    params = [0.5]
+
                 mfs.append(
                     {
                         "index": j,
                         "name": mf.Name,
                         "type": mf.Type,
-                        "parameters": mf.Parameters,
+                        "parameters": params,
                     }
                 )
 
@@ -56,12 +65,21 @@ class VariableManager:
         for i, output_var in enumerate(self._fis_model._fis.Outputs):
             mfs = []
             for j, mf in enumerate(output_var.MembershipFunctions):
+                # Normalize constant type parameters to list format
+                params = mf.Parameters
+                if mf.Type == "constant" and isinstance(params, (int, float)):
+                    params = [float(params)]
+                elif mf.Type == "constant" and isinstance(params, list) and len(params) == 1:
+                    params = params
+                elif mf.Type == "constant":
+                    params = [0.5]
+
                 mfs.append(
                     {
                         "index": j,
                         "name": mf.Name,
                         "type": mf.Type,
-                        "parameters": mf.Parameters,
+                        "parameters": params,
                     }
                 )
 

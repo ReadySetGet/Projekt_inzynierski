@@ -284,7 +284,8 @@ class CentralTabViewModel(BaseViewModel):
 
         import numpy as np
 
-        x_data = np.linspace(var_range[0], var_range[1], 1000)
+        interpolation_points = self._fuzzy_service.get_interpolation_points()
+        x_data = np.linspace(var_range[0], var_range[1], interpolation_points)
         y_data_list = []
         colors = ["r", "g", "b", "m", "c", "y", "k"]
 
