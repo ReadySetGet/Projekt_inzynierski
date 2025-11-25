@@ -22,9 +22,7 @@ class DeleteRuleTestCase(unittest.TestCase):
         nr_rules = len(self.model._fis.Rules)
         self.model.delete_rule(0)
         self.assertEqual(len(self.model._fis.Rules), nr_rules - 1, "Rule not deleted")
-        self.assertEqual(
-            self.model._fis.Rules[0].Name, "rule1", "Rule at wrong index deleted"
-        )
+        self.assertEqual(self.model._fis.Rules[0].Name, "rule1", "Rule at wrong index deleted")
 
     def tearDown(self) -> None:
         del self.model

@@ -24,17 +24,13 @@ class AddRuleTestCase(unittest.TestCase):
         self.model.add_input()
         self.model.add_mf("input1", "input")
         self.model.add_rule()
-        self.assertEqual(
-            self.model._fis.Rules[0].Antecedent, [1, 0], "Wrong antecedent of the rule"
-        )
+        self.assertEqual(self.model._fis.Rules[0].Antecedent, [1, 0], "Wrong antecedent of the rule")
 
     def test_4_rule_consequent(self) -> None:
         self.model.add_output()
         self.model.add_mf("output1", "output")
         self.model.add_rule()
-        self.assertEqual(
-            self.model._fis.Rules[0].Consequent, [1, 0], "Wrong consequent of the rule"
-        )
+        self.assertEqual(self.model._fis.Rules[0].Consequent, [1, 0], "Wrong consequent of the rule")
 
     def test_5_rule_weight(self) -> None:
         self.model.add_rule()
@@ -42,9 +38,7 @@ class AddRuleTestCase(unittest.TestCase):
 
     def test_6_rule_connection(self) -> None:
         self.model.add_rule()
-        self.assertEqual(
-            self.model._fis.Rules[0].Connection, 1, "Wrong rule connection"
-        )
+        self.assertEqual(self.model._fis.Rules[0].Connection, 1, "Wrong rule connection")
 
     def test_7_rule_IS_behaviour_input(self) -> None:
         self.model.add_input()
