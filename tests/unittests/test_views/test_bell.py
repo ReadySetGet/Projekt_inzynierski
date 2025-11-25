@@ -51,7 +51,6 @@ def test_initial_anchor_positions(bell_plot_instance):
 
 
 def test_left_a_interaction_valid(bell_plot_instance, qtbot):
-    initial_a = bell_plot_instance.a
     new_pos = (bell_plot_instance.c - 20, 0.5)
 
     bell_plot_instance.left_a_anchor.setPos(*new_pos)
@@ -71,7 +70,6 @@ def test_left_a_interaction_invalid(bell_plot_instance, qtbot):
 
 
 def test_right_a_interaction_valid(bell_plot_instance, qtbot):
-    initial_a = bell_plot_instance.a
     new_pos = (bell_plot_instance.c + 20, 0.5)
 
     bell_plot_instance.right_a_anchor.setPos(*new_pos)

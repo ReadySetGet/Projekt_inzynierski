@@ -1,7 +1,5 @@
 import pytest
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import Qt
-
 from app.views.mf_editor_tab import MFPropertiesWidget
 
 
