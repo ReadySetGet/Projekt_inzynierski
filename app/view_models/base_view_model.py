@@ -42,22 +42,24 @@ class BaseViewModel(QObject):
         self.data_changed.connect(self.refresh_data)
 
         # Register with event bus for global updates
-        if self._context_provider:
-            context = self._context_provider()
+        provider = type(self)._context_provider
+        if provider:
+            context = provider()
             if context and context.event_bus:
                 context.event_bus.register_view_model(self)
 
-        if self._context_provider:
-            context = self._context_provider()
+        if provider:
+            context = provider()
             if context and context.theme_manager:
                 context.theme_manager.theme_changed.connect(self._on_theme_changed)
 
     @property
     def context(self) -> AppContext:
         """Get the AppContext via the context provider."""
-        if self._context_provider is None:
+        provider = type(self)._context_provider
+        if provider is None:
             raise RuntimeError("No context provider set for BaseViewModel")
-        return self._context_provider()
+        return provider()
 
     @property
     def fuzzy_service(self):
