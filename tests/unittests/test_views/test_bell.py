@@ -1,7 +1,8 @@
 import numpy as np
+import pyqtgraph as pg
 import pytest
 from PyQt6 import QtWidgets
-import pyqtgraph as pg
+
 from app.views.bell_plot import BellPlot
 
 
@@ -22,7 +23,7 @@ def bell_plot_instance(main_window_with_plot):
     a = 15.0
     b = 2.0
     c = 50.0
-    color = '#00ff00'
+    color = "#00ff00"
     return BellPlot(plot_widget, x_data, y_data, a, b, c, color)
 
 
@@ -96,7 +97,8 @@ def test_update_b_interaction(bell_plot_instance, qtbot):
     bell_plot_instance.right_b_anchor.sigPositionChanged.emit(bell_plot_instance.right_b_anchor)
 
     expected_b = np.log(1 / bell_plot_instance.b_height - 1) / (
-            2 * np.log(abs((new_pos[0] - bell_plot_instance.c) / bell_plot_instance.a)))
+        2 * np.log(abs((new_pos[0] - bell_plot_instance.c) / bell_plot_instance.a))
+    )
     assert bell_plot_instance.b == pytest.approx(expected_b)
 
     expected_left_b_x = bell_plot_instance.c - bell_plot_instance.a * 0.25 ** (1 / (2 * expected_b))

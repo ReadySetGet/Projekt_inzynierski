@@ -1,13 +1,14 @@
 import numpy as np
-import pytest
 import pyqtgraph as pg
+import pytest
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
-from app.views.central_tab_view import CentralTabWidget
-from app.views.triangle_plot import TrianglePlot
-from app.views.trapezoid_plot import TrapezoidPlot
-from app.views.gauss_plot import GaussPlot
+
 from app.views.bell_plot import BellPlot
+from app.views.central_tab_view import CentralTabWidget
+from app.views.gauss_plot import GaussPlot
+from app.views.trapezoid_plot import TrapezoidPlot
+from app.views.triangle_plot import TrianglePlot
 
 
 @pytest.fixture
@@ -81,15 +82,15 @@ def test_add_triangle(tested_widget):
     plot_numb = len(tested_widget.plots)
     x = [-100, 1.0, 10, 100, 200]
     y = [0.0, 0, 1, 0, 0]
-    tested_widget.add_triangle_plot(x, y, 'r')
-    assert len(tested_widget.plots) == plot_numb+1
+    tested_widget.add_triangle_plot(x, y, "r")
+    assert len(tested_widget.plots) == plot_numb + 1
 
 
 def test_add_trapezoid(tested_widget):
     plot_numb = len(tested_widget.plots)
     x = [-100.0, 10, 25, 75, 90, 200]
     y = [0.0, 0, 1, 1, 0, 0]
-    tested_widget.add_trapezoid_plot(x, y, 'r')
+    tested_widget.add_trapezoid_plot(x, y, "r")
     assert len(tested_widget.plots) == plot_numb + 1
 
 
@@ -99,7 +100,7 @@ def test_add_gauss(tested_widget):
     sigma = 16.67
     gauss_x = np.linspace(-100, 200, 400)
     gauss_y = np.exp(-(1 / 2) * ((gauss_x - mu) / sigma) ** 2)
-    tested_widget.add_gauss_plot(gauss_x, gauss_y, sigma, mu, 'r')
+    tested_widget.add_gauss_plot(gauss_x, gauss_y, sigma, mu, "r")
     assert len(tested_widget.plots) == plot_numb + 1
 
 
@@ -110,7 +111,5 @@ def test_add_bell(tested_widget):
     c = 50.0
     bell_x = np.linspace(-100, 200, 200)
     bell_y = 1 / (1 + np.abs((bell_x - c) / a) ** (2 * b))
-    tested_widget.add_bell_plot(bell_x, bell_y, a, b, c, 'r')
+    tested_widget.add_bell_plot(bell_x, bell_y, a, b, c, "r")
     assert len(tested_widget.plots) == plot_numb + 1
-
-

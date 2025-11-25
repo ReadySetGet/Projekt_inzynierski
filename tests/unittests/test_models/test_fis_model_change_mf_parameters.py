@@ -11,11 +11,11 @@ class ChangeMFParametersTestCase(unittest.TestCase):
         self.model.add_mf("input1", "input")
 
     def test_1_mf_parameters_changed(self) -> None:
-        result = self.model.change_mf_parameters("input0", "input", 0,
-                                                 [1, 2, 3])
+        result = self.model.change_mf_parameters("input0", "input", 0, [1, 2, 3])
         self.assertEqual(result, 1, "Wrong result value")
-        self.assertEqual(self.model._fis.Inputs[0].MembershipFunctions[0]
-                         .Parameters, [1, 2, 3], "Wrong parameters of MF")
+        self.assertEqual(
+            self.model._fis.Inputs[0].MembershipFunctions[0].Parameters, [1, 2, 3], "Wrong parameters of MF"
+        )
 
     def test_2_mf_parameters_of_wrong_length(self) -> None:
         result = self.model.change_mf_parameters("input0", "input", 0, [1])
@@ -26,13 +26,11 @@ class ChangeMFParametersTestCase(unittest.TestCase):
         self.model.add_mf("output0", "output", "stala")
         result = self.model.change_mf_parameters("output0", "output", 0, 1)
         self.assertEqual(result, 1, "Wrong result value")
-        self.assertEqual(self.model._fis.Outputs[0].MembershipFunctions[0]
-                         .Parameters, 1, "Wrong parameters of mf")
-
+        self.assertEqual(self.model._fis.Outputs[0].MembershipFunctions[0].Parameters, 1, "Wrong parameters of mf")
 
     def tearDown(self) -> None:
         del self.model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

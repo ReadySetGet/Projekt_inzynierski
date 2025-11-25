@@ -1,7 +1,8 @@
+import numpy as np
+import pyqtgraph as pg
 import pytest
 from PyQt6 import QtWidgets
-import pyqtgraph as pg
-import numpy as np
+
 from app.views.gauss_plot import GaussPlot
 
 
@@ -21,7 +22,7 @@ def plot_instance(main_window_with_plot):
     y_data = np.exp(-(1 / 2) * ((x_data - 50) / 10) ** 2)
     sigma = 10.0
     mu = 50.0
-    color = '#ff0000'
+    color = "#ff0000"
     return GaussPlot(plot_widget, x_data, y_data, sigma, mu, color)
 
 

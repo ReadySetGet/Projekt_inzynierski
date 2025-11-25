@@ -1,6 +1,7 @@
 import pytest
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
+
 from app.views.rules_editor_tab import RulesEditorTab
 
 
@@ -76,21 +77,21 @@ def test_is_isnt_dropdowns(qtbot, tested_widget):
     with qtbot.waitSignal(tested_widget.is_dropdown_changed, raising=True, timeout=1000):
         first_i_dropdown.setCurrentIndex(1)
     assert first_i_dropdown.currentIndex() == 1
-    assert first_i_dropdown.currentText() == "Isn\'t"
+    assert first_i_dropdown.currentText() == "Isn't"
 
     assert final_i_dropdown.currentIndex() == 0
     assert final_i_dropdown.currentText() == "Is"
     with qtbot.waitSignal(tested_widget.is_dropdown_changed, raising=True, timeout=1000):
         final_i_dropdown.setCurrentIndex(1)
     assert final_i_dropdown.currentIndex() == 1
-    assert final_i_dropdown.currentText() == "Isn\'t"
+    assert final_i_dropdown.currentText() == "Isn't"
 
     assert o_dropdown.currentIndex() == 0
     assert o_dropdown.currentText() == "Is"
     with qtbot.waitSignal(tested_widget.is_dropdown_changed, raising=True, timeout=1000):
         o_dropdown.setCurrentIndex(1)
     assert o_dropdown.currentIndex() == 1
-    assert o_dropdown.currentText() == "Isn\'t"
+    assert o_dropdown.currentText() == "Isn't"
 
 
 def test_radio_buttons(tested_widget, qtbot):

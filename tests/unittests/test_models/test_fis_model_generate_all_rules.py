@@ -25,8 +25,7 @@ class GenerateAllRulesTestCase(unittest.TestCase):
 
     def test_1_is_nr_of_rules_correct_2_inputs(self) -> None:
         result = self.model.generate_all_rules()
-        self.assertEqual(len(self.model._fis.Rules),
-                         9, "Wrong nr of rules generated")
+        self.assertEqual(len(self.model._fis.Rules), 9, "Wrong nr of rules generated")
         self.assertEqual(result, 1, "Wrong result code returned")
 
     def test_2_is_nr_of_rules_correct_3_inputs(self) -> None:
@@ -35,8 +34,7 @@ class GenerateAllRulesTestCase(unittest.TestCase):
         self.model.add_mf("input2", "input")
         self.model.add_mf("input2", "input")
         result = self.model.generate_all_rules()
-        self.assertEqual(len(self.model._fis.Rules),
-                         27, "Wrong nr of rules generated")
+        self.assertEqual(len(self.model._fis.Rules), 27, "Wrong nr of rules generated")
         self.assertEqual(result, 1, "Wrong result code returned")
 
     def test_3_is_nr_of_rules_correct_3_outputs(self) -> None:
@@ -45,8 +43,7 @@ class GenerateAllRulesTestCase(unittest.TestCase):
         self.model.add_mf("output2", "output")
         self.model.add_mf("output2", "output")
         result = self.model.generate_all_rules()
-        self.assertEqual(len(self.model._fis.Rules),
-                         9, "Wrong nr of rules generated")
+        self.assertEqual(len(self.model._fis.Rules), 9, "Wrong nr of rules generated")
         self.assertEqual(result, 1, "Wrong result code returned")
 
     def test_4_is_nr_of_rules_correct_some_rules_present(self) -> None:
@@ -55,27 +52,24 @@ class GenerateAllRulesTestCase(unittest.TestCase):
         self.model.add_rule(None, [1, 3, 2, 2, 1, 1])
 
         result = self.model.generate_all_rules()
-        self.assertEqual(len(self.model._fis.Rules),
-                         9, "Wrong nr of rules generated")
+        self.assertEqual(len(self.model._fis.Rules), 9, "Wrong nr of rules generated")
         self.assertEqual(result, 1, "Wrong result code returned")
 
     def test_5_no_output_or_input(self) -> None:
         self.model._fis.Outputs.clear()
         result = self.model.generate_all_rules()
-        self.assertEqual(len(self.model._fis.Rules),
-                         0, "Rules incorrectly generated")
+        self.assertEqual(len(self.model._fis.Rules), 0, "Rules incorrectly generated")
         self.assertEqual(result, -1, "Wrong result code returned")
 
     def test_6_no_mfs(self) -> None:
         self.model._fis.Outputs[0].MembershipFunctions.clear()
         result = self.model.generate_all_rules()
-        self.assertEqual(len(self.model._fis.Rules),
-                         0, "Rules incorrectly generated")
+        self.assertEqual(len(self.model._fis.Rules), 0, "Rules incorrectly generated")
         self.assertEqual(result, -2, "Wrong result code returned")
 
     def tearDown(self) -> None:
         del self.model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
