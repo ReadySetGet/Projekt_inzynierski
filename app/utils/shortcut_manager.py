@@ -98,20 +98,3 @@ class ShortcutManager:
         """Remove all shortcuts managed by this manager."""
         for key in list(self._shortcuts.keys()):
             self.remove_shortcut(key)
-
-
-def register_default_shortcuts(shortcut_manager: "ShortcutManager", view_model, toggle_theme_callback) -> None:
-    """Register default keyboard shortcuts for navigation and theme switching.
-
-    Args:
-        shortcut_manager (ShortcutManager): The shortcut manager instance.
-        view_model: The view model for the main view (must have set_current_view).
-        toggle_theme_callback (Callable): Callback to toggle the theme.
-    """
-    shortcut_manager.register_shortcut("Ctrl+H", lambda: view_model.set_current_view("home"), description="Go to Home")
-    shortcut_manager.register_shortcut(
-        "Ctrl+S",
-        lambda: view_model.set_current_view("settings"),
-        description="Go to Settings",
-    )
-    shortcut_manager.register_shortcut("Ctrl+T", toggle_theme_callback, description="Toggle Theme")

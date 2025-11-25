@@ -4,12 +4,51 @@ from PyQt6.QtCore import Qt
 from app.views.central_tab_view import CentralTabWidget
 from app.views.rule import Rule
 
-rule1 = Rule("In1", "Mf1", "In2", "Mf2", "Out",
-             "Mf3", "is", "and", "1", "Rule 1")
-rule2 = Rule("In1", "Mf1", "In2", "Mf2", "Out",
-             "Mf3", "is", "and", "1", "Rule 2")
-rule3 = Rule("In1", "Mf1", "In2", "Mf2", "Out",
-             "Mf3", "is", "and", "1", "Rule 3")
+rule1 = Rule(
+    "In1",
+    "Mf1",
+    "1",
+    "In2",
+    "Mf2",
+    "2",
+    "Out",
+    "Mf3",
+    "3",
+    "is",
+    "and",
+    "1",
+    "Rule 1",
+)
+rule2 = Rule(
+    "In1",
+    "Mf1",
+    "1",
+    "In2",
+    "Mf2",
+    "2",
+    "Out",
+    "Mf3",
+    "3",
+    "is",
+    "and",
+    "1",
+    "Rule 2",
+)
+rule3 = Rule(
+    "In1",
+    "Mf1",
+    "1",
+    "In2",
+    "Mf2",
+    "2",
+    "Out",
+    "Mf3",
+    "3",
+    "is",
+    "and",
+    "1",
+    "Rule 3",
+)
 rules = [rule1, rule2, rule3]
 
 
