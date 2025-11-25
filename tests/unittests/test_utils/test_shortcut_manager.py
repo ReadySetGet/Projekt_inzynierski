@@ -1,7 +1,6 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import pytest
-from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QWidget
 
 from app.utils.shortcut_manager import ShortcutManager

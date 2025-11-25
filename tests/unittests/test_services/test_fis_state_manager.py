@@ -2,7 +2,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from app.models.fis_model import FISModel
 from app.services.fis_state_manager import FISStateManager
 
 
