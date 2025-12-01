@@ -54,6 +54,21 @@ class UpdateRuleTestCase(unittest.TestCase):
         result = self.model.update_rule(0, [1, 1], [1, 1, 1])
         self.assertEqual(result, -3, "Rule incorrectly updated")
 
+    def test_8_rule_with_given_idx_does_not_exist(self) -> None:
+        result = self.model.update_rule(5, [1, 1], [1, 1, 1, 1])
+        self.assertEqual(result, -1, "Rule incorrectly updated")
+
+    def test_9_incorrect_is_not_for_sugeno_output(self) -> None:
+        model_sugeno = FISModel(fis_type="sugeno")
+        model_sugeno.add_input()
+        model_sugeno.add_output()
+        model_sugeno.add_mf("input0", "input")
+        model_sugeno.add_mf("output0", "output", "stala")
+        model_sugeno.add_rule()
+        model_sugeno.add_rule()
+        result = model_sugeno.update_rule(0, [1, 0], [1, 1, 1, 1])
+        self.assertEqual(result, -4, "Rule incorrectly updated")
+
     def tearDown(self) -> None:
         del self.model
 

@@ -9,7 +9,7 @@ class NewMamdaniModelCreationTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.model = None
 
-    def test_1_new_sugeno_model_created(self) -> None:
+    def test_1_new_mamdani_model_created(self) -> None:
         self.model = FISModel(fis_type="mamdani")
         self.assertNotEqual(self.model, None, "No model created")
         self.assertEqual(type(self.model._fis), mamfis, "Wrong model type created")

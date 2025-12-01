@@ -12,7 +12,8 @@ class AddMFTestCase(unittest.TestCase):
     def test_1_mf_added_to_input(self) -> None:
         nr_mfs = len(self.model._fis.Inputs[0].MembershipFunctions)
         self.assertEqual(nr_mfs, 0, "Input has MFs upon creation")
-        self.model.add_mf("input0", "input")
+        result = self.model.add_mf("input0", "input")
+        self.assertEqual(result, 1, "Wrong result code")
         self.assertEqual(
             len(self.model._fis.Inputs[0].MembershipFunctions),
             nr_mfs + 1,
@@ -76,6 +77,19 @@ class AddMFTestCase(unittest.TestCase):
             "trimf",
             "Wrong type of MF added to output",
         )
+
+    def test_9_no_io_variable_with_given_name(self) -> None:
+        result = self.model.add_mf("output4", "output")
+        self.assertEqual(result, -1, "Wrong result code")
+
+    def test_10_mf_type(self) -> None:
+        self.model.add_mf("output0", "output")
+        self.assertEqual(self.model._fis.Outputs[0].MembershipFunctions[0].Type,
+                         "trimf", "Wrong mf type")
+
+    def test_11_wrong_mf_type(self) -> None:
+        result = self.model.add_mf("output0", "output", "wrong_type")
+        self.assertEqual(result, -2, "Wrong result code")
 
     def tearDown(self) -> None:
         del self.model

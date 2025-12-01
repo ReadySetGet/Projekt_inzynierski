@@ -22,6 +22,14 @@ class ChangeMFNameTestCase(unittest.TestCase):
         result = self.model.change_mf_name("output0", "output", 0, long_name)
         self.assertEqual(result, -3, "Name changed incorrectly")
 
+    def test_3_mf_with_given_idx_does_not_exist(self) -> None:
+        result = self.model.change_mf_name("output0", "output", 3, "newname")
+        self.assertEqual(result, -1, "Name changed incorrectly")
+
+    def test_4_io_variable_not_found(self) -> None:
+        result = self.model.change_mf_name("output5", "output", 0, "newname")
+        self.assertEqual(result, -2, "Name changed incorrectly")
+
     def tearDown(self) -> None:
         del self.model
 

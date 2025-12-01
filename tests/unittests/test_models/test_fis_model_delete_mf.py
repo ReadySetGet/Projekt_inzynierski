@@ -13,7 +13,8 @@ class DeleteMFTestCase(unittest.TestCase):
 
     def test_1_input_mf_deleted(self) -> None:
         nr_mfs = len(self.model._fis.Inputs[0].MembershipFunctions)
-        self.model.delete_mf("input0", "input", 0)
+        result = self.model.delete_mf("input0", "input", 0)
+        self.assertEqual(result, 1, "Wrong result code")
         self.assertEqual(
             len(self.model._fis.Inputs[0].MembershipFunctions),
             nr_mfs - 1,
@@ -37,7 +38,8 @@ class DeleteMFTestCase(unittest.TestCase):
 
     def test_3_output_mf_deleted(self) -> None:
         nr_mfs = len(self.model._fis.Outputs[0].MembershipFunctions)
-        self.model.delete_mf("output0", "output", 0)
+        result = self.model.delete_mf("output0", "output", 0)
+        self.assertEqual(result, 1, "Wrong result code")
         self.assertEqual(
             len(self.model._fis.Outputs[0].MembershipFunctions),
             nr_mfs - 1,
@@ -58,6 +60,14 @@ class DeleteMFTestCase(unittest.TestCase):
             "mf1",
             "Output MF at wrong index deleted",
         )
+
+    def test_5_mf_with_given_idx_does_not_exist(self) -> None:
+        result = self.model.delete_mf("output0", "output", 1)
+        self.assertEqual(result, -1, "MF deleted incorrectly")
+
+    def test_6_io_variable_not_found(self) -> None:
+        result = self.model.delete_mf("output2", "output", 0)
+        self.assertEqual(result, -2, "MF deleted incorrectly")
 
     def tearDown(self) -> None:
         del self.model
