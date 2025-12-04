@@ -1,19 +1,20 @@
-"""Extension module for inferring functionalities provided in 'fuzzylab'
-library.
+"""Extension module for inferring functionalities provided in 'fuzzylab' library.
 
 TODO: finish documentation of this module if used in the final solution
 
-Changed fuctions:
+Changed functions:
 
     fuzzify_input
     eval_rules_mamdani
 """
+
 import numpy as np
-from fuzzylab.evalmf import evalmf
 from fuzzylab.defuzz import defuzz
+from fuzzylab.evalmf import evalmf
 
 
 def evalfis(fis, user_input, rule_firing=False, num_points=101):
+    """Evaluate fuzzy inference system with given input."""
     if type(user_input) is not np.ndarray:
         user_input = np.asarray([user_input])
 
@@ -32,13 +33,12 @@ def evalfis(fis, user_input, rule_firing=False, num_points=101):
         rule_input = fuzzify_input(fis, user_input[i])
         firing_strength = eval_firing_strength(fis, rule_input)
 
-        if fis.Type == 'mamdani':
+        if fis.Type == "mamdani":
             rule_output = eval_rules_mamdani(fis, firing_strength, num_points)
             fuzzy_output = aggregate_output_mamdani(fis, rule_output)
             output[i] = defuzzify_output_mamdani(fis, fuzzy_output)
-        elif fis.Type == 'sugeno':
-            rule_output = eval_rules_sugeno(fis, firing_strength,
-                                            user_input[i])
+        elif fis.Type == "sugeno":
+            rule_output = eval_rules_sugeno(fis, firing_strength, user_input[i])
             fuzzy_output = aggregate_output_sugeno(fis, rule_output)
             output[i] = defuzzify_output_sugeno(fis, fuzzy_output)
 
@@ -52,6 +52,7 @@ def evalfis(fis, user_input, rule_firing=False, num_points=101):
 
 
 def fuzzify_input(fis, user_input):
+    """Fuzzify input values using membership functions."""
     num_rules = len(fis.Rules)
     num_inputs = len(fis.Inputs)
     rule_input = np.zeros((num_rules, num_inputs))
@@ -83,15 +84,16 @@ def fuzzify_input(fis, user_input):
 
 
 def eval_firing_strength(fis, rule_input):
+    """Evaluate firing strength for each rule."""
     num_rules = len(fis.Rules)
     num_inputs = len(fis.Inputs)
 
     # Initialize output matrix to prevent inefficient resizing.
     firing_strength = np.zeros(num_rules)
 
-    ## For each rule
-    ##    1. Apply connection to find matching degree of the antecedent.
-    ##    2. Multiply by weight of the rule to find degree of the rule.
+    # For each rule
+    #    1. Apply connection to find matching degree of the antecedent.
+    #    2. Multiply by weight of the rule to find degree of the rule.
 
     for i in range(num_rules):
         rule = fis.Rules[i]
@@ -109,21 +111,22 @@ def eval_firing_strength(fis, rule_input):
         else:
             connect = fis.OrMethod
 
-        if connect == 'min':
+        if connect == "min":
             firing_strength[i] = rule.Weight * np.min(antecedent_mus)
-        elif connect == 'max':
+        elif connect == "max":
             firing_strength[i] = rule.Weight * np.max(antecedent_mus)
-        elif connect == 'prod':
+        elif connect == "prod":
             firing_strength[i] = rule.Weight * np.prod(antecedent_mus)
-        elif connect == 'sum':
+        elif connect == "sum":
             firing_strength[i] = rule.Weight * np.sum(antecedent_mus)
-        elif connect == 'algebraic_product':
+        elif connect == "algebraic_product":
             firing_strength[i] = rule.Weight * np.prod(antecedent_mus)
 
     return firing_strength
 
 
 def eval_rules_mamdani(fis, firing_strength, num_points):
+    """Evaluate rules for Mamdani type fuzzy inference system."""
     num_rules = len(fis.Rules)
     num_outputs = len(fis.Outputs)
 
@@ -141,7 +144,6 @@ def eval_rules_mamdani(fis, firing_strength, num_points):
 
         if rule_matching_degree != 0:
             for j in range(num_outputs):
-
                 # Compute the fuzzy output for this (rule, output) pair.
 
                 mf_index = rule.Consequent[j] - 1
@@ -168,7 +170,7 @@ def eval_rules_mamdani(fis, firing_strength, num_points):
 
                 # Adjust the fuzzy output for the rule matching degree.
 
-                if fis.ImplicationMethod == 'min':
+                if fis.ImplicationMethod == "min":
                     fuzzy_out = np.minimum(rule_matching_degree, fuzzy_out)
 
                 rule_output[:, (j - 1) * num_rules + i] = fuzzy_out
@@ -177,6 +179,7 @@ def eval_rules_mamdani(fis, firing_strength, num_points):
 
 
 def aggregate_output_mamdani(fis, rule_output):
+    """Aggregate output for Mamdani type fuzzy inference system."""
     num_rules = len(fis.Rules)
     num_outputs = len(fis.Outputs)
     num_points = len(rule_output)
@@ -187,8 +190,8 @@ def aggregate_output_mamdani(fis, rule_output):
     # Compute the ith fuzzy output values, then store the values in the
     # ith column of the fuzzy_output matrix.
     for i in range(num_outputs):
-        indiv_fuzzy_out = rule_output[:, i * num_rules: (i + 1) * num_rules]
-        if fis.AggregationMethod == 'max':
+        indiv_fuzzy_out = rule_output[:, i * num_rules : (i + 1) * num_rules]
+        if fis.AggregationMethod == "max":
             agg_fuzzy_out = np.max(indiv_fuzzy_out, axis=1)
         fuzzy_output[:, i] = agg_fuzzy_out
 
@@ -196,6 +199,7 @@ def aggregate_output_mamdani(fis, rule_output):
 
 
 def defuzzify_output_mamdani(fis, fuzzy_output):
+    """Defuzzify output for Mamdani type fuzzy inference system."""
     num_outputs = len(fis.Outputs)
     num_points = len(fuzzy_output)
     output = np.zeros(num_outputs)
@@ -210,6 +214,7 @@ def defuzzify_output_mamdani(fis, fuzzy_output):
 
 
 def eval_rules_sugeno(fis, firing_strength, user_input):
+    """Evaluate rules for Sugeno type fuzzy inference system."""
     num_rules = len(fis.Rules)
     num_outputs = len(fis.Outputs)
 
@@ -233,7 +238,6 @@ def eval_rules_sugeno(fis, firing_strength, user_input):
 
         if rule_firing_strength != 0:
             for j in range(num_outputs):
-
                 mf_index = rule.Consequent[j] - 1
 
                 height = rule_firing_strength
@@ -242,10 +246,24 @@ def eval_rules_sugeno(fis, firing_strength, user_input):
 
                 mf = fis.Outputs[j].MembershipFunctions[mf_index]
 
-                if mf.Type == 'constant':
-                    location = mf.Parameters[0]
-                elif mf.Type == 'linear':
-                    location = mf.Parameters[0] * np.array([user_input, 1])
+                if mf.Type == "constant":
+                    # Handle both list and single value parameters
+                    if hasattr(mf.Parameters, "__getitem__"):
+                        location = mf.Parameters[0]
+                    else:
+                        location = mf.Parameters
+                elif mf.Type == "linear":
+                    # For linear functions: location = p0*x1 + p1*x2 + ... + pn
+                    # where pn is the constant term
+                    if hasattr(mf.Parameters, "__len__") and len(mf.Parameters) > len(user_input):
+                        # Parameters include coefficients for inputs + constant term
+                        location = np.dot(mf.Parameters[:-1], user_input) + mf.Parameters[-1]
+                    else:
+                        # Fallback: just use the first parameter
+                        if hasattr(mf.Parameters, "__getitem__"):
+                            location = mf.Parameters[0]
+                        else:
+                            location = mf.Parameters
 
                 # Store result in column of rule_output corresponding
                 # to the (rule, output) pair.
@@ -257,6 +275,7 @@ def eval_rules_sugeno(fis, firing_strength, user_input):
 
 
 def aggregate_output_sugeno(fis, rule_output):
+    """Aggregate output for Sugeno type fuzzy inference system."""
     fuzzy_output = []
     num_outputs = len(fis.Outputs)
     num_rules = len(fis.Rules)
@@ -265,15 +284,15 @@ def aggregate_output_sugeno(fis, rule_output):
     # then store the result as a structure in fuzzy_output.
 
     for i in range(num_outputs):
-        unagg_output = rule_output[:, i * num_rules: (i + 1) * num_rules]
-        aggregated_output = aggregate_fis_output(fis.AggregationMethod,
-                                                 unagg_output)
+        unagg_output = rule_output[:, i * num_rules : (i + 1) * num_rules]
+        aggregated_output = aggregate_fis_output(fis.AggregationMethod, unagg_output)
         fuzzy_output.append(aggregated_output)
 
     return np.asarray(fuzzy_output)
 
 
 def defuzzify_output_sugeno(fis, aggregated_output):
+    """Defuzzify output for Sugeno type fuzzy inference system."""
     num_outputs = len(fis.Outputs)
     output = np.zeros(num_outputs)
 
@@ -287,6 +306,7 @@ def defuzzify_output_sugeno(fis, aggregated_output):
 
 
 def aggregate_fis_output(fis_aggmethod, rule_output):
+    """Aggregate FIS output based on the specified aggregation method."""
     # Initialize output matrix (multiple_singletons).
     rule_output = np.transpose(rule_output)
     mult_singletons = rule_output[rule_output[:, 0].argsort()]
@@ -296,9 +316,8 @@ def aggregate_fis_output(fis_aggmethod, rule_output):
 
     for i in range(len(mult_singletons) - 1):
         if mult_singletons[i, 0] == mult_singletons[i + 1, 0]:
-            if fis_aggmethod == 'sum':
-                mult_singletons[i + 1, 1] = mult_singletons[i, 1] + \
-                                            mult_singletons[i + 1, 1]
+            if fis_aggmethod == "sum":
+                mult_singletons[i + 1, 1] = mult_singletons[i, 1] + mult_singletons[i + 1, 1]
 
             mult_singletons[i, 1] = 0
 
@@ -311,6 +330,7 @@ def aggregate_fis_output(fis_aggmethod, rule_output):
 
 
 def remove_null_rows(x):
+    """Remove null rows from the input array."""
     y = []
     for i in range(len(x)):
         if x[i, 1] != 0:
