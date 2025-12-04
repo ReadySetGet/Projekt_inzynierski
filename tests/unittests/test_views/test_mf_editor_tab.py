@@ -1,3 +1,5 @@
+from unittest.mock import PropertyMock
+
 import pytest
 from PyQt6 import QtWidgets
 
@@ -12,8 +14,10 @@ def app():
 
 
 @pytest.fixture
-def tested_widget(qtbot, app):
+def tested_widget(qtbot, app, setup_base_view_model_context):
     widget = MFPropertiesWidget()
+    if hasattr(widget, 'view_model') and widget.view_model:
+        type(widget.view_model).default_parameters = PropertyMock(return_value="[0, 0.5, 1]")
     qtbot.addWidget(widget)
     return widget
 
@@ -27,7 +31,7 @@ def test_initial_state(tested_widget):
 
     assert tested_widget.mf_name_edit.text() == "Placeholder"
 
-    assert tested_widget.mf_range_edit.text() == tested_widget.default_parameters
+    assert tested_widget.mf_range_edit.text() == tested_widget.view_model.default_parameters
 
     assert tested_widget.mf_table.rowCount() == 1
     assert tested_widget.mf_table.columnCount() == 3
@@ -35,7 +39,7 @@ def test_initial_state(tested_widget):
     assert tested_widget.mf_table.horizontalHeaderItem(1).text() == "Type"
     assert tested_widget.mf_table.horizontalHeaderItem(2).text() == "Parameters"
     assert tested_widget.mf_table.item(0, 0).text() == "Placeholder"
-    assert tested_widget.mf_table.item(0, 2).text() == tested_widget.default_parameters
+    assert tested_widget.mf_table.item(0, 2).text() == tested_widget.view_model.default_parameters
 
     assert tested_widget.shape_select_dropdown.itemText(0) == "Triangle"
     assert tested_widget.shape_select_dropdown.itemText(1) == "Trapezoid"

@@ -98,9 +98,9 @@ class CentralTabWidget(BaseTabView):
         # Placeholder plots removed - will be loaded from fuzzy service
 
         # Plot title and labels will be styled by theme
-        self.mf_plot_graph.setTitle("Membership Function Plot")
-        self.mf_plot_graph.setLabel("left", "Degree of Membership")
-        self.mf_plot_graph.setLabel("bottom", "Variable")
+        self.mf_plot_graph.setTitle(self.t("MEMBERSHIP_FUNCTION_PLOT"))
+        self.mf_plot_graph.setLabel("left", self.t("DEGREE_OF_MEMBERSHIP"))
+        self.mf_plot_graph.setLabel("bottom", self.t("VARIABLE"))
         frame_layout.addWidget(self.mf_plot_graph)
 
         self.seperator_line = QtWidgets.QFrame(parent=self.mf_plot)
@@ -134,7 +134,7 @@ class CentralTabWidget(BaseTabView):
         self.table_widget.setColumnWidth(0, 100)
         self.table_widget.setColumnWidth(1, 60)
         self.table_widget.setColumnWidth(2, 271)
-        self.table_widget.setHorizontalHeaderLabels(["Name", "Weight", "Rule"])
+        self.table_widget.setHorizontalHeaderLabels([self.t("NAME"), self.t("WEIGHT"), self.t("RULE")])
 
         self.clear_rules_button = QtWidgets.QPushButton(parent=self.rule_editor)
         self.clear_rules_button.setGeometry(QtCore.QRect(180, 60, 100, 28))
@@ -144,7 +144,7 @@ class CentralTabWidget(BaseTabView):
         self.rule_style_dropdown = QtWidgets.QComboBox(parent=self.rule_editor)
         self.rule_style_dropdown.setGeometry(QtCore.QRect(300, 60, 100, 28))
         self.rule_style_dropdown.setObjectName("rule_style_dropdown")
-        self.rule_style_dropdown.addItems(["Verbose", "Symbolic", "Indexed"])
+        self.rule_style_dropdown.addItems([self.t("VERBOSE"), self.t("SYMBOLIC"), self.t("INDEXED")])
         self.rule_style_dropdown.currentIndexChanged.connect(self._update_rule_style)
 
         self.add_rule_button = QtWidgets.QPushButton(parent=self.rule_editor)
@@ -204,17 +204,17 @@ class CentralTabWidget(BaseTabView):
         """Generate all possible rules based on inputs and outputs."""
         fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
         if not fuzzy_service:
-            self.status_bar.showMessage("Error: Fuzzy service not available.")
+            self.status_bar.showMessage(self.t("ERROR_FUZZY_SERVICE_NOT_AVAILABLE"))
             return
 
         success = fuzzy_service.add_all_possible_rules()
         if success:
             self.fillTable()
-            self.status_bar.showMessage("Last action: added all possible rule combinations.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_ADDED_ALL_RULES"))
             if hasattr(self.view_model, "notify_data_changed"):
                 self.view_model.notify_data_changed.emit()
         else:
-            self.status_bar.showMessage("Error: Failed to generate rules.")
+            self.status_bar.showMessage(self.t("ERROR_FAILED_TO_GENERATE_RULES"))
 
     def fillTable(self):
         """Fill the rules table with rules.
@@ -234,12 +234,12 @@ class CentralTabWidget(BaseTabView):
             rule_text = fuzzy_service.get_rule_text(i)
 
             if not rule_text:
-                rule_text = f"Rule {i+1} (no text available)"
+                rule_text = f"{self.t('RULE')} {i+1} ({self.t('NO_TEXT_AVAILABLE')})"
 
             rules_data = fuzzy_service.get_rules()
             if i < len(rules_data):
                 rule_data = rules_data[i]
-                name_str = rule_data.get("name", f"Rule{i+1}")
+                name_str = rule_data.get("name", f"{self.t('RULE')}{i+1}")
                 weight_str = str(rule_data.get("weight", 1.0))
                 self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(name_str))
                 self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(weight_str))
@@ -247,14 +247,14 @@ class CentralTabWidget(BaseTabView):
                 self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(""))
                 self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(""))
 
-            if display_type == "Symbolic":
+            if display_type == self.t("SYMBOLIC"):
                 pattern = r"\b({})\b".format("|".join(sorted(re.escape(k) for k in self._symbols)))
                 symbolic_rule = re.sub(pattern, lambda m: self._symbols.get(m.group(0)), rule_text)
                 symbolic_rule = re.sub(r"(=>)(.*)", _regex_func, symbolic_rule)
                 if not symbolic_rule or symbolic_rule == rule_text:
                     symbolic_rule = rule_text
                 self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(symbolic_rule))
-            elif display_type == "Indexed":
+            elif display_type == self.t("INDEXED"):
                 rules_data = fuzzy_service.get_rules()
                 if i < len(rules_data):
                     rule_data = rules_data[i]
@@ -281,29 +281,29 @@ class CentralTabWidget(BaseTabView):
                 self.view_model.notify_data_changed.emit()
 
         self.table_widget.clear()
-        self.table_widget.setHorizontalHeaderLabels(["Name", "Weight", "Rule"])
+        self.table_widget.setHorizontalHeaderLabels([self.t("NAME"), self.t("WEIGHT"), self.t("RULE")])
         self.table_widget.setRowCount(1)
         self.table_widget.setColumnCount(3)
-        self.status_bar.showMessage("Last action: cleared all rules.")
+        self.status_bar.showMessage(self.t("LAST_ACTION_CLEARED_ALL_RULES"))
 
     def add_rule(self):
         """Adds a new rule to the table and data of the application."""
         fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
         if not fuzzy_service:
-            self.status_bar.showMessage("Error: Fuzzy service not available.")
+            self.status_bar.showMessage(self.t("ERROR_FUZZY_SERVICE_NOT_AVAILABLE"))
             return
 
         input_vars = fuzzy_service.get_input_variables()
         output_vars = fuzzy_service.get_output_variables()
 
         if not input_vars or not output_vars:
-            self.status_bar.showMessage("Error: Need at least one input and one output to add a rule.")
+            self.status_bar.showMessage(self.t("ERROR_NEED_INPUT_OUTPUT_FOR_RULE"))
             return
 
         antecedent = [1] * len(input_vars)
         consequent = [1] * len(output_vars)
         rule_count = fuzzy_service.get_rule_count()
-        rule_name = f"Rule{rule_count + 1}"
+        rule_name = f"{self.t('RULE')}{rule_count + 1}"
 
         success = fuzzy_service.add_rule(
             rule_name=rule_name,
@@ -315,40 +315,40 @@ class CentralTabWidget(BaseTabView):
 
         if success:
             self.fillTable()
-            self.status_bar.showMessage("Last action: added new rule.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_ADDED_NEW_RULE"))
             if hasattr(self.view_model, "notify_data_changed"):
                 self.view_model.notify_data_changed.emit()
             self.addRuleClicked.emit()
         else:
-            self.status_bar.showMessage("Error: Failed to add rule.")
+            self.status_bar.showMessage(self.t("ERROR_FAILED_TO_ADD_RULE"))
 
     def remove_rule(self):
         """Removes selected rule from the table and data of the application."""
         fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
         if not fuzzy_service:
-            self.status_bar.showMessage("Error: Fuzzy service not available.")
+            self.status_bar.showMessage(self.t("ERROR_FUZZY_SERVICE_NOT_AVAILABLE"))
             return
 
         row = self.table_widget.currentRow()
         rule_count = fuzzy_service.get_rule_count()
 
         if row < 0 or row >= rule_count:
-            self.status_bar.showMessage("No rule selected to remove.")
+            self.status_bar.showMessage(self.t("NO_RULE_SELECTED_TO_REMOVE"))
             return
 
         success = fuzzy_service.delete_rule(row)
         if success:
             self.fillTable()
-            self.status_bar.showMessage("Last action: removed a rule.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_REMOVED_RULE"))
             if hasattr(self.view_model, "notify_data_changed"):
                 self.view_model.notify_data_changed.emit()
             self.deleteRuleClicked.emit()
         else:
-            self.status_bar.showMessage("Error: Failed to remove rule.")
+            self.status_bar.showMessage(self.t("ERROR_FAILED_TO_REMOVE_RULE"))
 
     def _update_rule_style(self):
         self.table_widget.clear()
-        self.table_widget.setHorizontalHeaderLabels(["Name", "Weight", "Rule"])
+        self.table_widget.setHorizontalHeaderLabels([self.t("NAME"), self.t("WEIGHT"), self.t("RULE")])
         self.table_widget.setColumnCount(3)
         self.fillTable()
 
@@ -404,8 +404,8 @@ class CentralTabWidget(BaseTabView):
 
         self.mf_plot_graph.setXRange(var_range[0], var_range[1])
 
-        var_type_label = "Input" if variable_type == "input" else "Output"
-        self.mf_plot_graph.setLabel("bottom", f"{var_type_label} variable: {variable_name}", color="black")
+        var_type_label = self.t("INPUT") if variable_type == "input" else self.t("OUTPUT")
+        self.mf_plot_graph.setLabel("bottom", f"{var_type_label} {self.t('VARIABLE')}: {variable_name}", color="black")
 
         # Define colors for different MFs
         colors = [
@@ -725,7 +725,7 @@ class CentralTabWidget(BaseTabView):
         if success:
             # Optionally show status message
             if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage(f"Updated MF parameters: {new_params}")
+                self.status_bar.showMessage(f"{self.t('UPDATED_MF_PARAMETERS')}: {new_params}")
 
             if hasattr(self.view_model, "notify_data_changed"):
                 self.view_model.notify_data_changed.emit()
