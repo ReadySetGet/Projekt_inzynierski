@@ -23,6 +23,7 @@ def mock_context():
 def view_model(mock_context):
     def context_provider():
         return mock_context
+
     BaseViewModel.set_context_provider(context_provider)
     vm = BaseViewModel()
     yield vm

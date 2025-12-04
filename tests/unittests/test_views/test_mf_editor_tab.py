@@ -16,7 +16,7 @@ def app():
 @pytest.fixture
 def tested_widget(qtbot, app, setup_base_view_model_context):
     widget = MFPropertiesWidget()
-    if hasattr(widget, 'view_model') and widget.view_model:
+    if hasattr(widget, "view_model") and widget.view_model:
         type(widget.view_model).default_parameters = PropertyMock(return_value="[0, 0.5, 1]")
     qtbot.addWidget(widget)
     return widget
