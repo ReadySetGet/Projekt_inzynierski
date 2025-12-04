@@ -1,0 +1,41 @@
+{
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.flake8Path": "flake8",
+  "python.linting.flake8Args": [
+    "--exclude=.git,__pycache__,build,dist,.venv,.githooks/commit_message_check.py"
+  ],
+  "python.formatting.provider": "black",
+  "python.formatting.blackPath": "black",
+  "python.sortImports.path": "isort",
+  "python.sortImports.args": ["--profile", "black"],
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll": "explicit"
+  },
+  "python.linting.pylintEnabled": false,
+  "python.linting.mypyEnabled": false,
+  "files.exclude": {
+    "**/.mypy_cache": true,
+    "**/.idea": true,
+    "**/__pycache__": true,
+    "**/__init__.py": true,
+    "**/.venv": true,
+    "**/venv": true,
+    "**/.env": true,
+    "**/env": true,
+    "**/build": true,
+    "**/dist": true
+  },
+  "files.associations": {
+    "*.qss": "css"
+  },
+  "material-icon-theme.folders.associations": {
+    "view_models": "controller",
+    "main_view": "components",
+    "counter_view": "components",
+    "test_view": "components"
+  },
+  "pydocstyle.ignore": ["D100", "D104"]
+} 
