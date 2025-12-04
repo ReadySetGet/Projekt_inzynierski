@@ -89,19 +89,19 @@ class RulesEditorTab(BaseWidgetView):
         """Set up all the GUI sub elements."""
         main_layout = QtWidgets.QVBoxLayout(self)
 
-        title_label = QtWidgets.QLabel(self.t("RULE_EDITOR"), parent=self)
-        title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
-        main_layout.addWidget(title_label)
+        self.title_label = QtWidgets.QLabel(self.t("RULE_EDITOR"), parent=self)
+        self.title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        main_layout.addWidget(self.title_label)
 
-        rules_group = QtWidgets.QGroupBox(self.t("RULES_LIST"), parent=self)
-        rules_layout = QtWidgets.QVBoxLayout(rules_group)
+        self.rules_group = QtWidgets.QGroupBox(self.t("RULES_LIST"), parent=self)
+        rules_layout = QtWidgets.QVBoxLayout(self.rules_group)
 
         display_mode_layout = QtWidgets.QHBoxLayout()
-        display_mode_label = QtWidgets.QLabel(self.t("DISPLAY_MODE") + ":", parent=self)
-        display_mode_layout.addWidget(display_mode_label)
+        self.display_mode_label = QtWidgets.QLabel(self.t("DISPLAY_MODE") + ":", parent=self)
+        display_mode_layout.addWidget(self.display_mode_label)
 
         self.display_mode_combo = QtWidgets.QComboBox(parent=self)
-        self.display_mode_combo.addItems(["Symbolic", "Indexed", "Verbose"])
+        self.display_mode_combo.addItems([self.t("SYMBOLIC"), self.t("INDEXED"), self.t("VERBOSE")])
         display_mode_layout.addWidget(self.display_mode_combo)
         display_mode_layout.addStretch()
         rules_layout.addLayout(display_mode_layout)
@@ -117,26 +117,29 @@ class RulesEditorTab(BaseWidgetView):
         rules_buttons_layout.addWidget(self.clear_rules_button)
         rules_layout.addLayout(rules_buttons_layout)
 
-        main_layout.addWidget(rules_group)
+        main_layout.addWidget(self.rules_group)
 
-        rule_editor_group = QtWidgets.QGroupBox(self.t("RULE_EDITOR"), parent=self)
-        editor_layout = QtWidgets.QVBoxLayout(rule_editor_group)
+        self.rule_editor_group = QtWidgets.QGroupBox(self.t("RULE_EDITOR"), parent=self)
+        editor_layout = QtWidgets.QVBoxLayout(self.rule_editor_group)
 
         name_layout = QtWidgets.QHBoxLayout()
-        name_layout.addWidget(QtWidgets.QLabel(self.t("NAME") + ":", parent=self))
+        self.name_label = QtWidgets.QLabel(self.t("NAME") + ":", parent=self)
+        name_layout.addWidget(self.name_label)
         self.rule_name_edit = QtWidgets.QLineEdit(parent=self)
         name_layout.addWidget(self.rule_name_edit)
         editor_layout.addLayout(name_layout)
 
         weight_layout = QtWidgets.QHBoxLayout()
-        weight_layout.addWidget(QtWidgets.QLabel(self.t("WEIGHT") + ":", parent=self))
+        self.weight_label = QtWidgets.QLabel(self.t("WEIGHT") + ":", parent=self)
+        weight_layout.addWidget(self.weight_label)
         self.rule_weight_edit = QtWidgets.QLineEdit(parent=self)
         self.rule_weight_edit.setText("1.0")
         weight_layout.addWidget(self.rule_weight_edit)
         editor_layout.addLayout(weight_layout)
 
         connection_layout = QtWidgets.QHBoxLayout()
-        connection_layout.addWidget(QtWidgets.QLabel(self.t("CONNECTION") + ":", parent=self))
+        self.connection_label = QtWidgets.QLabel(self.t("CONNECTION") + ":", parent=self)
+        connection_layout.addWidget(self.connection_label)
         self.and_radio_button = QtWidgets.QRadioButton(self.t("AND"), parent=self)
         self.and_radio_button.setChecked(True)
         self.or_radio_button = QtWidgets.QRadioButton(self.t("OR"), parent=self)
@@ -145,16 +148,16 @@ class RulesEditorTab(BaseWidgetView):
         connection_layout.addStretch()
         editor_layout.addLayout(connection_layout)
 
-        if_label = QtWidgets.QLabel(self.t("IF"), parent=self)
-        if_label.setStyleSheet("font-weight: bold;")
-        editor_layout.addWidget(if_label)
+        self.if_label = QtWidgets.QLabel(self.t("IF"), parent=self)
+        self.if_label.setStyleSheet("font-weight: bold;")
+        editor_layout.addWidget(self.if_label)
 
         self.antecedent_layout = QtWidgets.QVBoxLayout()
         editor_layout.addLayout(self.antecedent_layout)
 
-        then_label = QtWidgets.QLabel(self.t("THEN"), parent=self)
-        then_label.setStyleSheet("font-weight: bold;")
-        editor_layout.addWidget(then_label)
+        self.then_label = QtWidgets.QLabel(self.t("THEN"), parent=self)
+        self.then_label.setStyleSheet("font-weight: bold;")
+        editor_layout.addWidget(self.then_label)
 
         self.consequent_layout = QtWidgets.QVBoxLayout()
         editor_layout.addLayout(self.consequent_layout)
@@ -169,7 +172,7 @@ class RulesEditorTab(BaseWidgetView):
         rule_buttons_layout.addWidget(self.delete_rule_button)
         editor_layout.addLayout(rule_buttons_layout)
 
-        main_layout.addWidget(rule_editor_group)
+        main_layout.addWidget(self.rule_editor_group)
         main_layout.addStretch()
 
         self._build_rule_editor_dropdowns()
@@ -201,13 +204,13 @@ class RulesEditorTab(BaseWidgetView):
             row_layout.addWidget(QtWidgets.QLabel(f"{var_name}: ", parent=self))
 
             is_dropdown = QtWidgets.QComboBox(parent=self)
-            is_dropdown.addItems(["is", "is not"])
+            is_dropdown.addItems([self.t("IS"), self.t("IS_NOT")])
             is_dropdown.currentTextChanged.connect(self._on_antecedent_changed)
             row_layout.addWidget(is_dropdown)
             self.input_is_dropdowns.append(is_dropdown)
 
             mf_dropdown = QtWidgets.QComboBox(parent=self)
-            mf_dropdown.addItem("None", 0)
+            mf_dropdown.addItem(self.t("NONE"), 0)
             for mf in mfs:
                 mf_dropdown.addItem(mf.get("name", ""), mf.get("index", 0) + 1)
             mf_dropdown.currentIndexChanged.connect(self._on_antecedent_changed)
@@ -228,13 +231,13 @@ class RulesEditorTab(BaseWidgetView):
             row_layout.addWidget(QtWidgets.QLabel(f"{var_name}: ", parent=self))
 
             is_dropdown = QtWidgets.QComboBox(parent=self)
-            is_dropdown.addItems(["is", "is not"])
+            is_dropdown.addItems([self.t("IS"), self.t("IS_NOT")])
             is_dropdown.currentTextChanged.connect(self._on_consequent_changed)
             row_layout.addWidget(is_dropdown)
             self.output_is_dropdowns.append(is_dropdown)
 
             mf_dropdown = QtWidgets.QComboBox(parent=self)
-            mf_dropdown.addItem("None", 0)
+            mf_dropdown.addItem(self.t("NONE"), 0)
             for mf in mfs:
                 mf_dropdown.addItem(mf.get("name", ""), mf.get("index", 0) + 1)
             mf_dropdown.currentIndexChanged.connect(self._on_consequent_changed)
@@ -252,12 +255,12 @@ class RulesEditorTab(BaseWidgetView):
         for rule in rules_list:
             rule_index = rule.get("index", 0)
 
-            if display_mode == "Symbolic":
+            if display_mode == self.t("SYMBOLIC"):
                 text = self.view_model.get_rule_text(rule_index)
-            elif display_mode == "Indexed":
+            elif display_mode == self.t("INDEXED"):
                 ant = rule.get("antecedent", [])
                 cons = rule.get("consequent", [])
-                text = f"Rule{rule_index + 1}: [{','.join(map(str, ant))}] -> [{','.join(map(str, cons))}]"
+                text = f"{self.t('RULE')}{rule_index + 1}: [{','.join(map(str, ant))}] -> [{','.join(map(str, cons))}]"
             else:
                 text = self.view_model.get_rule_text(rule_index)
 
@@ -275,7 +278,41 @@ class RulesEditorTab(BaseWidgetView):
 
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
-        pass
+        if hasattr(self, "name_label"):
+            self.name_label.setText(self.t("NAME") + ":")
+        if hasattr(self, "weight_label"):
+            self.weight_label.setText(self.t("WEIGHT") + ":")
+        if hasattr(self, "connection_label"):
+            self.connection_label.setText(self.t("CONNECTION") + ":")
+        if hasattr(self, "and_radio_button"):
+            self.and_radio_button.setText(self.t("AND"))
+        if hasattr(self, "or_radio_button"):
+            self.or_radio_button.setText(self.t("OR"))
+        if hasattr(self, "if_label"):
+            self.if_label.setText(self.t("IF"))
+        if hasattr(self, "then_label"):
+            self.then_label.setText(self.t("THEN"))
+        if hasattr(self, "add_rule_button"):
+            self.add_rule_button.setText(self.t("ADD_RULE"))
+        if hasattr(self, "update_rule_button"):
+            self.update_rule_button.setText(self.t("UPDATE_RULE"))
+        if hasattr(self, "delete_rule_button"):
+            self.delete_rule_button.setText(self.t("DELETE_RULE"))
+        if hasattr(self, "rules_group"):
+            self.rules_group.setTitle(self.t("RULES_LIST"))
+        if hasattr(self, "rule_editor_group"):
+            self.rule_editor_group.setTitle(self.t("RULE_EDITOR"))
+        if hasattr(self, "title_label"):
+            self.title_label.setText(self.t("RULE_EDITOR"))
+        if hasattr(self, "display_mode_label"):
+            self.display_mode_label.setText(self.t("DISPLAY_MODE") + ":")
+        if hasattr(self, "add_all_rules_button"):
+            self.add_all_rules_button.setText(self.t("ADD_ALL_RULES"))
+        if hasattr(self, "clear_rules_button"):
+            self.clear_rules_button.setText(self.t("CLEAR_RULES"))
+        if hasattr(self, "display_mode_combo"):
+            self.display_mode_combo.clear()
+            self.display_mode_combo.addItems([self.t("SYMBOLIC"), self.t("INDEXED"), self.t("VERBOSE")])
 
     def _on_add_all_rules_clicked(self):
         """Handle Add All Rules button click."""
@@ -304,7 +341,7 @@ class RulesEditorTab(BaseWidgetView):
         if not self.view_model:
             return
 
-        rule_name = self.rule_name_edit.text() or "NewRule"
+        rule_name = self.rule_name_edit.text() or self.t("NEW_RULE")
 
         try:
             weight = float(self.rule_weight_edit.text())
@@ -319,14 +356,14 @@ class RulesEditorTab(BaseWidgetView):
         for i, dropdown in enumerate(self.input_dropdowns):
             mf_index = dropdown.currentData()
             antecedent.append(mf_index if mf_index is not None else 0)
-            is_not = 1 if self.input_is_dropdowns[i].currentText() == "is" else -1
+            is_not = 1 if self.input_is_dropdowns[i].currentText() == self.t("IS") else -1
             is_mf.append(is_not)
 
         consequent = []
         for i, dropdown in enumerate(self.output_dropdowns):
             mf_index = dropdown.currentData()
             consequent.append(mf_index if mf_index is not None else 0)
-            is_not = 1 if self.output_is_dropdowns[i].currentText() == "is" else -1
+            is_not = 1 if self.output_is_dropdowns[i].currentText() == self.t("IS") else -1
             is_mf.append(is_not)
 
         success = self.view_model.add_rule(
@@ -410,7 +447,7 @@ class RulesEditorTab(BaseWidgetView):
 
                 if i < len(is_mf):
                     self.input_is_dropdowns[i].blockSignals(True)
-                    self.input_is_dropdowns[i].setCurrentText("is" if is_mf[i] == 1 else "is not")
+                    self.input_is_dropdowns[i].setCurrentText(self.t("IS") if is_mf[i] == 1 else self.t("IS_NOT"))
                     self.input_is_dropdowns[i].blockSignals(False)
 
         for i, mf_idx in enumerate(consequent):
@@ -424,7 +461,9 @@ class RulesEditorTab(BaseWidgetView):
                 out_is_idx = i + len(antecedent)
                 if out_is_idx < len(is_mf):
                     self.output_is_dropdowns[i].blockSignals(True)
-                    self.output_is_dropdowns[i].setCurrentText("is" if is_mf[out_is_idx] == 1 else "is not")
+                    self.output_is_dropdowns[i].setCurrentText(
+                        self.t("IS") if is_mf[out_is_idx] == 1 else self.t("IS_NOT")
+                    )
                     self.output_is_dropdowns[i].blockSignals(False)
 
         self._updating_rule = False
@@ -521,14 +560,14 @@ class RulesEditorTab(BaseWidgetView):
         for i, dropdown in enumerate(self.input_dropdowns):
             mf_index = dropdown.currentData()
             antecedent.append(mf_index if mf_index is not None else 0)
-            is_not = 1 if self.input_is_dropdowns[i].currentText() == "is" else -1
+            is_not = 1 if self.input_is_dropdowns[i].currentText() == self.t("IS") else -1
             is_mf.append(is_not)
 
         consequent = []
         for i, dropdown in enumerate(self.output_dropdowns):
             mf_index = dropdown.currentData()
             consequent.append(mf_index if mf_index is not None else 0)
-            is_not = 1 if self.output_is_dropdowns[i].currentText() == "is" else -1
+            is_not = 1 if self.output_is_dropdowns[i].currentText() == self.t("IS") else -1
             is_mf.append(is_not)
 
         success = self.view_model.update_rule(

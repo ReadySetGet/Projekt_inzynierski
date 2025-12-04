@@ -143,7 +143,7 @@ class MFPropertiesWidget(BaseWidgetView):
         self.mf_table.setColumnWidth(1, 80)
         self.mf_table.setColumnWidth(2, 100)
 
-        self.mf_table.setHorizontalHeaderLabels(["Name", "Type", "Parameters"])
+        self.mf_table.setHorizontalHeaderLabels([self.t("NAME"), self.t("TYPE"), self.t("PARAMETERS")])
 
         self.add_mf_button = QtWidgets.QPushButton(parent=self.editor_frame)
         self.add_mf_button.setGeometry(QtCore.QRect(60, 210, 93, 28))
@@ -181,14 +181,28 @@ class MFPropertiesWidget(BaseWidgetView):
         self.add_mf_button.setText(self.t("ADD_MF"))
         self.number_of_mf_label.setText(self.t("NUMBER_OF_MF"))
         self.mf_name_edit.setPlaceholderText(self.t("ENTER_MF_NAME"))
-        self.mf_range_edit.setText(self.view_model.default_parameters)
+        default_params = getattr(self.view_model, "default_parameters", "[0, 0.5, 1]")
+        self.mf_range_edit.setText(default_params)
+
+        is_sugeno_output = False
+        if self.view_model._model and hasattr(self.view_model._model, "_fis"):
+            from fuzzylab import sugfis
+
+            if isinstance(self.view_model._model._fis, sugfis) and self.view_model.selected_variable_type == "output":
+                is_sugeno_output = True
+
+        if is_sugeno_output:
+            self.mf_table.setHorizontalHeaderLabels([self.t("NAME"), self.t("PARAMETERS")])
+        else:
+            self.mf_table.setHorizontalHeaderLabels([self.t("NAME"), self.t("TYPE"), self.t("PARAMETERS")])
 
         self._populate_variable_dropdown()
         self._update_parameter_label()
 
     def _set_number_of_mf(self, count: int):
         """Update the label text to reflect current mf count."""
-        self.number_of_mf_label.setText(f"Number of MF: {count}")
+        base_text = self.t("NUMBER_OF_MF")
+        self.number_of_mf_label.setText(f"{base_text} {count}")
 
     def _remove_mf(self):
         """Remove the selected membership function using the view model."""
@@ -243,20 +257,30 @@ class MFPropertiesWidget(BaseWidgetView):
             self.mf_table.setColumnCount(2)
             self.mf_table.setColumnWidth(0, 120)
             self.mf_table.setColumnWidth(1, 150)
-            self.mf_table.setHorizontalHeaderLabels(["Name", "Parameters"])
+            self.mf_table.setHorizontalHeaderLabels([self.t("NAME"), self.t("PARAMETERS")])
         else:
             self.mf_table.setColumnCount(3)
             self.mf_table.setColumnWidth(0, 80)
             self.mf_table.setColumnWidth(1, 80)
             self.mf_table.setColumnWidth(2, 100)
-            self.mf_table.setHorizontalHeaderLabels(["Name", "Type", "Parameters"])
+            self.mf_table.setHorizontalHeaderLabels([self.t("NAME"), self.t("TYPE"), self.t("PARAMETERS")])
 
         current_selections = {}
         if not self._updating_type:
+            reverse_type_map = {
+                self.t("TRIANGLE"): "Triangle",
+                self.t("TRAPEZOID"): "Trapezoid",
+                self.t("GAUSS"): "Gauss",
+                self.t("BELL"): "Bell",
+                self.t("CONSTANT"): "Constant",
+                self.t("LINEAR"): "Linear",
+            }
             for row in range(self.mf_table.rowCount()):
                 dropdown = self.mf_table.cellWidget(row, 1)
                 if dropdown and isinstance(dropdown, QtWidgets.QComboBox):
-                    current_selections[row] = dropdown.currentText()
+                    translated_text = dropdown.currentText()
+                    actual_type = reverse_type_map.get(translated_text, translated_text)
+                    current_selections[row] = actual_type
 
         self.mf_table.setRowCount(len(mf_list))
 
@@ -266,16 +290,35 @@ class MFPropertiesWidget(BaseWidgetView):
             # Only show Type column for non-Sugeno outputs
             if not is_sugeno_output:
                 type_dropdown = QtWidgets.QComboBox(parent=self.mf_table)
-                type_dropdown.addItems(self.view_model.available_mf_types)
+                mf_types = self.view_model.available_mf_types
+                translated_types = []
+                type_map = {
+                    "Triangle": self.t("TRIANGLE"),
+                    "Trapezoid": self.t("TRAPEZOID"),
+                    "Gauss": self.t("GAUSS"),
+                    "Bell": self.t("BELL"),
+                    "Constant": self.t("CONSTANT"),
+                    "Linear": self.t("LINEAR"),
+                }
+                reverse_type_map = {v: k for k, v in type_map.items()}
+                for mf_type in mf_types:
+                    translated_types.append(type_map.get(mf_type, mf_type))
+                type_dropdown.addItems(translated_types)
 
                 # Block signals while setting initial value to avoid triggering change handler
                 type_dropdown.blockSignals(True)
                 if row in self._desired_types:
-                    type_dropdown.setCurrentText(self._desired_types[row])
+                    desired = self._desired_types[row]
+                    translated_desired = type_map.get(desired, desired)
+                    type_dropdown.setCurrentText(translated_desired)
                 elif row in current_selections and not self._updating_type:
-                    type_dropdown.setCurrentText(current_selections[row])
+                    current = current_selections[row]
+                    translated_current = type_map.get(current, current)
+                    type_dropdown.setCurrentText(translated_current)
                 else:
-                    type_dropdown.setCurrentText(mf_data["mf_type"])
+                    actual_type = mf_data["mf_type"]
+                    translated_type = type_map.get(actual_type, actual_type)
+                    type_dropdown.setCurrentText(translated_type)
                 type_dropdown.blockSignals(False)
 
                 def make_type_change_handler(row_num, dropdown_ref):
@@ -324,7 +367,7 @@ class MFPropertiesWidget(BaseWidgetView):
             self.variable_dropdown.addItem(var["display"])
 
         if self.variable_dropdown.count() == 0:
-            self.variable_dropdown.addItem("No variables available")
+            self.variable_dropdown.addItem(self.t("NO_VARIABLES_AVAILABLE"))
         else:
             self.variable_dropdown.setCurrentIndex(0)
             first_var = variables[0]
@@ -367,12 +410,21 @@ class MFPropertiesWidget(BaseWidgetView):
         print(f"DEBUG: _on_mf_type_changed called - row={row}, new_type={new_type}")
         print(f"DEBUG: selected_variable={self.view_model.selected_variable}")
 
-        self._desired_types[row] = new_type
+        type_map = {
+            self.t("TRIANGLE"): "Triangle",
+            self.t("TRAPEZOID"): "Trapezoid",
+            self.t("GAUSS"): "Gauss",
+            self.t("BELL"): "Bell",
+            self.t("CONSTANT"): "Constant",
+            self.t("LINEAR"): "Linear",
+        }
+        actual_type = type_map.get(new_type, new_type)
+        self._desired_types[row] = actual_type
 
         self._updating_type = True
 
         try:
-            success = self.view_model.change_mf_type(self.view_model.selected_variable, row, new_type)
+            success = self.view_model.change_mf_type(self.view_model.selected_variable, row, actual_type)
 
             print(f"DEBUG: change_mf_type returned success={success}")
 

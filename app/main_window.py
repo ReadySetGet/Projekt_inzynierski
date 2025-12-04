@@ -130,7 +130,10 @@ class MainWindow(QMainWindow):
         self.statusBar = QtWidgets.QStatusBar(parent=self)
         self.statusBar.setObjectName("statusbar")
         self.setStatusBar(self.statusBar)
-        self.statusBar.showMessage("Started application")
+        if self.context and self.context.translate_manager:
+            self.statusBar.showMessage(self.context.translate_manager.t("STARTED_APPLICATION"))
+        else:
+            self.statusBar.showMessage("Started application")
 
         # Top menu (fixed height)
         self.upMenuTab = TopMenu(parent=self.central_widget, status_bar=self.statusBar)
@@ -229,9 +232,10 @@ class MainWindow(QMainWindow):
 
     def _handle_import_clicked(self) -> None:
         """Handle importing a FIS model from file."""
-        title = "Import FIS Model"
         if self.context and self.context.translate_manager:
-            title = self.context.translate_manager.t("IMPORT")
+            title = self.context.translate_manager.t("IMPORT_FIS_MODEL")
+        else:
+            title = "Import FIS Model"
 
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self,
@@ -247,19 +251,31 @@ class MainWindow(QMainWindow):
         if success:
             if hasattr(self, "statusBar") and self.statusBar:
                 filename = os.path.basename(file_path)
-                self.statusBar.showMessage(f"Imported model from {filename}", 5000)
+                if self.context and self.context.translate_manager:
+                    msg = f"{self.context.translate_manager.t('IMPORTED_MODEL_FROM')} {filename}"
+                    self.statusBar.showMessage(msg, 5000)
+                else:
+                    self.statusBar.showMessage(f"Imported model from {filename}", 5000)
         else:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Import Failed",
-                "The selected file could not be imported.",
-            )
+            if self.context and self.context.translate_manager:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    self.context.translate_manager.t("IMPORT_FAILED"),
+                    self.context.translate_manager.t("IMPORT_FAILED_MESSAGE"),
+                )
+            else:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    "Import Failed",
+                    "The selected file could not be imported.",
+                )
 
     def _handle_export_clicked(self) -> None:
         """Handle exporting the current FIS model to file."""
-        title = "Export FIS Model"
         if self.context and self.context.translate_manager:
-            title = self.context.translate_manager.t("EXPORT")
+            title = self.context.translate_manager.t("EXPORT_FIS_MODEL")
+        else:
+            title = "Export FIS Model"
 
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self,
@@ -278,13 +294,24 @@ class MainWindow(QMainWindow):
         if success:
             if hasattr(self, "statusBar") and self.statusBar:
                 filename = os.path.basename(file_path)
-                self.statusBar.showMessage(f"Exported model to {filename}", 5000)
+                if self.context and self.context.translate_manager:
+                    msg = f"{self.context.translate_manager.t('EXPORTED_MODEL_TO')} {filename}"
+                    self.statusBar.showMessage(msg, 5000)
+                else:
+                    self.statusBar.showMessage(f"Exported model to {filename}", 5000)
         else:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Export Failed",
-                "The model could not be exported to the selected file.",
-            )
+            if self.context and self.context.translate_manager:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    self.context.translate_manager.t("EXPORT_FAILED"),
+                    self.context.translate_manager.t("EXPORT_FAILED_MESSAGE"),
+                )
+            else:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    "Export Failed",
+                    "The model could not be exported to the selected file.",
+                )
 
     def _register_shortcuts(self) -> None:
         """Register keyboard shortcuts."""

@@ -198,7 +198,10 @@ class FisTabView(BaseTabView):
         """
         system_type = system_info.get("type", "mamdani")
         system_type_capitalized = system_type.capitalize()
-        self.box_system_label.setText(f"{system_type_capitalized}\nType 1")
+        if system_type_capitalized == "Mamdani":
+            self.box_system_label.setText(self.t("MAMDANI_TYPE_1"))
+        else:
+            self.box_system_label.setText(f"{system_type_capitalized}\n{self.t('TYPE')} 1")
 
     def _redraw_all_plots(self):
         """Redraw all input and output plots."""
@@ -314,10 +317,9 @@ class FisTabView(BaseTabView):
 
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
-        _translate = QtCore.QCoreApplication.translate
-        self.box_system_label.setText(_translate("Main Window", "Mamdani\nType 1"))
-        self.system_label.setText(_translate("MainWindow", "System:"))
-        self.name_label.setText(_translate("MainWindow", "FIS System"))
+        self.box_system_label.setText(self.t("MAMDANI_TYPE_1"))
+        self.system_label.setText(self.t("SYSTEM"))
+        self.name_label.setText(self.t("FIS_SYSTEM"))
 
     def _plot_graphs(self, position_y, position_x, data):
         """Plot all the input or output data as graphs and label them.
@@ -357,7 +359,7 @@ class FisTabView(BaseTabView):
         name_label.setGeometry(QtCore.QRect(position_x, position_y + 140, 140, 20))
         name_label.setStyleSheet("border: 0px")
         name_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        name_label.setText(f"{data.GetName()} ({len(data.GetMfs())} MFs)")
+        name_label.setText(f"{data.GetName()} ({len(data.GetMfs())} {self.t('MFS')})")
         self.labels.append(name_label)
 
         in_out_plot.show()

@@ -53,7 +53,7 @@ class TopMenu(BaseTabView):
         main_layout.setSpacing(10)
 
         # Left section - File management buttons
-        files_group = QtWidgets.QGroupBox("File Management")
+        files_group = QtWidgets.QGroupBox(self.t("FILE_MANAGEMENT"))
         files_layout = QtWidgets.QVBoxLayout(files_group)
         files_layout.setContentsMargins(5, 5, 5, 5)
 
@@ -76,7 +76,7 @@ class TopMenu(BaseTabView):
         main_layout.addWidget(files_group)
 
         # Center section - Input/Output management
-        io_group = QtWidgets.QGroupBox("Input/Output Management")
+        io_group = QtWidgets.QGroupBox(self.t("INPUT_OUTPUT_MANAGEMENT"))
         io_layout = QtWidgets.QVBoxLayout(io_group)
         io_layout.setContentsMargins(5, 5, 5, 5)
 
@@ -107,7 +107,7 @@ class TopMenu(BaseTabView):
         main_layout.addWidget(io_group)
 
         # Center-right section - Conversion and surface
-        control_group = QtWidgets.QGroupBox("Controls")
+        control_group = QtWidgets.QGroupBox(self.t("CONTROLS"))
         control_layout = QtWidgets.QVBoxLayout(control_group)
         control_layout.setContentsMargins(5, 5, 5, 5)
 
@@ -140,7 +140,7 @@ class TopMenu(BaseTabView):
         main_layout.addWidget(control_group)
 
         # Right section - Help and Settings
-        help_group = QtWidgets.QGroupBox("Help & Settings")
+        help_group = QtWidgets.QGroupBox(self.t("HELP_SETTINGS"))
         help_layout = QtWidgets.QVBoxLayout(help_group)
         help_layout.setContentsMargins(5, 5, 5, 5)
 
@@ -183,7 +183,7 @@ class TopMenu(BaseTabView):
         Only one such window can exist at any given time.
         """
         if self.status_bar:
-            self.status_bar.showMessage("Last action: Opened area plot window.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_OPENED_AREA_PLOT"))
         if self.w is None:
             self.w = AreaPlot()
         self.w.show()
@@ -194,34 +194,34 @@ class TopMenu(BaseTabView):
         Only one such window can exist at any given time.
         """
         if self.status_bar:
-            self.status_bar.showMessage("Last action: Opened settings window.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_OPENED_SETTINGS"))
         if self.s is None:
             self.s = SettingsView()
         self.s.show()
 
     def _add_input_button_clicked(self):
         if self.status_bar:
-            self.status_bar.showMessage("Last action: Add input clicked.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_ADD_INPUT"))
         self.view_model.add_input()
 
     def _del_input_button_clicked(self):
         if self.status_bar:
-            self.status_bar.showMessage("Last action: Delete input clicked.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_DELETE_INPUT"))
         self.view_model.delete_input()
 
     def _add_output_button_clicked(self):
         if self.status_bar:
-            self.status_bar.showMessage("Last action: Add output clicked.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_ADD_OUTPUT"))
         self.view_model.add_output()
 
     def _del_output_button_clicked(self):
         if self.status_bar:
-            self.status_bar.showMessage("Last action: Delete output clicked.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_DELETE_OUTPUT"))
         self.view_model.delete_output()
 
     def _help_button_clicked(self):
         if self.status_bar:
-            self.status_bar.showMessage("Last action: Help clicked.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_HELP"))
         if hasattr(self, "help_clicked"):
             self.help_clicked.emit()
 
@@ -235,12 +235,10 @@ class TopMenu(BaseTabView):
             self._update_system_type_from_model()
             self._update_conversion_button_text()
             if self.status_bar:
-                self.status_bar.showMessage(
-                    f"Last action: Conversion successful. System type: {self.system_type}", 5000
-                )
+                self.status_bar.showMessage(f"{self.t('LAST_ACTION_CONVERSION_SUCCESS')} {self.system_type}", 5000)
         else:
             if self.status_bar:
-                self.status_bar.showMessage("Last action: Conversion failed", 5000)
+                self.status_bar.showMessage(self.t("LAST_ACTION_CONVERSION_FAILED"), 5000)
 
         if hasattr(self, "conversion_clicked"):
             self.conversion_clicked.emit()
@@ -275,7 +273,7 @@ class TopMenu(BaseTabView):
         """Handle interpolation spinbox value change."""
         self.view_model.set_interpolation_points(value)
         if self.status_bar:
-            self.status_bar.showMessage(f"Interpolation points set to {value}", 2000)
+            self.status_bar.showMessage(f"{self.t('INTERPOLATION_POINTS_SET_TO')} {value}", 2000)
 
     def _update_interpolation_spinbox(self):
         """Update interpolation spinbox value from model."""
@@ -287,17 +285,17 @@ class TopMenu(BaseTabView):
 
     def _new_button_clicked(self):
         if self.status_bar:
-            self.status_bar.showMessage("Last action: New clicked.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_NEW"))
         if hasattr(self, "new_clicked"):
             self.new_clicked.emit()
 
     def _export_button_clicked(self):
         if self.status_bar:
-            self.status_bar.showMessage("Last action: Export clicked.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_EXPORT"))
         self.export_clicked.emit()
 
     def _import_button_clicked(self):
         if self.status_bar:
-            self.status_bar.showMessage("Last action: Import clicked.")
+            self.status_bar.showMessage(self.t("LAST_ACTION_IMPORT"))
         if hasattr(self, "import_clicked"):
             self.import_clicked.emit()
