@@ -14,8 +14,10 @@ from PyQt6 import QtCore, QtWidgets
 from app.view_models.central_tab_view_model import CentralTabViewModel
 from app.views.base_tab_view import BaseTabView
 from app.views.bell_plot import BellPlot
+from app.views.constant_plot import ConstantPlot
 from app.views.fis_tab_view import FisTabView
 from app.views.gauss_plot import GaussPlot
+from app.views.linear_plot import LinearPlot
 from app.views.rule_interference_view import RuleInterferenceTabWidget
 from app.views.trapezoid_plot import TrapezoidPlot
 from app.views.triangle_plot import TrianglePlot
@@ -93,6 +95,15 @@ class CentralTabWidget(BaseTabView):
         # the membership functions.
         self.mf_plot_graph = pg.PlotWidget()
         self.mf_plot_graph.setXRange(0, 100)
+        self.mf_plot_graph.setYRange(0, 1)
+        self.mf_plot_graph.enableAutoRange(axis="y", enable=False)
+
+        view_box = self.mf_plot_graph.getViewBox()
+        if view_box:
+            view_box.setMouseEnabled(x=False, y=False)
+            view_box.setLimits(minYRange=1.0, maxYRange=1.0)
+
+        self.mf_plot_graph.showButtons()
 
         # Plots will be created dynamically based on selected variable's MFs
         # Placeholder plots removed - will be loaded from fuzzy service
@@ -403,6 +414,7 @@ class CentralTabWidget(BaseTabView):
         var_range = variable_data.get("range", [0, 100])
 
         self.mf_plot_graph.setXRange(var_range[0], var_range[1])
+        self.mf_plot_graph.setYRange(0, 1)
 
         var_type_label = self.t("INPUT") if variable_type == "input" else self.t("OUTPUT")
         self.mf_plot_graph.setLabel("bottom", f"{var_type_label} {self.t('VARIABLE')}: {variable_name}", color="black")
@@ -421,6 +433,15 @@ class CentralTabWidget(BaseTabView):
 
         for i, mf in enumerate(mfs):
             mf_type = mf.get("type", "trimf")
+            type_mapping = {
+                "trojkatna": "trimf",
+                "trapezoidalna": "trapmf",
+                "gaussowska": "gaussmf",
+                "dzwonowa": "gbellmf",
+                "stala": "constant",
+                "liniowa": "linear",
+            }
+            mf_type = type_mapping.get(mf_type, mf_type)
             mf_name = mf.get("name", f"MF{i}")
             mf_params = mf.get("parameters", [])
             color = colors[i % len(colors)]
@@ -526,6 +547,56 @@ class CentralTabWidget(BaseTabView):
                 self._connect_plot_to_fuzzy_service(plot, mf_index, "gbellmf")
                 return plot
 
+            elif mf_type == "constant":
+                fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+                interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
+                x_data = np.linspace(var_range[0], var_range[1], interpolation_points)
+
+                if isinstance(mf_params, (int, float)):
+                    constant_value = float(mf_params)
+                elif isinstance(mf_params, (list, tuple)) and len(mf_params) > 0:
+                    constant_value = float(mf_params[0])
+                else:
+                    constant_value = 0.5
+
+                constant_value = np.clip(constant_value, 0.0, 1.0)
+                y_data = np.full_like(x_data, constant_value)
+
+                plot = ConstantPlot(
+                    plot_widget=self.mf_plot_graph,
+                    x_data=x_data,
+                    y_data=y_data,
+                    constant_value=constant_value,
+                    color=color,
+                )
+                self._connect_plot_to_fuzzy_service(plot, mf_index, "constant")
+                return plot
+
+            elif mf_type == "linear":
+                fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+                interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
+                x_data = np.linspace(var_range[0], var_range[1], interpolation_points)
+
+                if isinstance(mf_params, (list, tuple)) and len(mf_params) > 0:
+                    parameters = [float(p) for p in mf_params]
+                    constant_term = parameters[-1] if len(parameters) > 0 else 0.5
+                else:
+                    parameters = [0.5]
+                    constant_term = 0.5
+
+                constant_term = np.clip(constant_term, 0.0, 1.0)
+                y_data = np.full_like(x_data, constant_term)
+
+                plot = LinearPlot(
+                    plot_widget=self.mf_plot_graph,
+                    x_data=x_data,
+                    y_data=y_data,
+                    parameters=parameters,
+                    color=color,
+                )
+                self._connect_plot_to_fuzzy_service(plot, mf_index, "linear")
+                return plot
+
         except Exception as e:
             print(f"Error creating MF plot: {e}")
             return None
@@ -612,6 +683,16 @@ class CentralTabWidget(BaseTabView):
                 plot.position_anchor.sigPositionChangeFinished.connect(
                     lambda: self._on_bell_anchor_changed(plot, mf_index)
                 )
+        elif mf_type == "constant":
+            if hasattr(plot, "value_anchor"):
+                plot.value_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_constant_anchor_changed(plot, mf_index)
+                )
+        elif mf_type == "linear":
+            if hasattr(plot, "value_anchor"):
+                plot.value_anchor.sigPositionChangeFinished.connect(
+                    lambda: self._on_linear_anchor_changed(plot, mf_index)
+                )
 
     def _on_triangle_anchor_changed(self, plot, mf_index):
         """Handle triangle anchor position changes and update fuzzy service."""
@@ -675,6 +756,25 @@ class CentralTabWidget(BaseTabView):
             c = max(var_range[0], min(var_range[1], round(float(plot.c), 2)))
 
             new_params = [a, b, c]
+            self._update_mf_parameters(mf_index, new_params)
+
+    def _on_constant_anchor_changed(self, plot, mf_index):
+        """Handle constant anchor position changes and update fuzzy service."""
+        if hasattr(plot, "constant_value"):
+            constant_value = max(0.0, min(1.0, round(float(plot.constant_value), 2)))
+            new_params = [constant_value]
+            self._update_mf_parameters(mf_index, new_params)
+
+    def _on_linear_anchor_changed(self, plot, mf_index):
+        """Handle linear anchor position changes and update fuzzy service."""
+        if hasattr(plot, "parameters") and len(plot.parameters) > 0:
+            var_range = self._get_variable_range_for_mf(mf_index)
+            if not var_range:
+                return
+
+            constant_term = max(0.0, min(1.0, round(float(plot.parameters[-1]), 2)))
+            new_params = plot.parameters.copy()
+            new_params[-1] = constant_term
             self._update_mf_parameters(mf_index, new_params)
 
     def _get_variable_range_for_mf(self, mf_index):

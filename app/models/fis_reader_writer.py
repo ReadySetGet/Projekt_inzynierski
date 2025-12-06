@@ -51,10 +51,28 @@ class FISReaderWriter:
 
         try:
             new_fis = readfis(path)
-        except ValueError:
+        except (ValueError, AssertionError, IndexError, KeyError) as e:
+            import traceback
+
+            print(f"Error reading FIS file {path}: {e}")
+            print(f"Traceback: {traceback.format_exc()}")
+            return -3
+        except Exception as e:
+            import traceback
+
+            print(f"Unexpected error reading FIS file {path}: {e}")
+            print(f"Traceback: {traceback.format_exc()}")
             return -3
 
-        self.model = FISModel(fis=new_fis)
+        if new_fis is None:
+            return -3
+
+        try:
+            self.model = FISModel(fis=new_fis)
+        except Exception as e:
+            print(f"Error creating FIS model from file {path}: {e}")
+            return -3
+
         return 1
 
     def write_fis(self, path: str) -> int:
