@@ -21,5 +21,5 @@ class ReturnSystemNameTestCase(unittest.TestCase):
         del self.model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

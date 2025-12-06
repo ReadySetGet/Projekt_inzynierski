@@ -17,36 +17,27 @@ class ReturnAllInputVariablesTestCase(unittest.TestCase):
 
     def test_1_return_all_mfs_of_input_variable(self) -> None:
         input_mfs = self.model.return_all_mfs_of_io_variable("input0", "input")
-        self.assertEqual(len(input_mfs), 2,
-                         "Not all mfs returned")
+        self.assertEqual(len(input_mfs), 2, "Not all mfs returned")
 
     def test_2_return_all_mfs_of_output_variable(self) -> None:
-        output_mfs = self.model.return_all_mfs_of_io_variable("output0",
-                                                              "output")
-        self.assertEqual(len(output_mfs), 2,
-                         "Not all mfs returned")
+        output_mfs = self.model.return_all_mfs_of_io_variable("output0", "output")
+        self.assertEqual(len(output_mfs), 2, "Not all mfs returned")
 
     def test_3_no_mfs(self) -> None:
-        input_mfs = self.model.return_all_mfs_of_io_variable("input1",
-                                                             "input")
-        self.assertEqual(len(input_mfs), 0,
-                         "Nonexistent mfs returned")
+        input_mfs = self.model.return_all_mfs_of_io_variable("input1", "input")
+        self.assertEqual(len(input_mfs), 0, "Nonexistent mfs returned")
 
     def test_4_nonexistent_variable(self) -> None:
-        input_mfs = self.model.return_all_mfs_of_io_variable("input2",
-                                                             "input")
-        self.assertEqual(input_mfs, None,
-                         "Nonexistent variable found")
+        input_mfs = self.model.return_all_mfs_of_io_variable("input2", "input")
+        self.assertEqual(input_mfs, None, "Nonexistent variable found")
 
     def test_5_nonexistent_variable_type(self) -> None:
-        input_mfs = self.model.return_all_mfs_of_io_variable("input0",
-                                                             "tak")
-        self.assertEqual(input_mfs, None,
-                         "Nonexistent variable type found")
+        input_mfs = self.model.return_all_mfs_of_io_variable("input0", "tak")
+        self.assertEqual(input_mfs, None, "Nonexistent variable type found")
 
     def tearDown(self) -> None:
         del self.model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -27,12 +27,11 @@ class ReturnAllRulesTestCase(unittest.TestCase):
             result = self.model.add_rule([1, 1], [1, 1, 1, 1])
             self.assertEqual(result, 1, "Issues with rule adding")
         rules = self.model.return_all_rules()
-        self.assertEqual(len(rules), self.nr_rules,
-                         "Wrong length of rule list")
+        self.assertEqual(len(rules), self.nr_rules, "Wrong length of rule list")
 
     def tearDown(self) -> None:
         del self.model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
