@@ -43,9 +43,9 @@ class BrowserFrameWidget(BaseFrameView):
         view_model.refresh_browser()
 
     def _setup_ui(self):
+        """Set up all the GUI sub elements."""
         self.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-        self.setObjectName("browserFrame")
 
         # Create main layout
         main_layout = QtWidgets.QVBoxLayout(self)
