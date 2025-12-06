@@ -246,10 +246,11 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
         result = self.reader.read_fis("./resources/model.fis")
         self.assertEqual(result, 1, "Wrong return value")
         self.assertNotEqual(self.reader.model, None, "Model not imported")
+        self.new_model = self.reader.model
 
         # Checking correct model data fetching
         fis_type = self.new_model.get_current_inference_type()
-        self.assertEqual(fis_type, fl.sugfis, "Wrong type returned")
+        self.assertEqual(fis_type, fl.mamfis, "Wrong type returned")
 
         input_vars = self.new_model.return_all_input_variables()
         self.assertEqual(len(input_vars), 2, "Not all inputs returned")
@@ -268,10 +269,10 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
         self.assertEqual(len(input_mfs), 2, "Not all mfs returned")
 
         rules = self.new_model.return_all_rules()
-        self.assertEqual(len(rules), 4, "Wrong length of rule list")
+        self.assertEqual(len(rules), 2, "Wrong length of rule list")
 
         points = self.new_model.get_interpolation_points()
-        self.assertEqual(points, 50,
+        self.assertEqual(points, 100,
                          "Wrong number of interpolation points received")
 
         name = self.new_model.return_system_name()
