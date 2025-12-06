@@ -1,5 +1,6 @@
 import pytest
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtCore, QtWidgets
+
 from app.views.browser_frame_view import BrowserFrameWidget
 
 
@@ -23,7 +24,7 @@ def test_widget_initial_state(tested_widget):
 
     assert isinstance(tested_widget, QtWidgets.QFrame)
 
-    clear_in = tested_widget.findChild(QtWidgets.QPushButton,"del_inputs_button")
+    clear_in = tested_widget.findChild(QtWidgets.QPushButton, "del_inputs_button")
     assert isinstance(clear_in, QtWidgets.QPushButton)
     assert clear_in.text() == "Clear Inputs"
 
@@ -40,4 +41,3 @@ def test_clear_inputs_signal(qtbot, tested_widget):
 def test_clear_outputs_signal(qtbot, tested_widget):
     with qtbot.waitSignal(tested_widget.del_outputs, timeout=1000, raising=True):
         qtbot.mouseClick(tested_widget.delete_all_outputs_button, QtCore.Qt.MouseButton.LeftButton)
-
