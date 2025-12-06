@@ -88,16 +88,20 @@ class BellPlot:
         """Change the width of the plot when interacting with left A anchor."""
         new_pos = self.left_a_anchor.pos()
         new_a = abs(new_pos.x() - self.c)
-        if new_a > 0.1:
+        if new_a > 0.1 and 0 <= new_pos.x() <= 100:
             self.a = new_a
+        else:
+            self.left_a_anchor.setPos(self.c - self.a, 0.5)
         self._update_plot()
 
     def _interaction_right_a(self):
         """Change the width of the plot when interacting with right A anchor."""
         new_pos = self.right_a_anchor.pos()
         new_a = abs(new_pos.x() - self.c)
-        if new_a > 0.1:
+        if new_a > 0.1 and 0 <= new_pos.x() <= 100:
             self.a = new_a
+        else:
+            self.right_a_anchor.setPos(self.c + self.a, 0.5)
         self._update_plot()
 
     def _update_b(self, item):

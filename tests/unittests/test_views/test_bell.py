@@ -73,7 +73,7 @@ def test_right_a_interaction_valid(bell_plot_instance, qtbot):
     new_pos = (bell_plot_instance.c + 20, 0.5)
 
     bell_plot_instance.right_a_anchor.setPos(*new_pos)
-    bell_plot_instance.right_a_anchor.sigPositionChanged.emit(bell_plot_instance.left_a_anchor)
+    bell_plot_instance.right_a_anchor.sigPositionChanged.emit(bell_plot_instance.right_a_anchor)
 
     assert bell_plot_instance.a == 20.0
 
@@ -82,8 +82,8 @@ def test_right_a_interaction_invalid(bell_plot_instance, qtbot):
     initial_a = bell_plot_instance.a
     new_pos = (200, 0.5)
 
-    bell_plot_instance.left_a_anchor.setPos(*new_pos)
-    bell_plot_instance.left_a_anchor.sigPositionChanged.emit(bell_plot_instance.left_a_anchor)
+    bell_plot_instance.right_a_anchor.setPos(*new_pos)
+    bell_plot_instance.right_a_anchor.sigPositionChanged.emit(bell_plot_instance.right_a_anchor)
 
     assert bell_plot_instance.a == initial_a
 

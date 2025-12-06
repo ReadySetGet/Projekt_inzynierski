@@ -83,7 +83,7 @@ class EditorTabWidget(BaseTabView):
         )
         self.mf_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectItems)
 
-        self.mf_table.setHorizontalHeaderLabels(["Name", "Type", "Parameters"])
+        self.mf_table.setHorizontalHeaderLabels([self.t("NAME"), self.t("TYPE"), self.t("PARAMETERS")])
         self.mf_table.setRowCount(0)
         self.mf_name_edit.editingFinished.connect(self._on_variable_name_changed)
         self.mf_range_edit.editingFinished.connect(self._on_variable_range_changed)
@@ -177,12 +177,12 @@ class EditorTabWidget(BaseTabView):
     def set_name_table_text(self):
         """Update the MF name in the table."""
         self.mf_table.item(self.row, 0).setText(self.mf_name_edit.text())
-        self.status_bar.showMessage("Last action: Edited MF name")
+        self.status_bar.showMessage(self.t("LAST_ACTION_EDITED_MF_NAME"))
 
     def set_range_table_text(self):
         """Update the MF range in the table."""
         self.mf_table.item(self.row, 2).setText(self.mf_range_edit.text())
-        self.status_bar.showMessage("Last action: Edited MF range")
+        self.status_bar.showMessage(self.t("LAST_ACTION_EDITED_MF_RANGE"))
 
     def update_property_editor(self):
         """Update the Property Editor based on the currently selected variable."""
@@ -238,7 +238,7 @@ class EditorTabWidget(BaseTabView):
                 self.mf_table.setItem(i, 0, QtWidgets.QTableWidgetItem(mf.get("name", "")))
 
                 type_dropdown = QtWidgets.QComboBox()
-                type_dropdown.addItems(["Gauss", "Trapezoid", "Triangle", "Bell"])
+                type_dropdown.addItems([self.t("GAUSS"), self.t("TRAPEZOID"), self.t("TRIANGLE"), self.t("BELL")])
 
                 fuzzy_type = mf.get("type", "trimf")
                 english_type = type_mapping.get(fuzzy_type, "Triangle")
@@ -286,11 +286,11 @@ class EditorTabWidget(BaseTabView):
             if success:
                 self.view_model.notify_data_changed.emit()
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"Variable name changed to: {new_name}")
+                    self.status_bar.showMessage(f"{self.t('VARIABLE_NAME_CHANGED_TO')} {new_name}")
             else:
                 self.mf_name_edit.setText(old_name)
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change variable name")
+                    self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_VARIABLE_NAME"))
 
     def _on_variable_range_changed(self):
         """Handle variable range change."""
@@ -331,14 +331,14 @@ class EditorTabWidget(BaseTabView):
             if success:
                 self.view_model.notify_data_changed.emit()
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"Variable range changed to: {new_range}")
+                    self.status_bar.showMessage(f"{self.t('VARIABLE_RANGE_CHANGED_TO')} {new_range}")
             else:
                 var_data = selected_var_info.get("data", {})
                 old_range = var_data.get("range", [0, 100])
                 range_str = f"[{old_range[0]} {old_range[1]}]"
                 self.mf_range_edit.setText(range_str)
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change variable range")
+                    self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_VARIABLE_RANGE"))
 
         except (ValueError, IndexError) as e:
             var_data = selected_var_info.get("data", {})
@@ -346,7 +346,7 @@ class EditorTabWidget(BaseTabView):
             range_str = f"[{old_range[0]} {old_range[1]}]"
             self.mf_range_edit.setText(range_str)
             if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage(f"Invalid range format: {e}")
+                self.status_bar.showMessage(f"{self.t('INVALID_RANGE_FORMAT')}: {e}")
 
     def _on_mf_table_item_changed(self, item):
         """Handle MF table item changes (name and parameters)."""
@@ -384,7 +384,7 @@ class EditorTabWidget(BaseTabView):
                 # Also trigger a global refresh to update plots
                 self.view_model.notify_data_changed.emit()
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"MF name changed to: {new_name.strip()}")
+                    self.status_bar.showMessage(f"{self.t('MF_NAME_CHANGED_TO')} {new_name.strip()}")
             else:
                 var_data = selected_var_info.get("data", {})
                 mfs = var_data.get("membership_functions", [])
@@ -392,7 +392,7 @@ class EditorTabWidget(BaseTabView):
                     old_name = mfs[mf_index].get("name", "")
                     self.mf_table.setItem(mf_index, 0, QtWidgets.QTableWidgetItem(old_name))
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change MF name")
+                    self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_MF_NAME"))
         finally:
             self._updating_mf = False
 
@@ -428,7 +428,7 @@ class EditorTabWidget(BaseTabView):
                         params_str = str(old_params).replace(" ", "")
                         self.mf_table.setItem(mf_index, 2, QtWidgets.QTableWidgetItem(params_str))
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"Invalid parameters format: {e}")
+                    self.status_bar.showMessage(f"{self.t('INVALID_PARAMETERS_FORMAT')}: {e}")
                 return
 
             selected_var_info = self.view_model.get_selected_variable_info()
@@ -447,7 +447,7 @@ class EditorTabWidget(BaseTabView):
                 # Also trigger a global refresh to update plots
                 self.view_model.notify_data_changed.emit()
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"MF parameters updated: {new_params}")
+                    self.status_bar.showMessage(f"{self.t('MF_PARAMETERS_UPDATED')}: {new_params}")
             else:
                 var_data = selected_var_info.get("data", {})
                 mfs = var_data.get("membership_functions", [])
@@ -456,7 +456,7 @@ class EditorTabWidget(BaseTabView):
                     params_str = str(old_params).replace(" ", "")
                     self.mf_table.setItem(mf_index, 2, QtWidgets.QTableWidgetItem(params_str))
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change MF parameters")
+                    self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_MF_PARAMETERS"))
         finally:
             self._updating_mf = False
 
@@ -530,7 +530,7 @@ class EditorTabWidget(BaseTabView):
                 self.view_model.notify_data_changed.emit()
 
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"MF type changed to: {new_type}")
+                    self.status_bar.showMessage(f"{self.t('MF_TYPE_CHANGED_TO')} {new_type}")
 
                 self._updating_mf = True
             else:
@@ -544,7 +544,7 @@ class EditorTabWidget(BaseTabView):
                     if dropdown:
                         dropdown.setCurrentText(old_english_type)
                 if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change MF type")
+                    self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_MF_TYPE"))
         finally:
             self._updating_mf = False
 
@@ -554,7 +554,7 @@ class EditorTabWidget(BaseTabView):
 
         if not selected_var_info:
             if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("No variable selected")
+                self.status_bar.showMessage(self.t("NO_VARIABLE_SELECTED"))
             return
 
         var_name = selected_var_info.get("name")
@@ -578,10 +578,10 @@ class EditorTabWidget(BaseTabView):
             self.update_property_editor()
             self.view_model.notify_data_changed.emit()
             if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage(f"Added MF: {new_mf_name}")
+                self.status_bar.showMessage(f"{self.t('ADDED_MF')}: {new_mf_name}")
         else:
             if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("Failed to add MF")
+                self.status_bar.showMessage(self.t("FAILED_TO_ADD_MF"))
 
     def _on_remove_mf_clicked(self):
         """Handle remove MF button click."""
@@ -589,13 +589,13 @@ class EditorTabWidget(BaseTabView):
 
         if not selected_var_info:
             if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("No variable selected")
+                self.status_bar.showMessage(self.t("NO_VARIABLE_SELECTED"))
             return
 
         current_row = self.mf_table.currentRow()
         if current_row < 0:
             if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("No MF selected")
+                self.status_bar.showMessage(self.t("NO_MF_SELECTED"))
             return
 
         var_name = selected_var_info.get("name")
@@ -612,7 +612,7 @@ class EditorTabWidget(BaseTabView):
             self.update_property_editor()
             self.view_model.notify_data_changed.emit()
             if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage(f"Deleted MF: {mf_name}")
+                self.status_bar.showMessage(f"{self.t('DELETED_MF')}: {mf_name}")
         else:
             if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("Failed to delete MF")
+                self.status_bar.showMessage(self.t("FAILED_TO_DELETE_MF"))

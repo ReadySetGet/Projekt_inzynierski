@@ -79,11 +79,10 @@ def write_rules_section(fid: TextIO, fis) -> None:
         weight = rule.Weight
         connection = rule.Connection
         is_mf_values = rule.IsMFInput + rule.IsMFOutput
-        rule_name = rule.Name
 
         if num_inputs > 0:
             if is_mf_values[0] == 0:
-                antecedent[0] = (-1)*antecedent[0]
+                antecedent[0] = (-1) * antecedent[0]
             fid.write(f"{antecedent[0]}")
             for index in range(1, num_inputs):
                 if is_mf_values[index] == 0:

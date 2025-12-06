@@ -203,7 +203,7 @@ class AreaPlotViewModel(BaseViewModel):
                 center = (var_min + var_max) / 2.0
             return center
         elif mf_type == "gaussmf" and len(params) >= 2:
-            center = float(params[0])
+            center = float(params[1])
             if center >= var_min and center <= var_max:
                 return center
             elif center >= 0.0 and center <= 1.0 and range_size > 0:

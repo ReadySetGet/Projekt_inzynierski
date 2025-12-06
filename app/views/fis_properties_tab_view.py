@@ -334,30 +334,36 @@ class FisPropertiesTabView(BaseWidgetView):
         """Update the inputs list."""
         self.inputs_list.clear()
         for input_var in self.view_model.inputs:
-            item_text = f"{input_var['name']} (Range: {input_var['range']}, MFs: {input_var['mf_count']})"
+            item_text = (
+                f"{input_var['name']} ({self.t('RANGE')}: {input_var['range']}, {self.t('MFS')}: "
+                f"{input_var['mf_count']})"
+            )
             self.inputs_list.addItem(item_text)
 
     def _update_outputs_list(self):
         """Update the outputs list."""
         self.outputs_list.clear()
         for output_var in self.view_model.outputs:
-            item_text = f"{output_var['name']} (Range: {output_var['range']}, MFs: {output_var['mf_count']})"
+            item_text = (
+                f"{output_var['name']} ({self.t('RANGE')}: {output_var['range']}, {self.t('MFS')}: "
+                f"{output_var['mf_count']})"
+            )
             self.outputs_list.addItem(item_text)
 
     def _update_variable_info(self, variable_name, variable_type):
         """Update the variable info text."""
         info = self.view_model.get_variable_info(variable_name, variable_type)
         if info:
-            info_text = f"Name: {info['name']}\n"
-            info_text += f"Type: {variable_type}\n"
-            info_text += f"Range: {info['range']}\n"
-            info_text += f"Membership Functions: {info['mf_count']}\n\n"
+            info_text = f"{self.t('NAME')}: {info['name']}\n"
+            info_text += f"{self.t('TYPE')}: {variable_type}\n"
+            info_text += f"{self.t('RANGE')}: {info['range']}\n"
+            info_text += f"{self.t('MEMBERSHIP_FUNCTIONS')}: {info['mf_count']}\n\n"
 
             if info["membership_functions"]:
-                info_text += "Membership Functions:\n"
+                info_text += f"{self.t('MEMBERSHIP_FUNCTIONS')}: \n"
                 for mf in info["membership_functions"]:
                     info_text += f" - {mf['name']} ({mf['type']}): {mf['parameters']}\n"
 
             self.variable_info_text.setText(info_text)
         else:
-            self.variable_info_text.setText("No variable selected")
+            self.variable_info_text.setText(self.t("NO_VARIABLE_SELECTED"))
