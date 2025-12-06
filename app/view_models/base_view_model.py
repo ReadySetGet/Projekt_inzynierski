@@ -83,7 +83,8 @@ class BaseViewModel(QObject):
 
     def t(self, key: str) -> str:
         """Get the translation for a key."""
-        return self.translate_manager.t(key)
+        result = self.translate_manager.t(key)
+        return str(result) if result is not None else key
 
     def load_stylesheet_with_theme(self, qss_path: str) -> str:
         """Load stylesheet with current theme applied."""

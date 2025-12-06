@@ -49,6 +49,8 @@ class TranslateManager(QObject):
             bool: True if loaded successfully, False otherwise.
         """
         lang_dir = os.path.join(self.locales_path, language_code)
+        if not os.path.isdir(lang_dir):
+            return False
         json_files = [f for f in os.listdir(lang_dir) if f.endswith(".json")]
         if not json_files:
             return False

@@ -43,9 +43,9 @@ class BrowserFrameWidget(BaseFrameView):
         view_model.refresh_browser()
 
     def _setup_ui(self):
+        """Set up all the GUI sub elements."""
         self.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
-        self.setObjectName("browserFrame")
 
         # Create main layout
         main_layout = QtWidgets.QVBoxLayout(self)
@@ -123,7 +123,7 @@ class BrowserFrameWidget(BaseFrameView):
                         self.view_model.select_system_item(name, data)
                     elif category == "design":
                         self.view_model.select_design_item(name, data)
-            self.status_bar.showMessage(f"Last action: selected item {item.text(0)}")
+            self.status_bar.showMessage(f"{self.t('LAST_ACTION_SELECTED_ITEM')} {item.text(0)}")
 
     def clear_inputs(self):
         """Clear all inputs from the tree widget."""

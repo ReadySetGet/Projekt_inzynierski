@@ -155,14 +155,15 @@ class RuleInterferenceTabWidget(BaseTabView):
         self.system_label.setText(self.t("SYSTEM"))
         self.input_values_label.setText(self.t("INPUT_VALUES"))
         self.aggregated_placeholder.setText(self.t("NO_OUTPUT") if hasattr(self, "t") else "No outputs defined.")
-        self.input_values_edit.setPlaceholderText("0.0, 0.0")
+        self.input_values_edit.setPlaceholderText(self.t("INPUT_VALUES_PLACEHOLDER"))
 
     def _update_system_name(self) -> None:
         try:
             system_name = self.view_model.fuzzy_service.get_system_name()
+            system_name = str(system_name) if system_name is not None else None
         except Exception:
-            system_name = self.t("PLACEHOLDER")
-        self.name_label.setText(system_name or self.t("PLACEHOLDER"))
+            system_name = None
+        self.name_label.setText(str(system_name) if system_name else str(self.t("PLACEHOLDER")))
 
     # ------------------------------------------------------------------ #
     # View model connections                                             #
@@ -248,7 +249,7 @@ class RuleInterferenceTabWidget(BaseTabView):
         for idx, label in enumerate(self._input_value_labels):
             if idx < len(inputs_payload):
                 var_info = inputs_payload[idx]
-                var_name = var_info.get("name", f"Input {idx + 1}")
+                var_name = var_info.get("name", f"{self.t('INPUT')} {idx + 1}")
                 value = var_info.get("value")
                 if value is None:
                     label.setText(f"{var_name} = --")
@@ -346,7 +347,7 @@ class RuleInterferenceTabWidget(BaseTabView):
             return
 
         for rule in rules_payload:
-            title_label = QtWidgets.QLabel(rule.get("display", "Rule"))
+            title_label = QtWidgets.QLabel(rule.get("display", self.t("RULE")))
             title_label.setStyleSheet("font-weight: bold;")
             self.rules_list_layout.addWidget(title_label)
 
@@ -454,7 +455,7 @@ class RuleInterferenceTabWidget(BaseTabView):
             label = entry["label"]
             plot = entry["plot"]
 
-            name = output.get("variable_name") or f"Output {idx + 1}"
+            name = output.get("variable_name") or f"{self.t('OUTPUT')} {idx + 1}"
             value = output.get("value")
             if value is not None:
                 label.setText(f"{name} = {format(value, '.2f')}")
@@ -549,7 +550,7 @@ class RuleInterferenceTabWidget(BaseTabView):
                 current_values[idx] = value
 
         if self.view_model.set_input_values(current_values):
-            self._show_status_message("Updated inference inputs via editor.")
+            self._show_status_message(self.t("UPDATED_INFERENCE_INPUTS"))
 
     # ------------------------------------------------------------------ #
     # Utility helpers                                                    #

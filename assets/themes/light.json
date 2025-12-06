@@ -1,0 +1,22 @@
+{
+  "colors": {
+    "primary": "#007bff",
+    "secondary": "#6c757d",
+    "background": "#ffffff",
+    "surface": "#f5f5f5",
+    "text": "#212529",
+    "text-secondary": "#6c757d",
+    "text-disabled": "#adb5bd",
+    "button": "#e9ecef",
+    "button-hover": "#dee2e6",
+    "button-pressed": "#ced4da",
+    "border": "#dee2e6",
+    "input-background": "#ffffff",
+    "selection-background": "#007bff",
+    "selection-text": "#ffffff",
+    "disabled": "#e9ecef",
+    "error": "#dc3545",
+    "success": "#28a745",
+    "warning": "#ffc107"
+  }
+}

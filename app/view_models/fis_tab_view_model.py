@@ -231,8 +231,9 @@ class FisTabViewModel(BaseViewModel):
 
     def get_system_display_name(self) -> str:
         """Get the display name for the system."""
-        system_type = self._system_info.get("type", "Mamdani")
-        return f"{system_type} Type 1"
+        system_type = self._system_info.get("type", "mamdani")
+        system_type_capitalized = system_type.capitalize() if system_type else "Mamdani"
+        return f"{system_type_capitalized} Type 1"
 
     def get_variable_display_name(self, var_data: Dict) -> str:
         """Get display name for a variable."""

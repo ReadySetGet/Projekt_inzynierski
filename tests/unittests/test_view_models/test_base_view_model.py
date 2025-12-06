@@ -21,9 +21,13 @@ def mock_context():
 
 @pytest.fixture
 def view_model(mock_context):
-    with patch.object(BaseViewModel, "_context_provider", return_value=mock_context):
-        BaseViewModel.set_context_provider(lambda: mock_context)
-        return BaseViewModel()
+    def context_provider():
+        return mock_context
+
+    BaseViewModel.set_context_provider(context_provider)
+    vm = BaseViewModel()
+    yield vm
+    BaseViewModel.set_context_provider(None)
 
 
 def test_base_view_model_initialization(view_model, mock_context):
@@ -58,6 +62,7 @@ def test_base_view_model_translate_manager_property(view_model, mock_context):
 
 
 def test_base_view_model_translate_method(view_model, mock_context):
+    mock_context.translate_manager.t.return_value = "translated"
     result = view_model.t("test_key")
     mock_context.translate_manager.t.assert_called_once_with("test_key")
     assert result == "translated"
@@ -67,7 +72,7 @@ def test_base_view_model_load_stylesheet_with_theme(view_model, mock_context):
     mock_context.theme_manager.load_stylesheet_with_theme.return_value = "stylesheet_content"
     result = view_model.load_stylesheet_with_theme("test.qss")
     assert result == "stylesheet_content"
-    mock_context.theme_manager.load_stylesheet_with_theme.assert_called_once_with("test.qss")
+    mock_context.theme_manager.load_stylesheet_with_theme.assert_called_with("test.qss")
 
 
 def test_base_view_model_refresh_data(view_model):

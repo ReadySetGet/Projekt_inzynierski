@@ -79,7 +79,8 @@ class BaseWidgetView(QWidget):
     def t(self, key: str) -> str:
         """Get translation for a key via view model."""
         if self.view_model:
-            return self.view_model.t(key)
+            result = self.view_model.t(key)
+            return str(result) if result is not None else key
         return key
 
     def request_global_update(self) -> None:

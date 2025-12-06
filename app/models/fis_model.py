@@ -479,7 +479,7 @@ class FISModel:
         return 1
 
     def clear_all_rules(self) -> None:
-        """Delete all rules."""
+        """Delete all rules from the system."""
         self._fis.Rules.clear()
 
     def update_rule(self, rule_idx: int, new_rule_is_mf: list[int], new_rule_data: list[int]) -> int:
@@ -823,6 +823,65 @@ class FISModel:
                 self.add_rule(None, potential_rule_ext)
 
         return 1
+
+    def return_all_rules(self) -> list[FisRuleEx]:
+        """Return a list if all available rules."""
+        return self._fis.Rules
+
+    def clear_all_io_variables(self) -> None:
+        """Delete all input/output variables from the system."""
+        self._fis.Inputs.clear()
+        self._fis.Outputs.clear()
+        self.clear_all_rules()
+
+    def return_all_input_variables(self) -> list[fl.fisvar]:
+        """Get all input variables of the system.
+
+        Returns:
+            A list (potentially empty) of all input variables of the system.
+        """
+        return self._fis.Inputs
+
+    def return_all_output_variables(self) -> list[fl.fisvar]:
+        """Get all output variables of the system.
+
+        Returns:
+            A list (potentially empty) of all output variables of the system.
+        """
+        return self._fis.Outputs
+
+    def return_all_mfs_of_io_variable(self, io_variable_name: str, io_variable_type: str) -> list[fl.fismf] | None:
+        """Get all membership functions of an input/output variable.
+
+        Args:
+            io_variable_name (str): name of the input/output variable whose mfs
+                are to be returned
+            io_variable_type (str): whether it is an input or output variable.
+                Accepted values: input, output
+
+        Returns:
+            None, if a variable of the given type with the given name does not
+                exist. A list (potentially empty) of all its membership
+                functions otherwise.
+        """
+        if io_variable_type == "input":
+            for input_variable in self._fis.Inputs:
+                if input_variable.Name == io_variable_name:
+                    return input_variable.MembershipFunctions
+        if io_variable_type == "output":
+            for output_variable in self._fis.Outputs:
+                if output_variable.Name == io_variable_name:
+                    return output_variable.MembershipFunctions
+
+        return None
+
+    def return_system_name(self) -> str:
+        """Return the name of the Fuzzy Inference System used.
+
+        Returns:
+            The name (str) of the system.
+        """
+        return self._fis.Name
 
     def _find_variable(self, io_variable_name: str, input_or_output: str) -> [fl.fisvar, int]:
         io_variable = None

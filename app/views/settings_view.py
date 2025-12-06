@@ -28,7 +28,7 @@ class SettingsView(BaseWidgetView):
 
     def _setup_ui(self):
         self.resize(400, 150)
-        self.setWindowTitle("Settings")
+        self.setWindowTitle(self.t("SETTINGS"))
 
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
