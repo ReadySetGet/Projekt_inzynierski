@@ -42,6 +42,9 @@ CONFIG_PATH = PROJECT_ROOT / "config.ini"
 PYPROJECT_TOML = PROJECT_ROOT / "pyproject.toml"
 REQUIREMENTS_TXT = PROJECT_ROOT / "requirements.txt"
 
+# Projects directory
+PROJECTS_DIR = PROJECT_ROOT / "projects"
+
 
 def local_path(module_file: str, *parts: str) -> Path:
     """Return a path relative to the directory of the given module file.

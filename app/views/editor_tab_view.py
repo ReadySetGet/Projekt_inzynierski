@@ -223,32 +223,53 @@ class EditorTabWidget(BaseTabView):
         try:
             var_data = var_info.get("data") or {}
             mfs = var_data.get("membership_functions", [])
+            var_type = var_info.get("type", "input")
 
             base_text = self.t("NUMBER_OF_MF")
             self.number_of_mf_label.setText(f"{base_text} {len(mfs)}")
             self.mf_table.setRowCount(len(mfs))
-            type_mapping = {
-                "gaussmf": "Gauss",
-                "trapmf": "Trapezoid",
-                "trimf": "Triangle",
-                "gbellmf": "Bell",
-            }
+
+            fis_type = self.view_model.get_fis_type() if self.view_model else "mamdani"
+            is_sugeno_output = fis_type == "sugeno" and var_type == "output"
+
+            if is_sugeno_output:
+                type_mapping = {
+                    "constant": "Constant",
+                    "linear": "Linear",
+                }
+            else:
+                type_mapping = {
+                    "gaussmf": "Gauss",
+                    "trapmf": "Trapezoid",
+                    "trimf": "Triangle",
+                    "gbellmf": "Bell",
+                }
 
             for i, mf in enumerate(mfs):
                 self.mf_table.setItem(i, 0, QtWidgets.QTableWidgetItem(mf.get("name", "")))
 
                 type_dropdown = QtWidgets.QComboBox()
-                type_dropdown.addItems([self.t("GAUSS"), self.t("TRAPEZOID"), self.t("TRIANGLE"), self.t("BELL")])
 
-                fuzzy_type = mf.get("type", "trimf")
-                english_type = type_mapping.get(fuzzy_type, "Triangle")
+                if is_sugeno_output:
+                    type_dropdown.addItems([self.t("LINEAR"), self.t("CONSTANT")])
+                else:
+                    type_dropdown.addItems([self.t("GAUSS"), self.t("TRAPEZOID"), self.t("TRIANGLE"), self.t("BELL")])
 
-                # Block signals while setting initial value
+                fuzzy_type = mf.get("type", "trimf" if not is_sugeno_output else "constant")
+
+                if is_sugeno_output:
+                    sugeno_type_mapping = {
+                        "constant": "Constant",
+                        "linear": "Linear",
+                    }
+                    english_type = sugeno_type_mapping.get(fuzzy_type.lower(), "Constant")
+                else:
+                    english_type = type_mapping.get(fuzzy_type, "Triangle")
+
                 type_dropdown.blockSignals(True)
                 type_dropdown.setCurrentText(english_type)
                 type_dropdown.blockSignals(False)
 
-                # Use currentIndexChanged and capture dropdown reference
                 type_dropdown.currentIndexChanged.connect(
                     lambda index, idx=i, dropdown=type_dropdown: self._on_mf_type_changed(idx, dropdown.currentText())
                 )
@@ -473,15 +494,23 @@ class EditorTabWidget(BaseTabView):
 
             var_name = selected_var_info.get("name")
             var_type = selected_var_info.get("type")
+            fis_type = self.view_model.get_fis_type() if self.view_model else "mamdani"
+            is_sugeno_output = fis_type == "sugeno" and var_type == "output"
 
-            type_mapping = {
-                "Gauss": "gaussowska",
-                "Trapezoid": "trapezoidalna",
-                "Triangle": "trojkatna",
-                "Bell": "dzwonowa",
-            }
+            if is_sugeno_output:
+                type_mapping = {
+                    "Linear": "liniowa",
+                    "Constant": "stala",
+                }
+            else:
+                type_mapping = {
+                    "Gauss": "gaussowska",
+                    "Trapezoid": "trapezoidalna",
+                    "Triangle": "trojkatna",
+                    "Bell": "dzwonowa",
+                }
 
-            fuzzy_type = type_mapping.get(new_type, "trojkatna")
+            fuzzy_type = type_mapping.get(new_type, "trojkatna" if not is_sugeno_output else "stala")
 
             success = self.view_model.fuzzy_service.change_membership_function_type(
                 var_name, mf_index, fuzzy_type, var_type
@@ -493,30 +522,73 @@ class EditorTabWidget(BaseTabView):
                 range_min, range_max = var_range[0], var_range[1]
                 range_span = range_max - range_min
 
-                if new_type == "Triangle":
-                    new_params = [range_min, range_min + 0.5 * range_span, range_max]
-                elif new_type == "Trapezoid":
-                    new_params = [
-                        range_min,
-                        range_min + 0.3 * range_span,
-                        range_min + 0.7 * range_span,
-                        range_max,
-                    ]
-                elif new_type == "Gauss":
-                    new_params = [
-                        0.2 * range_span,
-                        range_min + 0.5 * range_span,
-                    ]  # [sigma, mu]
-                elif new_type == "Bell":
-                    new_params = [
-                        0.2 * range_span,
-                        3,
-                        range_min + 0.5 * range_span,
-                    ]  # [a, b, c]
-                else:
-                    new_params = [range_min, range_min + 0.5 * range_span, range_max]
+                if is_sugeno_output:
+                    mfs = var_data.get("membership_functions", [])
+                    old_mf = mfs[mf_index] if mf_index < len(mfs) else None
+                    old_type = old_mf.get("type", "constant") if old_mf else "constant"
+                    old_params_raw = old_mf.get("parameters", [0.5]) if old_mf else [0.5]
 
-                # Round to 2 decimal places
+                    if not isinstance(old_params_raw, list):
+                        old_params = [float(old_params_raw)]
+                    elif len(old_params_raw) == 0:
+                        old_params = [0.5]
+                    else:
+                        old_params = [float(p) for p in old_params_raw if isinstance(p, (int, float))]
+
+                    if len(old_params) == 0:
+                        old_params = [0.5]
+
+                    if new_type == "Constant":
+                        if old_type == "linear" and len(old_params) > 0:
+                            new_params = [old_params[-1]]
+                        elif old_type == "constant" and len(old_params) > 0:
+                            new_params = [old_params[0]]
+                        else:
+                            new_params = [0.5]
+                    elif new_type == "Linear":
+                        if self.view_model.fuzzy_service:
+                            num_inputs = len(self.view_model.fuzzy_service.get_input_variables())
+                        else:
+                            num_inputs = 1
+                        if old_type == "constant" and len(old_params) > 0:
+                            constant_value = old_params[0]
+                            new_params = [0.0] * num_inputs + [constant_value]
+                        elif old_type == "linear":
+                            if len(old_params) == num_inputs + 1:
+                                new_params = old_params
+                            elif len(old_params) > 0:
+                                constant_value = old_params[-1]
+                                new_params = [0.0] * num_inputs + [constant_value]
+                            else:
+                                new_params = [0.0] * num_inputs + [0.5]
+                        else:
+                            new_params = [0.0] * num_inputs + [0.5]
+                    else:
+                        new_params = [0.5]
+                else:
+                    if new_type == "Triangle":
+                        new_params = [range_min, range_min + 0.5 * range_span, range_max]
+                    elif new_type == "Trapezoid":
+                        new_params = [
+                            range_min,
+                            range_min + 0.3 * range_span,
+                            range_min + 0.7 * range_span,
+                            range_max,
+                        ]
+                    elif new_type == "Gauss":
+                        new_params = [
+                            0.2 * range_span,
+                            range_min + 0.5 * range_span,
+                        ]
+                    elif new_type == "Bell":
+                        new_params = [
+                            0.2 * range_span,
+                            3,
+                            range_min + 0.5 * range_span,
+                        ]
+                    else:
+                        new_params = [range_min, range_min + 0.5 * range_span, range_max]
+
                 new_params = [round(p, 2) for p in new_params]
 
                 self.view_model.fuzzy_service.update_membership_function_parameters(
@@ -537,9 +609,13 @@ class EditorTabWidget(BaseTabView):
                 var_data = selected_var_info.get("data", {})
                 mfs = var_data.get("membership_functions", [])
                 if mf_index < len(mfs):
-                    old_fuzzy_type = mfs[mf_index].get("type", "trimf")
-                    reverse_mapping = {v: k for k, v in type_mapping.items()}
-                    old_english_type = reverse_mapping.get(old_fuzzy_type, "Triangle")
+                    old_fuzzy_type = mfs[mf_index].get("type", "trimf" if not is_sugeno_output else "constant")
+                    if is_sugeno_output:
+                        reverse_mapping = {"linear": "Linear", "constant": "Constant"}
+                        old_english_type = reverse_mapping.get(old_fuzzy_type.lower(), "Constant")
+                    else:
+                        reverse_mapping = {v: k for k, v in type_mapping.items()}
+                        old_english_type = reverse_mapping.get(old_fuzzy_type, "Triangle")
                     dropdown = self.mf_table.cellWidget(mf_index, 1)
                     if dropdown:
                         dropdown.setCurrentText(old_english_type)
