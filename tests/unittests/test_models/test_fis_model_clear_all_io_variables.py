@@ -15,16 +15,13 @@ class ClearAllIOVariablesTestCase(unittest.TestCase):
 
     def test_1_all_io_variables_deleted(self) -> None:
         self.model.clear_all_io_variables()
-        self.assertEqual(len(self.model._fis.Inputs), 0,
-                         "Not all inputs deleted")
-        self.assertEqual(len(self.model._fis.Outputs), 0,
-                         "Not all outputs deleted")
-        self.assertEqual(len(self.model._fis.Rules), 0,
-                         "Not all rules deleted")
+        self.assertEqual(len(self.model._fis.Inputs), 0, "Not all inputs deleted")
+        self.assertEqual(len(self.model._fis.Outputs), 0, "Not all outputs deleted")
+        self.assertEqual(len(self.model._fis.Rules), 0, "Not all rules deleted")
 
     def tearDown(self) -> None:
         del self.model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
