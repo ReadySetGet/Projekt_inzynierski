@@ -783,17 +783,15 @@ class FISModel:
             new_fis_model._fis.DefuzzificationMethod = "centroid"
             return new_fis_model
 
-    def generate_all_rules(self):
+    def generate_all_rules(self) -> int:
         """Generate all possible rules, based on current input/output/mf configuration.
 
         If some rules are already present, generate only the missing ones.
 
-        To stay compatible with Matlab, this function does not generate rules
-        with input mfs being null. Also, it does not override such rules if
-        they were added manually, instead appending a new, full rule.
-
-        Output variations, like in Matlab, are not considered, for time
-        complexity's sake.
+        To stay compatible with Fuzzy Logic Designer, this function does not
+        generate rules with input mfs being null. Also, it does not override
+        such rules if they were added manually, instead appending a new, full
+        rule.
 
         Returns:
             int: 1 if rules added successfully, -1 if there are no outputs and/or inputs,

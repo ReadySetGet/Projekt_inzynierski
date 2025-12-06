@@ -3,7 +3,7 @@ import unittest
 from app.models.fis_model import FISModel
 
 
-class ReturnAllInputVariablesTestCase(unittest.TestCase):
+class ReturnAllMFsOfIOVariableTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.model = FISModel()
         self.model.add_input()
@@ -32,7 +32,7 @@ class ReturnAllInputVariablesTestCase(unittest.TestCase):
         self.assertEqual(input_mfs, None, "Nonexistent variable found")
 
     def test_5_nonexistent_variable_type(self) -> None:
-        input_mfs = self.model.return_all_mfs_of_io_variable("input0", "tak")
+        input_mfs = self.model.return_all_mfs_of_io_variable("input0", "type")
         self.assertEqual(input_mfs, None, "Nonexistent variable type found")
 
     def tearDown(self) -> None:

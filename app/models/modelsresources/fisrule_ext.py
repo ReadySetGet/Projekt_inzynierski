@@ -14,6 +14,7 @@ class FisRuleEx(fl.fisrule):
     Changes:
 
         - added support for IS NOT variable to mf mappings when inferring
+        - added support for rule naming
     """
 
     IsMFInput: list[int]
