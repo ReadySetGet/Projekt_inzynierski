@@ -824,6 +824,10 @@ class FISModel:
 
         return 1
 
+    def return_all_rules(self) -> list[FisRuleEx]:
+        """Return a list if all available rules."""
+        return self._fis.Rules
+
     def _find_variable(self, io_variable_name: str, input_or_output: str) -> [fl.fisvar, int]:
         io_variable = None
         found_idx = -1
