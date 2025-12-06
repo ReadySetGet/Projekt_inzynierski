@@ -3,7 +3,7 @@ import unittest
 from app.models.fis_reader_writer import FISReaderWriter
 
 
-class DeleteOutputTestCase(unittest.TestCase):
+class ReadFISTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.reader = FISReaderWriter()
 

@@ -1,0 +1,36 @@
+[System]
+Name='new_model'
+Type='mamdani'
+Version=2.0
+NumInputs=2
+NumOutputs=1
+NumRules=2
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='input0'
+Range=[-3 8]
+NumMFs=2
+MF1='mf0':'trimf',[1 2 3]
+MF2='mf1':'trimf',[0 0.5 1]
+
+[Input2]
+Name='input1'
+Range=[0 1]
+NumMFs=1
+MF1='mf0':'gaussmf',[0.3196 1.2467]
+
+[Output1]
+Name='output0'
+Range=[0 1]
+NumMFs=2
+MF1='newname':'trimf',[0.09999999999999998 0.5 0.9]
+MF2='mf1':'trimf',[0.09999999999999998 0.5 0.9]
+
+[Rules]
+1 -1, 1 (1) : 1
+2 1, 1 (1) : 1

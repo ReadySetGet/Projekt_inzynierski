@@ -4,7 +4,7 @@ from app.models.fis_model import FISModel
 from app.models.fis_reader_writer import FISReaderWriter
 
 
-class DeleteOutputTestCase(unittest.TestCase):
+class WriteFISTestCase(unittest.TestCase):
     def setUp(self) -> None:
         model = FISModel()
         model.add_input()
@@ -24,7 +24,7 @@ class DeleteOutputTestCase(unittest.TestCase):
 
     def test_1_unsupported_extension(self) -> None:
         result = self.writer.write_fis("./resources/notfisfile.txt")
-        self.assertEqual(result, -1, "Unsupported extension wronglyrecognized")
+        self.assertEqual(result, -1, "Unsupported extension wrongly recognized")
 
     def test_2_no_fis_model_provided(self) -> None:
         self.writer.model = None
