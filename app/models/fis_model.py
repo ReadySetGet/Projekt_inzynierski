@@ -838,7 +838,6 @@ class FISModel:
         """Get all input variables of the system.
 
         Returns:
-
             A list (potentially empty) of all input variables of the system.
         """
         return self._fis.Inputs
@@ -847,24 +846,20 @@ class FISModel:
         """Get all output variables of the system.
 
         Returns:
-
-            A list (potentially empty) of all input variables of the system.
+            A list (potentially empty) of all output variables of the system.
         """
-
         return self._fis.Outputs
 
     def return_all_mfs_of_io_variable(self, io_variable_name: str, io_variable_type: str) -> list[fl.fismf] | None:
-        """Get all input variables of the system.
+        """Get all membership functions of an input/output variable.
 
-        Parameters:
-
+        Args:
             io_variable_name (str): name of the input/output variable whose mfs
                 are to be returned
             io_variable_type (str): whether it is an input or output variable.
                 Accepted values: input, output
 
         Returns:
-
             None, if a variable of the given type with the given name does not
                 exist. A list (potentially empty) of all its membership
                 functions otherwise.
@@ -884,7 +879,6 @@ class FISModel:
         """Return the name of the Fuzzy Inference System used.
 
         Returns:
-
             The name (str) of the system.
         """
         return self._fis.Name
