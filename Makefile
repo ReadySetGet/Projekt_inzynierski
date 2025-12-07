@@ -15,10 +15,10 @@ lint-fix:
 	$(VENV_PY) -m isort app && $(VENV_PY) -m black app
 
 format:
-	$(VENV_PY) -m black app
+	$(VENV_PY) -m black app tests
 
 format-check:
-	$(VENV_PY) -m black --check app
+	$(VENV_PY) -m black --check app tests
 
 test:
 	$(VENV_PY) -m pytest
