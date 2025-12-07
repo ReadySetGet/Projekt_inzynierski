@@ -227,6 +227,22 @@ class FisTabViewModel(BaseViewModel):
 
             y = 1 / (1 + np.exp(-a * (x - c)))
 
+        elif mf_type == "constant":
+            if isinstance(parameters, (int, float)):
+                const_value = float(parameters)
+            elif isinstance(parameters, (list, tuple)) and len(parameters) > 0:
+                const_value = float(parameters[0])
+            else:
+                const_value = 0.5
+            y = np.full_like(x, np.clip(const_value, 0.0, 1.0))
+
+        elif mf_type == "linear":
+            if isinstance(parameters, (list, tuple)) and len(parameters) > 0:
+                constant_term = float(parameters[-1])
+            else:
+                constant_term = 0.5
+            y = np.full_like(x, np.clip(constant_term, 0.0, 1.0))
+
         return y.tolist()
 
     def get_system_display_name(self) -> str:

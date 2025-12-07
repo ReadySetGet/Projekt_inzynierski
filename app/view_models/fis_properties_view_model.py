@@ -58,7 +58,7 @@ class FisPropertiesViewModel(BaseViewModel):
     def inputs(self) -> List[Dict]:
         """Get the input variables."""
         fis_model = self.fuzzy_service.get_fis_model()
-        if not fis_model or not hasattr(fis_model, "_fis"):
+        if not fis_model or not fis_model._fis:
             return []
 
         inputs = []
@@ -77,7 +77,7 @@ class FisPropertiesViewModel(BaseViewModel):
     def outputs(self) -> List[Dict]:
         """Get the output variables."""
         fis_model = self.fuzzy_service.get_fis_model()
-        if not fis_model or not hasattr(fis_model, "_fis"):
+        if not fis_model or not fis_model._fis:
             return []
 
         outputs = []
@@ -105,15 +105,15 @@ class FisPropertiesViewModel(BaseViewModel):
     def _update_system_info(self) -> None:
         """Update system information from the fuzzy service."""
         fis_model = self.fuzzy_service.get_fis_model()
-        if not fis_model or not hasattr(fis_model, "_fis"):
+        if not fis_model or not fis_model._fis:
             return
 
         fis = fis_model._fis
 
-        if hasattr(fis, "Name") and fis.Name:
+        if fis.Name:
             self.system_name = fis.Name
 
-        if hasattr(fis, "__class__"):
+        if fis.__class__:
             if "mamfis" in str(fis.__class__).lower():
                 self.system_type = "mamfis"
             elif "sugfis" in str(fis.__class__).lower():
@@ -178,7 +178,7 @@ class FisPropertiesViewModel(BaseViewModel):
     def get_variable_info(self, variable_name: str, variable_type: str) -> Optional[Dict]:
         """Get information about a specific variable."""
         fis_model = self.fuzzy_service.get_fis_model()
-        if not fis_model or not hasattr(fis_model, "_fis"):
+        if not fis_model or not fis_model._fis:
             return None
 
         fis = fis_model._fis
@@ -200,7 +200,7 @@ class FisPropertiesViewModel(BaseViewModel):
     def update_variable_range(self, variable_name: str, variable_type: str, new_range: List[float]) -> bool:
         """Update the range of a variable."""
         fis_model = self.fuzzy_service.get_fis_model()
-        if not fis_model or not hasattr(fis_model, "_fis"):
+        if not fis_model or not fis_model._fis:
             return False
 
         fis = fis_model._fis
