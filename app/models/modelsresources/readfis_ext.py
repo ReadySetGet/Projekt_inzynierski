@@ -157,10 +157,17 @@ def get_next_fis_io(fid, i, in_or_out):
 
     values = get_line(fid).split("=")
     assert values[0] == "Range", f"Range for {in_or_out} {i + 1} expected"
-    range_values = values[1].split(" ")
-    range_low = float(range_values[0][1:])
-    range_high = float(range_values[1][:-1])
-    assert range_low < range_high, f"Correct range for {in_or_out} {i + 1} expected"
+    range_str = values[1].strip()
+    range_str = range_str.replace("[", "").replace("]", "")
+    range_values = [v.strip() for v in range_str.split() if v.strip()]
+    if len(range_values) < 2:
+        msg = f"Invalid range format for {in_or_out} {i + 1}: {values[1]}"
+        raise ValueError(msg)
+    range_low = float(range_values[0])
+    range_high = float(range_values[1])
+    if range_low >= range_high:
+        msg = f"Range low must be less than high for {in_or_out} {i + 1}"
+        raise ValueError(msg)
 
     values = get_line(fid).split("=")
     assert values[0] == "NumMFs", f"Number of MFs for {in_or_out} {i + 1} expected"
@@ -173,13 +180,52 @@ def get_next_fis_io(fid, i, in_or_out):
 
 def get_next_mf(fid, i, j, in_or_out):
     """Read and return the next membership function definition."""
-    values = re.split(r"=|:|,|]|\[| ", get_line(fid))
-    assert values[0][:2] == "MF", f"Next MF for {in_or_out} {i + 1} expected"
-    mf_index = int(values[0][2:])
-    assert mf_index == j + 1, f"Correct MF index for {in_or_out} {i + 1} expected"
-    mf_name = values[1][1:-1]
-    mf_type = values[2][1:-1]
-    mf_params = [float(val) for val in values[4:-1]]
+    line = get_line(fid)
+    if not line or line[:2] != "MF":
+        msg = f"Next MF for {in_or_out} {i + 1} expected, got: {line}"
+        raise ValueError(msg)
+
+    parts = line.split("=", 1)
+    if len(parts) < 2:
+        msg = f"Invalid MF format: {line}"
+        raise ValueError(msg)
+
+    mf_header = parts[0].strip()
+    mf_index = int(mf_header[2:])
+    if mf_index != j + 1:
+        msg = f"Correct MF index for {in_or_out} {i + 1} expected, got {mf_index}"
+        raise ValueError(msg)
+
+    mf_def = parts[1].strip()
+    mf_parts = mf_def.split(":", 1)
+    if len(mf_parts) < 2:
+        msg = f"Invalid MF definition format: {line}"
+        raise ValueError(msg)
+
+    mf_name = mf_parts[0].strip().strip("'\"")
+    mf_type_and_params = mf_parts[1].strip()
+
+    comma_pos = mf_type_and_params.find("',")
+    if comma_pos == -1:
+        msg = f"Invalid MF type/params format: {line}"
+        raise ValueError(msg)
+
+    mf_type = mf_type_and_params[:comma_pos].strip().strip("'\"")
+    params_str = mf_type_and_params[comma_pos + 2 :].strip()
+
+    params_str = params_str.replace("[", "").replace("]", "")
+    param_values = [v.strip() for v in params_str.split() if v.strip()]
+
+    mf_params = []
+    for val in param_values:
+        try:
+            mf_params.append(float(val))
+        except ValueError:
+            continue
+
+    if not mf_params:
+        msg = f"No valid parameters found in MF definition: {line}"
+        raise ValueError(msg)
 
     next_mf = fismf(mf_type, mf_params, Name=mf_name)
 
@@ -189,21 +235,51 @@ def get_next_mf(fid, i, j, in_or_out):
 def get_next_rule(fid, num_inputs):
     """Read the next rule definition and return a `FisRuleEx` instance."""
     line_ext = get_line(fid)
-    sections = [val for val in re.split(r";", line_ext) if val]
-    if len(sections) < 3:
+    sections = [val.strip() for val in re.split(r";", line_ext) if val.strip()]
+
+    if len(sections) < 1:
         msg = f"Malformed rule definition: {line_ext!r}"
         raise ValueError(msg)
 
-    values_is_mf = [int(val) for val in re.split(r":|,|\(|\)| ", sections[1]) if val]
-    rule_name = sections[2][1:]
+    rule_part = sections[0].strip()
+    values = [val for val in re.split(r":|,|\(|\)| ", rule_part) if val]
 
-    values = [val for val in re.split(r":|,|\(|\)| ", sections[0]) if val]
+    if len(values) < num_inputs + 3:
+        msg = f"Rule definition too short: {line_ext!r}"
+        raise ValueError(msg)
+
     for index in range(len(values) - 2):
-        values[index] = int(values[index])
+        try:
+            values[index] = int(values[index])
+        except ValueError:
+            msg = f"Invalid rule value at index {index}: {values[index]}"
+            raise ValueError(msg)
 
-    weight_token = float(values[-2])
-    values[-2] = int(weight_token) if weight_token.is_integer() else weight_token
-    values[-1] = int(values[-1])
+    try:
+        weight_token = float(values[-2])
+        values[-2] = int(weight_token) if weight_token.is_integer() else weight_token
+        values[-1] = int(values[-1])
+    except (ValueError, IndexError) as e:
+        msg = f"Invalid weight or connection in rule: {line_ext!r}"
+        raise ValueError(msg) from e
+
+    num_outputs = len(values) - num_inputs - 2
+
+    if len(sections) >= 3:
+        is_mf_part = sections[1].strip()
+        values_is_mf = [int(val) for val in re.split(r":|,|\(|\)| ", is_mf_part) if val]
+        if len(values_is_mf) != num_inputs + num_outputs:
+            values_is_mf = [1] * (num_inputs + num_outputs)
+        rule_name = sections[2].strip()
+    elif len(sections) >= 2:
+        is_mf_part = sections[1].strip()
+        values_is_mf = [int(val) for val in re.split(r":|,|\(|\)| ", is_mf_part) if val]
+        if len(values_is_mf) != num_inputs + num_outputs:
+            values_is_mf = [1] * (num_inputs + num_outputs)
+        rule_name = "Rule"
+    else:
+        values_is_mf = [1] * (num_inputs + num_outputs)
+        rule_name = "Rule"
 
     next_rule = FisRuleEx(values_is_mf, rule_name, [values], num_inputs)
 

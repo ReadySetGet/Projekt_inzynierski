@@ -202,17 +202,16 @@ class RulesEditorViewModel(BaseViewModel):
         if not (0 <= rule_index < len(self._rules)):
             return False
 
-        if self.fuzzy_service:
-            if hasattr(self.fuzzy_service, "_rule_manager"):
-                result = self.fuzzy_service._rule_manager.update_rule_name(rule_index, new_name)
-            else:
-                return False
+        if self.fuzzy_service._rule_manager:
+            result = self.fuzzy_service._rule_manager.update_rule_name(rule_index, new_name)
             if result:
                 self._rules[rule_index]["name"] = new_name
                 self.rule_name_changed.emit(rule_index, new_name)
                 self._update_rules()
                 self.notify_data_changed.emit()
                 return True
+        else:
+            return False
 
         return False
 
@@ -221,22 +220,21 @@ class RulesEditorViewModel(BaseViewModel):
         if not (0 <= rule_index < len(self._rules)):
             return False
 
-        if self.fuzzy_service:
-            current_rule = self._rules[rule_index]
-            result = self.fuzzy_service.update_rule(
-                rule_index,
-                current_rule["antecedent"],
-                current_rule["consequent"],
-                new_weight,
-                current_rule["connection"],
-                current_rule["is_mf"],
-            )
-            if result:
-                self._rules[rule_index]["weight"] = new_weight
-                self.rule_weight_changed.emit(rule_index, new_weight)
-                self._update_rules()
-                self.notify_data_changed.emit()
-                return True
+        current_rule = self._rules[rule_index]
+        result = self.fuzzy_service.update_rule(
+            rule_index,
+            current_rule["antecedent"],
+            current_rule["consequent"],
+            new_weight,
+            current_rule["connection"],
+            current_rule["is_mf"],
+        )
+        if result:
+            self._rules[rule_index]["weight"] = new_weight
+            self.rule_weight_changed.emit(rule_index, new_weight)
+            self._update_rules()
+            self.notify_data_changed.emit()
+            return True
 
         return False
 
@@ -245,22 +243,21 @@ class RulesEditorViewModel(BaseViewModel):
         if not (0 <= rule_index < len(self._rules)):
             return False
 
-        if self.fuzzy_service:
-            current_rule = self._rules[rule_index]
-            result = self.fuzzy_service.update_rule(
-                rule_index,
-                current_rule["antecedent"],
-                current_rule["consequent"],
-                current_rule["weight"],
-                new_connection,
-                current_rule["is_mf"],
-            )
-            if result:
-                self._rules[rule_index]["connection"] = new_connection
-                self.rule_connection_changed.emit(rule_index, new_connection)
-                self._update_rules()
-                self.notify_data_changed.emit()
-                return True
+        current_rule = self._rules[rule_index]
+        result = self.fuzzy_service.update_rule(
+            rule_index,
+            current_rule["antecedent"],
+            current_rule["consequent"],
+            current_rule["weight"],
+            new_connection,
+            current_rule["is_mf"],
+        )
+        if result:
+            self._rules[rule_index]["connection"] = new_connection
+            self.rule_connection_changed.emit(rule_index, new_connection)
+            self._update_rules()
+            self.notify_data_changed.emit()
+            return True
 
         return False
 
@@ -289,12 +286,11 @@ class RulesEditorViewModel(BaseViewModel):
 
     def clear_all_rules(self) -> bool:
         """Clear all rules."""
-        if self.fuzzy_service:
-            result = self.fuzzy_service.clear_all_rules()
-            if result:
-                self._update_rules()
-                self.notify_data_changed.emit()
-                return True
+        result = self.fuzzy_service.clear_all_rules()
+        if result:
+            self._update_rules()
+            self.notify_data_changed.emit()
+            return True
         return False
 
     def update_data(self) -> None:
@@ -304,14 +300,13 @@ class RulesEditorViewModel(BaseViewModel):
 
     def refresh_data(self) -> None:
         """Refresh all data from the model - only updates logic, no signal emission."""
-        self.update_data()
+        self._update_rules()
+        self._update_mf_options()
 
     def add_all_possible_rules(self) -> bool:
         """Add all possible rules."""
-        if self.fuzzy_service:
-            result = self.fuzzy_service.add_all_possible_rules()
-            if result:
-                self._update_rules()
-                self.notify_data_changed.emit()
-            return result
-        return False
+        result = self.fuzzy_service.add_all_possible_rules()
+        if result:
+            self._update_rules()
+            self.notify_data_changed.emit()
+        return result

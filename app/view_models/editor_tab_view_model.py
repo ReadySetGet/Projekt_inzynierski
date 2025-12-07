@@ -94,3 +94,13 @@ class EditorTabViewModel(BaseViewModel):
             }
 
         return None
+
+    def get_fis_type(self) -> str:
+        """Get the current FIS type.
+
+        Returns:
+            String indicating FIS type ("mamdani" or "sugeno")
+        """
+        if not self.fuzzy_service:
+            return "mamdani"
+        return self.fuzzy_service.get_fis_type()
