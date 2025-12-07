@@ -129,9 +129,7 @@ class RuleInterferenceTabWidget(BaseTabView):
         self.aggregated_layout.setContentsMargins(0, 0, 0, 0)
         self.aggregated_layout.setSpacing(16)
 
-        self.aggregated_placeholder = QtWidgets.QLabel(
-            self.t("NO_OUTPUT") if hasattr(self, "t") else "No outputs defined."
-        )
+        self.aggregated_placeholder = QtWidgets.QLabel(self.t("NO_OUTPUT"))
         self.aggregated_placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.aggregated_layout.addWidget(self.aggregated_placeholder)
 
@@ -154,7 +152,7 @@ class RuleInterferenceTabWidget(BaseTabView):
     def _retranslate_ui(self) -> None:
         self.system_label.setText(self.t("SYSTEM"))
         self.input_values_label.setText(self.t("INPUT_VALUES"))
-        self.aggregated_placeholder.setText(self.t("NO_OUTPUT") if hasattr(self, "t") else "No outputs defined.")
+        self.aggregated_placeholder.setText(self.t("NO_OUTPUT"))
         self.input_values_edit.setPlaceholderText(self.t("INPUT_VALUES_PLACEHOLDER"))
 
     def _update_system_name(self) -> None:
@@ -363,7 +361,7 @@ class RuleInterferenceTabWidget(BaseTabView):
         self._rule_row_widgets.clear()
 
         if not rules_payload:
-            empty_label = QtWidgets.QLabel(self.t("NO_RULES_DEFINED") if hasattr(self, "t") else "No rules defined.")
+            empty_label = QtWidgets.QLabel(self.t("NO_RULES_DEFINED"))
             empty_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             self.rules_list_layout.addWidget(empty_label)
             return
@@ -393,7 +391,7 @@ class RuleInterferenceTabWidget(BaseTabView):
                     row_layout.addWidget(plot)
                     input_plots.append(plot)
             else:
-                placeholder = QtWidgets.QLabel(self.t("NO_INPUT_CONDITIONS") if hasattr(self, "t") else "No inputs")
+                placeholder = QtWidgets.QLabel(self.t("NO_INPUT_CONDITIONS"))
                 placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
                 row_layout.addWidget(placeholder)
 
@@ -405,12 +403,9 @@ class RuleInterferenceTabWidget(BaseTabView):
             output_plots = []
             outputs = rule.get("outputs", [])
             is_sugeno = False
-            if hasattr(self.view_model, "fuzzy_service") and self.view_model.fuzzy_service:
-                try:
-                    fis_type = self.view_model.fuzzy_service.get_fis_type()
-                    is_sugeno = fis_type == "sugeno"
-                except Exception:
-                    pass
+            if self.view_model.fuzzy_service:
+                fis_type = self.view_model.fuzzy_service.get_fis_type()
+                is_sugeno = fis_type == "sugeno"
 
             if outputs:
                 if is_sugeno:
@@ -443,7 +438,7 @@ class RuleInterferenceTabWidget(BaseTabView):
                         row_layout.addWidget(plot)
                         output_plots.append(plot)
             else:
-                placeholder = QtWidgets.QLabel(self.t("NO_OUTPUT") if hasattr(self, "t") else "No outputs")
+                placeholder = QtWidgets.QLabel(self.t("NO_OUTPUT"))
                 placeholder.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
                 row_layout.addWidget(placeholder)
 
@@ -517,7 +512,7 @@ class RuleInterferenceTabWidget(BaseTabView):
         hide_axes(plot_widget)
 
         is_sugeno = False
-        if hasattr(self.view_model, "fuzzy_service") and self.view_model.fuzzy_service:
+        if self.view_model.fuzzy_service:
             try:
                 fis_type = self.view_model.fuzzy_service.get_fis_type()
                 is_sugeno = fis_type == "sugeno"
@@ -634,22 +629,19 @@ class RuleInterferenceTabWidget(BaseTabView):
             hide_axes(plot)
 
             is_sugeno = False
-            if hasattr(self.view_model, "fuzzy_service") and self.view_model.fuzzy_service:
-                try:
-                    fis_type = self.view_model.fuzzy_service.get_fis_type()
-                    is_sugeno = fis_type == "sugeno"
-                except Exception:
-                    pass
+            if self.view_model.fuzzy_service:
+                fis_type = self.view_model.fuzzy_service.get_fis_type()
+                is_sugeno = fis_type == "sugeno"
 
             if is_sugeno:
                 x = output.get("curve_x", [])
                 y = output.get("curve_y", [])
 
-                if x and len(x) >= 2:
+                if x and len(x) >= 2 and value is not None:
                     range_min = min(x)
                     range_max = max(x)
 
-                    constant_value = value if value is not None else 0.5
+                    constant_value = value
                     constant_value = max(range_min, min(range_max, constant_value))
 
                     plot.setXRange(range_min, range_max)

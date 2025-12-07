@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
-from PyQt6 import QtWidgets
+from PyQt6 import QtCore, QtWidgets
 
 from app.view_models.area_plot_view_model import AreaPlotViewModel
 from app.views.base_widget_view import BaseWidgetView
@@ -18,6 +18,7 @@ class AreaPlot(BaseWidgetView):
         """Initialize the area plot widget."""
         super().__init__()
         self.setObjectName("area_plot")
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         self.view_model = AreaPlotViewModel()
         self.view_model.setParent(self)
         self.set_view_model(self.view_model)
@@ -33,8 +34,8 @@ class AreaPlot(BaseWidgetView):
         self._update_surface()
 
     def _setup_ui(self):
-        self.resize(650, 629)
-        self.setWindowTitle("Area Plot")
+        self.resize(800, 700)
+        self.setWindowTitle("Control Surface")
 
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(12, 12, 12, 12)
@@ -55,20 +56,24 @@ class AreaPlot(BaseWidgetView):
         axes_layout.setHorizontalSpacing(12)
         axes_layout.setVerticalSpacing(6)
 
+        axes_label = QtWidgets.QLabel()
+        axes_label.setText(self.t("AXES"))
+        axes_layout.addWidget(axes_label, 0, 0)
+
         self.x_label = QtWidgets.QLabel()
         self.x_combobox = QtWidgets.QComboBox()
-        axes_layout.addWidget(self.x_label, 0, 0)
-        axes_layout.addWidget(self.x_combobox, 0, 1)
+        axes_layout.addWidget(self.x_label, 1, 0)
+        axes_layout.addWidget(self.x_combobox, 1, 1)
 
         self.y_label = QtWidgets.QLabel()
         self.y_combobox = QtWidgets.QComboBox()
-        axes_layout.addWidget(self.y_label, 0, 2)
-        axes_layout.addWidget(self.y_combobox, 0, 3)
+        axes_layout.addWidget(self.y_label, 1, 2)
+        axes_layout.addWidget(self.y_combobox, 1, 3)
 
         self.z_label = QtWidgets.QLabel()
         self.z_combobox = QtWidgets.QComboBox()
-        axes_layout.addWidget(self.z_label, 0, 4)
-        axes_layout.addWidget(self.z_combobox, 0, 5)
+        axes_layout.addWidget(self.z_label, 1, 4)
+        axes_layout.addWidget(self.z_combobox, 1, 5)
 
         main_layout.addLayout(axes_layout)
 
@@ -81,12 +86,14 @@ class AreaPlot(BaseWidgetView):
         self.x_label_2 = QtWidgets.QLabel()
         self.x_spinbox = QtWidgets.QSpinBox()
         self.x_spinbox.setRange(5, 200)
+        self.x_spinbox.setValue(15)
         mesh_layout.addWidget(self.x_label_2)
         mesh_layout.addWidget(self.x_spinbox)
 
         self.y_label_2 = QtWidgets.QLabel()
         self.y_spinbox = QtWidgets.QSpinBox()
         self.y_spinbox.setRange(5, 200)
+        self.y_spinbox.setValue(15)
         mesh_layout.addWidget(self.y_label_2)
         mesh_layout.addWidget(self.y_spinbox)
         mesh_layout.addStretch()
@@ -117,7 +124,7 @@ class AreaPlot(BaseWidgetView):
         self.frame_layout.setContentsMargins(0, 0, 0, 0)
         self.frame_layout.setSpacing(0)
 
-        self.figure = plt.Figure(figsize=(6, 6))
+        self.figure = plt.Figure(figsize=(8, 6))
         self.ax = self.figure.add_subplot(111, projection="3d")
         self.canvas = FigureCanvas(self.figure)
         self.frame_layout.addWidget(NavigationToolbar(self.canvas, self))
@@ -130,13 +137,12 @@ class AreaPlot(BaseWidgetView):
         self.mesh_label.setText(self.t("MESH_POINTS"))
         self.x_label.setText(self.t("X"))
         self.y_label.setText(self.t("Y"))
-        self.z_label.setText(self.t("OUTPUT"))
+        self.z_label.setText(self.t("Z"))
         self.x_label_2.setText(self.t("X"))
         self.y_label_2.setText(self.t("Y"))
         self.reference_label.setText(self.t("REFERENCE_INPUTS"))
         self.other_inputs_group.setTitle(self.t("OTHER_INPUTS"))
         self.line_edit.setPlaceholderText(self.t("NO_ADDITIONAL_INPUTS"))
-        self.other_inputs_group.setTitle(self.t("OTHER_INPUTS"))
 
     def _connect_signals(self):
         self.x_combobox.currentIndexChanged.connect(self._on_axis_changed)
@@ -145,8 +151,7 @@ class AreaPlot(BaseWidgetView):
         self.x_spinbox.valueChanged.connect(self._on_control_changed)
         self.y_spinbox.valueChanged.connect(self._on_control_changed)
 
-        if hasattr(self.view_model, "notify_data_changed"):
-            self.view_model.notify_data_changed.connect(self._on_data_changed)
+        self.view_model.notify_data_changed.connect(self._on_data_changed)
 
     def _populate_controls(self):
         if not self.view_model or not self.view_model.fuzzy_service:
@@ -175,13 +180,17 @@ class AreaPlot(BaseWidgetView):
                 system_name = self.view_model.fuzzy_service.get_system_name()
                 self.name_label.setText(system_name)
 
+            if self.x_combobox.count() > 0:
+                self.x_combobox.setCurrentIndex(0)
             if self.x_combobox.count() > 1 and self.y_combobox.count() > 1:
                 self.y_combobox.setCurrentIndex(1)
+            elif self.y_combobox.count() > 0:
+                self.y_combobox.setCurrentIndex(0)
             if self.z_combobox.count() > 0:
                 self.z_combobox.setCurrentIndex(0)
 
             self.x_combobox.setEnabled(self.x_combobox.count() > 0)
-            self.y_combobox.setEnabled(self.y_combobox.count() > 1)
+            self.y_combobox.setEnabled(self.y_combobox.count() > 0)
             self.z_combobox.setEnabled(self.z_combobox.count() > 0)
         finally:
             self._is_updating_controls = False
@@ -216,7 +225,6 @@ class AreaPlot(BaseWidgetView):
         self._update_surface()
 
     def _rebuild_other_inputs_controls(self):
-        # Clear existing controls
         while self.other_inputs_layout.count():
             item = self.other_inputs_layout.takeAt(0)
             widget = item.widget()
@@ -276,12 +284,17 @@ class AreaPlot(BaseWidgetView):
 
     def _update_surface(self):
         if not self.view_model or not self.view_model.fuzzy_service:
+            self.ax.clear()
+            self.canvas.draw_idle()
             return
 
         if self.x_combobox.count() == 0 or self.y_combobox.count() == 0 or self.z_combobox.count() == 0:
+            self.ax.clear()
+            self.canvas.draw_idle()
             return
 
         if len(self._input_variables) < 2:
+            self.ax.clear()
             self.canvas.draw_idle()
             return
 
@@ -292,10 +305,23 @@ class AreaPlot(BaseWidgetView):
         y_points = self.y_spinbox.value()
 
         if not x_var or not y_var or not output_var:
+            self.ax.clear()
+            self.canvas.draw_idle()
+            return
+
+        input_names = {var.get("name", "") for var in self._input_variables}
+        output_names = {var.get("name", "") for var in self._output_variables}
+
+        if x_var not in input_names or y_var not in input_names:
+            self.ax.clear()
+            self.canvas.draw_idle()
+            return
+        if output_var not in output_names:
+            self.ax.clear()
+            self.canvas.draw_idle()
             return
 
         if x_var == y_var and self.x_combobox.count() > 1:
-            # Avoid identical axes by switching the second combo if possible
             new_index = (self.y_combobox.currentIndex() + 1) % self.y_combobox.count()
             if self.y_combobox.itemText(new_index) != x_var:
                 self._is_updating_controls = True
@@ -312,7 +338,11 @@ class AreaPlot(BaseWidgetView):
             y_points,
             fixed_inputs=overrides,
         )
+
         if not surface_data:
+            self.ax.clear()
+            self.line_edit.setText("Error: Could not compute surface")
+            self.canvas.draw_idle()
             return
 
         error = surface_data.get("error")
@@ -323,7 +353,7 @@ class AreaPlot(BaseWidgetView):
                 missing_str = ", ".join(missing)
                 error_msg = f"System not ready. Missing: {missing_str}"
             else:
-                error_msg = self.t("SYSTEM_NOT_READY") if hasattr(self, "t") else "System not ready"
+                error_msg = self.t("SYSTEM_NOT_READY")
             self.line_edit.setText(error_msg)
             self.canvas.draw_idle()
             return
@@ -339,44 +369,92 @@ class AreaPlot(BaseWidgetView):
         Y = surface_data["Y"]
         Z = surface_data["Z"]
 
-        output_var_info = next((var for var in self._output_variables if var.get("name") == output_var), None)
-        output_range = output_var_info.get("range", [0, 1]) if output_var_info else [0, 1]
-
         z_min = surface_data.get("z_min")
         z_max = surface_data.get("z_max")
 
+        valid_Z = Z[~np.isnan(Z) & ~np.isinf(Z)]
         if z_min is None or z_max is None or np.isnan(z_min) or np.isnan(z_max):
-            z_min = np.nanmin(Z) if not np.isnan(Z).all() else output_range[0]
-            z_max = np.nanmax(Z) if not np.isnan(Z).all() else output_range[1]
+            if len(valid_Z) > 0:
+                z_min = float(np.nanmin(valid_Z))
+                z_max = float(np.nanmax(valid_Z))
+            else:
+                output_var_info = next((var for var in self._output_variables if var.get("name") == output_var), None)
+                output_range = output_var_info.get("range", [0, 1]) if output_var_info else [0, 1]
+                z_min = float(output_range[0]) if len(output_range) > 0 else 0.0
+                z_max = float(output_range[1]) if len(output_range) > 1 else 1.0
 
-        if z_min == z_max or abs(z_max - z_min) < 1e-6:
-            z_min = output_range[0]
-            z_max = output_range[1]
-            if z_min == z_max:
-                z_min -= 0.1
-                z_max += 0.1
+        if len(valid_Z) > 0:
+            actual_z_min = float(np.nanmin(valid_Z))
+            actual_z_max = float(np.nanmax(valid_Z))
+            if not (np.isnan(actual_z_min) or np.isnan(actual_z_max)):
+                z_min = actual_z_min
+                z_max = actual_z_max
+
+        if z_min == z_max or abs(z_max - z_min) < 1e-10:
+            if not np.isnan(z_min) and not np.isinf(z_min):
+                output_var_info = next((var for var in self._output_variables if var.get("name") == output_var), None)
+                output_range = output_var_info.get("range", [0, 1]) if output_var_info else [0, 1]
+                output_range_size = abs(output_range[1] - output_range[0]) if len(output_range) >= 2 else 1.0
+                offset = max(output_range_size * 0.05, 0.1)
+                z_min = z_min - offset
+                z_max = z_max + offset
+            else:
+                output_var_info = next((var for var in self._output_variables if var.get("name") == output_var), None)
+                output_range = output_var_info.get("range", [0, 1]) if output_var_info else [0, 1]
+                z_min = float(output_range[0]) if len(output_range) > 0 else 0.0
+                z_max = float(output_range[1]) if len(output_range) > 1 else 1.0
+                if z_min == z_max:
+                    z_min -= 0.1
+                    z_max += 0.1
         else:
-            padding = (z_max - z_min) * 0.1
-            z_min = max(z_min - padding, output_range[0])
-            z_max = min(z_max + padding, output_range[1])
+            range_size = abs(z_max - z_min)
+            padding = max(range_size * 0.05, 1e-6)
+            z_min = z_min - padding
+            z_max = z_max + padding
+
+        Z_clean = np.where(np.isnan(Z) | np.isinf(Z), np.nan, Z)
 
         self.ax.clear()
-        self.ax.plot_surface(X, Y, Z, cmap="viridis", edgecolor="none")
-        self.ax.set_xlabel(x_var)
-        self.ax.set_ylabel(y_var)
-        self.ax.set_zlabel(output_var)
-        self.ax.set_zlim(z_min, z_max)
+        try:
+            self.ax.plot_surface(
+                X, Y, Z_clean, cmap="viridis", edgecolor="none", alpha=0.8, linewidth=0, antialiased=True
+            )
+            self.ax.set_xlabel(x_var)
+            self.ax.set_ylabel(y_var)
+            self.ax.set_zlabel(output_var)
+            self.ax.set_zlim(z_min, z_max)
+        except Exception as e:
+            self.ax.clear()
+            self.line_edit.setText(f"Error plotting surface: {str(e)}")
+            self.canvas.draw_idle()
+            return
 
-        if self._other_input_widgets:
-            reference_text = [
-                f"{name} = {format(spin.value(), '.2f')}" for name, spin in self._other_input_widgets.items()
-            ]
-            self.line_edit.setText(", ".join(reference_text))
-        else:
-            self.line_edit.setText(self.t("NO_ADDITIONAL_INPUTS"))
+        reference_text = [f"{name} = {format(spin.value(), '.2f')}" for name, spin in self._other_input_widgets.items()]
+        self.line_edit.setText(", ".join(reference_text))
 
         self.canvas.draw_idle()
 
     def _on_data_changed(self):
         """Handle data changed signal from view model."""
         self._populate_controls()
+
+    def closeEvent(self, event):
+        """Handle window close event to properly clean up resources."""
+        self._is_updating_controls = True
+        self._disconnect_signals()
+        self.view_model.blockSignals(True)
+        if self.view_model.event_bus:
+            self.view_model.event_bus.unregister_view_model(self.view_model)
+        self.canvas.close()
+        plt.close(self.figure)
+        super().closeEvent(event)
+
+    def _disconnect_signals(self):
+        """Disconnect all signal connections."""
+        self.x_combobox.currentIndexChanged.disconnect()
+        self.y_combobox.currentIndexChanged.disconnect()
+        self.z_combobox.currentIndexChanged.disconnect()
+        self.x_spinbox.valueChanged.disconnect()
+        self.y_spinbox.valueChanged.disconnect()
+        for spin in self._other_input_widgets.values():
+            spin.valueChanged.disconnect()
