@@ -68,11 +68,10 @@ class FisPropertiesTabView(BaseWidgetView):
         self.system_type_label.setObjectName("system_type_label")
         type_layout.addWidget(self.system_type_label)
 
-        self.system_type_combo = QtWidgets.QComboBox()
-        self.system_type_combo.setObjectName("system_type_combo")
-        # Items will be set in _retranslate_ui with translations
-        self.system_type_combo.currentTextChanged.connect(self._on_system_type_changed)
-        type_layout.addWidget(self.system_type_combo)
+        self.system_type_display_label = QtWidgets.QLabel()
+        self.system_type_display_label.setObjectName("system_type_display_label")
+        type_layout.addWidget(self.system_type_display_label)
+        type_layout.addStretch()
         main_layout.addLayout(type_layout)
 
         # Defuzzification section
@@ -179,22 +178,14 @@ class FisPropertiesTabView(BaseWidgetView):
         self.delete_output_button.setText(self.t("DELETE_OUTPUT"))
         self.variable_info_label.setText(self.t("VARIABLE_INFO"))
 
-        # Update system type combo with translated items
-        current_selection = self.system_type_combo.currentText()
-        self.system_type_combo.clear()
-        self.system_type_combo.addItems([self.t("MAMDANI"), self.t("SUGENO")])
-
-        # Restore selection if possible
-        if current_selection:
-            # Map old values to new translated values
-            if current_selection == "mamfis" or current_selection == self.t("MAMDANI"):
-                self.system_type_combo.setCurrentText(self.t("MAMDANI"))
-            elif current_selection == "sugfis" or current_selection == self.t("SUGENO"):
-                self.system_type_combo.setCurrentText(self.t("SUGENO"))
-        else:
-            # Set based on current system type
+        if self.view_model and self.view_model.fuzzy_service:
             display_type = self.view_model.get_fis_type_display()
-            self.system_type_combo.setCurrentText(self.t(display_type.upper()))
+            translated_type = self.t(display_type.upper())
+            if translated_type == display_type.upper():
+                translated_type = display_type
+            self.system_type_display_label.setText(translated_type)
+        else:
+            self.system_type_display_label.setText("")
 
     def _on_system_updated(self):
         """Handle system update from view model."""
@@ -211,23 +202,6 @@ class FisPropertiesTabView(BaseWidgetView):
     def _on_variable_selected(self, variable_name, variable_type):
         """Handle variable selection."""
         self._update_variable_info(variable_name, variable_type)
-
-    def _on_system_type_changed(self, system_type):
-        """Handle system type change - convert the system if needed."""
-        # Get current system type
-        current_type = self.view_model.get_fis_type_display()
-        current_type_translated = self.t(current_type.upper())
-
-        # Only convert if the type actually changed
-        if system_type != current_type_translated:
-            # Convert the system
-            success = self.view_model.convert_inference_system()
-            if success:
-                # Update UI after conversion
-                self._update_ui_from_model()
-            else:
-                # Revert combo box selection if conversion failed
-                self.system_type_combo.setCurrentText(current_type_translated)
 
     def _on_defuzzification_changed(self, method_text):
         """Handle defuzzification method change."""
@@ -310,11 +284,14 @@ class FisPropertiesTabView(BaseWidgetView):
         """Update UI elements from the model."""
         self.system_name_edit.setText(self.view_model.system_name)
 
-        # Update system type combo with translated value
-        display_type = self.view_model.get_fis_type_display()
-        self.system_type_combo.blockSignals(True)
-        self.system_type_combo.setCurrentText(self.t(display_type.upper()))
-        self.system_type_combo.blockSignals(False)
+        if self.view_model and self.view_model.fuzzy_service:
+            display_type = self.view_model.get_fis_type_display()
+            translated_type = self.t(display_type.upper())
+            if translated_type == display_type.upper():
+                translated_type = display_type
+            self.system_type_display_label.setText(translated_type)
+        else:
+            self.system_type_display_label.setText("")
 
         # Update defuzzification combo
         available_methods = self.view_model.get_available_defuzzification_methods()

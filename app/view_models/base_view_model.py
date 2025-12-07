@@ -88,9 +88,7 @@ class BaseViewModel(QObject):
 
     def load_stylesheet_with_theme(self, qss_path: str) -> str:
         """Load stylesheet with current theme applied."""
-        if self.theme_manager:
-            return self.theme_manager.load_stylesheet_with_theme(qss_path)
-        return ""
+        return self.theme_manager.load_stylesheet_with_theme(qss_path)
 
     def _on_theme_changed(self) -> None:
         """Handle theme change events."""

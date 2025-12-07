@@ -208,13 +208,16 @@ class RuleManager:
                 if mf_idx > 0:
                     if i < len(fis.Inputs):
                         input_name = fis.Inputs[i].Name
-                        if mf_idx <= len(fis.Inputs[i].MembershipFunctions):
+                        if mf_idx <= len(fis.Inputs[i].MembershipFunctions) and mf_idx > 0:
                             mf_name = fis.Inputs[i].MembershipFunctions[mf_idx - 1].Name
-                            is_not = (
-                                "is not "
-                                if (hasattr(rule, "IsMFInput") and i < len(rule.IsMFInput) and rule.IsMFInput[i] != 1)
-                                else "is "
-                            )
+                            is_not = ""
+                            if hasattr(rule, "IsMFInput") and rule.IsMFInput:
+                                if i < len(rule.IsMFInput) and rule.IsMFInput[i] != 1:
+                                    is_not = "is not "
+                                else:
+                                    is_not = "is "
+                            else:
+                                is_not = "is "
                             antecedent_parts.append(f"{input_name} {is_not}{mf_name}")
 
             consequent_parts = []
@@ -222,15 +225,16 @@ class RuleManager:
                 if mf_idx > 0:
                     if i < len(fis.Outputs):
                         output_name = fis.Outputs[i].Name
-                        if mf_idx <= len(fis.Outputs[i].MembershipFunctions):
+                        if mf_idx <= len(fis.Outputs[i].MembershipFunctions) and mf_idx > 0:
                             mf_name = fis.Outputs[i].MembershipFunctions[mf_idx - 1].Name
-                            is_not = (
-                                "is not "
-                                if (
-                                    hasattr(rule, "IsMFOutput") and i < len(rule.IsMFOutput) and rule.IsMFOutput[i] != 1
-                                )
-                                else "is "
-                            )
+                            is_not = ""
+                            if hasattr(rule, "IsMFOutput") and rule.IsMFOutput:
+                                if i < len(rule.IsMFOutput) and rule.IsMFOutput[i] != 1:
+                                    is_not = "is not "
+                                else:
+                                    is_not = "is "
+                            else:
+                                is_not = "is "
                             consequent_parts.append(f"{output_name} {is_not}{mf_name}")
 
             if not antecedent_parts or not consequent_parts:

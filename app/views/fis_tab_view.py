@@ -110,6 +110,8 @@ class FisTabView(BaseTabView):
         """
         super().__init__(parent)
 
+        self.box_system_label = None
+
         self.view_model = FisTabViewModel()
         self.view_model.setParent(self)
         self.set_view_model(self.view_model)
@@ -199,7 +201,9 @@ class FisTabView(BaseTabView):
         system_type = system_info.get("type", "mamdani")
         system_type_capitalized = system_type.capitalize()
         if system_type_capitalized == "Mamdani":
-            self.box_system_label.setText(self.t("MAMDANI_TYPE_1"))
+            text = self.t("MAMDANI_TYPE_1")
+            text = text.replace("\\n", "\n")
+            self.box_system_label.setText(text)
         else:
             self.box_system_label.setText(f"{system_type_capitalized}\n{self.t('TYPE')} 1")
 
@@ -225,7 +229,7 @@ class FisTabView(BaseTabView):
 
     def _restore_selection_highlighting(self):
         """Restore selection highlighting based on fuzzy service state."""
-        if not hasattr(self.view_model, "fuzzy_service"):
+        if not self.view_model.fuzzy_service:
             return
 
         fuzzy_service = self.view_model.fuzzy_service
@@ -317,7 +321,9 @@ class FisTabView(BaseTabView):
 
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
-        self.box_system_label.setText(self.t("MAMDANI_TYPE_1"))
+        text = self.t("MAMDANI_TYPE_1")
+        text = text.replace("\\n", "\n")
+        self.box_system_label.setText(text)
         self.system_label.setText(self.t("SYSTEM"))
         self.name_label.setText(self.t("FIS_SYSTEM"))
 
@@ -453,13 +459,13 @@ class FisTabView(BaseTabView):
 
         self._selected_input = input_data
 
-        if hasattr(self.view_model, "fuzzy_service"):
+        if self.view_model.fuzzy_service:
             self.view_model.fuzzy_service.set_selected_input(input_data.GetName())
 
         self._update_plot_styling()
 
         # Notify data refresh
-        if hasattr(self.view_model, "notify_data_changed"):
+        if self.view_model.notify_data_changed:
             self.view_model.notify_data_changed.emit()
 
         # Emit signal
@@ -475,13 +481,13 @@ class FisTabView(BaseTabView):
 
         self._selected_output = output_data
 
-        if hasattr(self.view_model, "fuzzy_service"):
+        if self.view_model.fuzzy_service:
             self.view_model.fuzzy_service.set_selected_output(output_data.GetName())
 
         self._update_plot_styling()
 
         # Notify data refresh
-        if hasattr(self.view_model, "notify_data_changed"):
+        if self.view_model.notify_data_changed:
             self.view_model.notify_data_changed.emit()
 
         # Emit signal
@@ -492,13 +498,13 @@ class FisTabView(BaseTabView):
         self._selected_input = None
         self._selected_output = None
 
-        if hasattr(self.view_model, "fuzzy_service"):
+        if self.view_model.fuzzy_service:
             self.view_model.fuzzy_service.clear_selection()
 
         self._update_plot_styling()
 
         # Notify data refresh
-        if hasattr(self.view_model, "notify_data_changed"):
+        if self.view_model.notify_data_changed:
             self.view_model.notify_data_changed.emit()
 
         self.selection_cleared.emit()
@@ -578,7 +584,7 @@ class FisTabView(BaseTabView):
 
     def _apply_initial_box_styling(self) -> None:
         """Apply initial styling to the system type box."""
-        if not hasattr(self, "box_system_label") or self.box_system_label is None:
+        if self.box_system_label is None:
             return
         self.box_system_label.setStyleSheet(
             "; ".join(
@@ -594,7 +600,7 @@ class FisTabView(BaseTabView):
 
     def _apply_fis_theme(self) -> None:
         """Apply theme colors to FIS plot elements (graph frame and center box)."""
-        if not hasattr(self, "box_system_label") or self.box_system_label is None:
+        if self.box_system_label is None:
             return
 
         if not self.view_model or not self.view_model.theme_manager:
@@ -612,7 +618,7 @@ class FisTabView(BaseTabView):
         text_color = colors.get("text", "#000000")
 
         # Update graph frame background
-        if hasattr(self, "graph_frame") and self.graph_frame is not None:
+        if self.graph_frame:
             graph_style = "; ".join(
                 [
                     f"background-color: {surface_color}",
@@ -635,7 +641,7 @@ class FisTabView(BaseTabView):
         )
 
         # Update pen color for lines
-        if hasattr(self, "pen") and self.pen is not None:
+        if self.pen:
             self.pen.setColor(QtGui.QColor(text_color))
 
         # Update all plot styling to match theme
