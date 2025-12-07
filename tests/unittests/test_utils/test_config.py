@@ -1,3 +1,4 @@
+import configparser
 from pathlib import Path
 from unittest.mock import patch
 
@@ -74,6 +75,7 @@ def test_app_config_app_name(temp_config_file):
 
 def test_app_config_app_name_fallback():
     AppConfig._initialized = False
+    AppConfig._config = configparser.ConfigParser()
     with patch("app.utils.config.CONFIG_PATH", Path("/nonexistent/config.ini")):
         AppConfig.initialize("/nonexistent/config.ini")
         name = AppConfig.app_name()
@@ -89,6 +91,7 @@ def test_app_config_window_width(temp_config_file):
 
 def test_app_config_window_width_fallback():
     AppConfig._initialized = False
+    AppConfig._config = configparser.ConfigParser()
     with patch("app.utils.config.CONFIG_PATH", Path("/nonexistent/config.ini")):
         AppConfig.initialize("/nonexistent/config.ini")
         width = AppConfig.window_width()
@@ -104,6 +107,7 @@ def test_app_config_window_height(temp_config_file):
 
 def test_app_config_window_height_fallback():
     AppConfig._initialized = False
+    AppConfig._config = configparser.ConfigParser()
     with patch("app.utils.config.CONFIG_PATH", Path("/nonexistent/config.ini")):
         AppConfig.initialize("/nonexistent/config.ini")
         height = AppConfig.window_height()
