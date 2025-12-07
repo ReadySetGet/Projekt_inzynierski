@@ -14,8 +14,13 @@ class FISStateManager:
         Args:
             fis_type: Type of FIS to create ("mamdani" or "sugeno")
         """
-        self._fis_model = FISModel()
-        self._fis_type = fis_type
+        if fis_type.lower() == "sugeno":
+            self._fis_model = FISModel(fis_type="sugeno", fis_name="empty_sugeno")
+            self._fis_type = "sugeno"
+        else:
+            self._fis_model = FISModel(fis_type="mamdani", fis_name="empty_mamdani")
+            self._fis_type = "mamdani"
+
         self._last_inference_results = []
         self._last_inference_inputs = []
         self._inference_state = "idle"  # idle, calculating, error
@@ -23,12 +28,6 @@ class FISStateManager:
         # Selection tracking
         self._selected_input_name: str = None
         self._selected_output_name: str = None
-
-        if fis_type.lower() == "sugeno":
-            self.create_sugeno_fis("default_sugeno_fis")
-        else:
-            # Default to Mamdani (already created by FISModel())
-            self._add_default_variables()
 
     @property
     def fis_model(self) -> FISModel:
