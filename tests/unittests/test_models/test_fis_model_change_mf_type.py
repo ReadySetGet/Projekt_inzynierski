@@ -27,18 +27,15 @@ class ChangeMFTypeTestCase(unittest.TestCase):
         )
 
     def test_3_mf_with_given_idx_does_not_exist(self) -> None:
-        result = self.model.change_mf_type("output0", "output", 5,
-                                           "gaussowska")
+        result = self.model.change_mf_type("output0", "output", 5, "gaussowska")
         self.assertEqual(result, -1, "Type changed incorrectly")
 
     def test_4_io_variable_not_found(self) -> None:
-        result = self.model.change_mf_type("output2", "output", 0,
-                                           "gaussowska")
+        result = self.model.change_mf_type("output2", "output", 0, "gaussowska")
         self.assertEqual(result, -2, "Type changed incorrectly")
 
     def test_5_wrong_mf_type(self) -> None:
-        result = self.model.change_mf_type("output0", "output", 0,
-                                           "jakaś")
+        result = self.model.change_mf_type("output0", "output", 0, "jakaś")
         self.assertEqual(result, -3, "Type changed incorrectly")
 
     def tearDown(self) -> None:

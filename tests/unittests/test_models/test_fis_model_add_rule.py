@@ -75,7 +75,7 @@ class AddRuleTestCase(unittest.TestCase):
         self.assertEqual(result, -1, "Rule was incorrectly added - mfs set to None")
 
     def test_12_is_not_in_sugeno_output(self) -> None:
-        model_sugeno = FISModel(fis_type='sugeno')
+        model_sugeno = FISModel(fis_type="sugeno")
         model_sugeno.add_input()
         model_sugeno.add_output()
         model_sugeno.add_mf("input0", "input")

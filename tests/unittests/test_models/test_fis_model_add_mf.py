@@ -84,8 +84,7 @@ class AddMFTestCase(unittest.TestCase):
 
     def test_10_mf_type(self) -> None:
         self.model.add_mf("output0", "output")
-        self.assertEqual(self.model._fis.Outputs[0].MembershipFunctions[0].Type,
-                         "trimf", "Wrong mf type")
+        self.assertEqual(self.model._fis.Outputs[0].MembershipFunctions[0].Type, "trimf", "Wrong mf type")
 
     def test_11_wrong_mf_type(self) -> None:
         result = self.model.add_mf("output0", "output", "wrong_type")
