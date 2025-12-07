@@ -63,7 +63,7 @@ def test_theme_manager_available_themes(theme_manager, temp_themes_dir):
 def test_theme_manager_set_theme(theme_manager, temp_themes_dir):
     dark_json = temp_themes_dir / "dark.json"
     dark_json.write_text('{"colors": {"primary": "#000000"}}')
-    
+
     theme_manager.palette_paths = theme_manager._discover_palettes()
 
     result = theme_manager.set_theme("dark")

@@ -24,14 +24,26 @@ def test_initial_state(tested_widget):
         assert tested_widget.name_label.text() in ["Name", "translated_NAME", "NAME", "NAME:", "translated_NAME:"]
     assert tested_widget.rule_weight_edit.text() == "1.0"
     if hasattr(tested_widget, "weight_label"):
-        assert tested_widget.weight_label.text() in ["Weight", "translated_WEIGHT", "WEIGHT", "WEIGHT:", "translated_WEIGHT:"]
+        assert tested_widget.weight_label.text() in [
+            "Weight",
+            "translated_WEIGHT",
+            "WEIGHT",
+            "WEIGHT:",
+            "translated_WEIGHT:",
+        ]
     assert tested_widget.rule_name_edit.text() == ""
     if hasattr(tested_widget, "if_label"):
         assert tested_widget.if_label.text() in ["If", "translated_IF", "IF"]
     if hasattr(tested_widget, "then_label"):
         assert tested_widget.then_label.text() in ["Then", "translated_THEN", "THEN"]
     if hasattr(tested_widget, "connection_label"):
-        assert tested_widget.connection_label.text() in ["Connection", "translated_CONNECTION", "CONNECTION", "CONNECTION:", "translated_CONNECTION:"]
+        assert tested_widget.connection_label.text() in [
+            "Connection",
+            "translated_CONNECTION",
+            "CONNECTION",
+            "CONNECTION:",
+            "translated_CONNECTION:",
+        ]
     if hasattr(tested_widget, "and_radio_button"):
         assert tested_widget.and_radio_button.text() in ["And", "translated_AND", "AND"]
     if hasattr(tested_widget, "or_radio_button"):

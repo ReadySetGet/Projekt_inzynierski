@@ -23,7 +23,7 @@ def tested_widget(qtbot, app, setup_base_view_model_context, mock_fuzzy_service)
     mock_fis_model = Mock()
     mock_fis_model._fis = mock_fis
     mock_fuzzy_service.get_fis_model = Mock(return_value=mock_fis_model)
-    
+
     widget = EditorTabWidget()
     if hasattr(widget, "view_model") and widget.view_model:
         type(widget.view_model).default_parameters = PropertyMock(return_value="[0, 0.5, 1]")
@@ -45,7 +45,10 @@ def test_initial_state(tested_widget):
     assert tested_widget.mf_table.horizontalHeaderItem(1).text() in ["translated_TYPE", "TYPE"]
     assert tested_widget.mf_table.horizontalHeaderItem(2).text() in ["translated_PARAMETERS", "PARAMETERS"]
 
-    assert "NUMBER_OF_MF" in tested_widget.number_of_mf_label.text() or "translated_NUMBER_OF_MF" in tested_widget.number_of_mf_label.text()
+    assert (
+        "NUMBER_OF_MF" in tested_widget.number_of_mf_label.text()
+        or "translated_NUMBER_OF_MF" in tested_widget.number_of_mf_label.text()
+    )
 
 
 def test_object_names(tested_widget):
@@ -73,7 +76,7 @@ def test_types(tested_widget):
 def test_shape_select_dropdown(tested_widget):
     tested_widget.mf_table.setRowCount(1)
     tested_widget.mf_table.setItem(0, 0, QtWidgets.QTableWidgetItem("test_mf"))
-    
+
     type_dropdown = QtWidgets.QComboBox()
     type_dropdown.addItems(["translated_TRIANGLE", "translated_TRAPEZOID", "translated_GAUSS", "translated_BELL"])
     tested_widget.mf_table.setCellWidget(0, 1, type_dropdown)
