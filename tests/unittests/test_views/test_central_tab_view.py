@@ -30,7 +30,13 @@ def test_tabs_structure(tested_widget):
     assert tested_widget.count() >= 3
     assert tested_widget.tabText(0) in ["FIS Plot", "translated_FIS_PLOT", "FIS_PLOT"]
     if tested_widget.count() > 1:
-        assert tested_widget.tabText(1) in ["MF Editor", "translated_MF_EDITOR", "MF_EDITOR", "MF Plot", "translated_MF_PLOT"]
+        assert tested_widget.tabText(1) in [
+            "MF Editor",
+            "translated_MF_EDITOR",
+            "MF_EDITOR",
+            "MF Plot",
+            "translated_MF_PLOT",
+        ]
     assert tested_widget.widget(0).objectName() == "fis_plot"
 
 
@@ -53,7 +59,11 @@ def test_mf_plot_widgets(tested_widget):
     system_label = mf_tab.findChild(QtWidgets.QLabel, "system_name_label")
     if system_label:
         assert isinstance(system_label, QtWidgets.QLabel)
-        assert "SYSTEM" in system_label.text() or "System" in system_label.text() or "translated_SYSTEM" in system_label.text()
+        assert (
+            "SYSTEM" in system_label.text()
+            or "System" in system_label.text()
+            or "translated_SYSTEM" in system_label.text()
+        )
 
     plot = mf_tab.findChild(pg.PlotWidget, "plot")
     if plot:
@@ -72,7 +82,11 @@ def test_editor_tab(tested_widget):
         system_label = editor_tab.findChild(QtWidgets.QLabel, "system_label_2")
         if system_label:
             assert isinstance(system_label, QtWidgets.QLabel)
-            assert "SYSTEM" in system_label.text() or "System" in system_label.text() or "translated_SYSTEM" in system_label.text()
+            assert (
+                "SYSTEM" in system_label.text()
+                or "System" in system_label.text()
+                or "translated_SYSTEM" in system_label.text()
+            )
 
 
 def test_add_triangle(tested_widget):

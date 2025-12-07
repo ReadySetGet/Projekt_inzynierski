@@ -30,7 +30,11 @@ def test_widget_initial_state(tested_widget):
     assert tested_widget.new_button.text() in ["New", "translated_NEW", "NEW"]
     assert tested_widget.system_type in ["Mamdani", "mamdani"]
     if hasattr(tested_widget, "conversion_button"):
-        assert "Mamdani" in tested_widget.conversion_button.text() or "Sugeno" in tested_widget.conversion_button.text() or "translated" in tested_widget.conversion_button.text()
+        assert (
+            "Mamdani" in tested_widget.conversion_button.text()
+            or "Sugeno" in tested_widget.conversion_button.text()
+            or "translated" in tested_widget.conversion_button.text()
+        )
 
 
 def test_tabs_structure(tested_widget):
@@ -104,12 +108,16 @@ def test_new_signal_emit(qtbot, tested_widget):
 def test_conversion_signal_emit(qtbot, tested_widget):
     if not hasattr(tested_widget, "conversion_button"):
         pytest.skip("conversion_button not available")
-    
+
     try:
         with qtbot.waitSignal(tested_widget.conversion_clicked, timeout=1000):
             qtbot.mouseClick(tested_widget.conversion_button, Qt.MouseButton.LeftButton)
     except Exception:
         qtbot.mouseClick(tested_widget.conversion_button, Qt.MouseButton.LeftButton)
-    
+
     if hasattr(tested_widget, "conversion_button"):
-        assert "Sugeno" in tested_widget.conversion_button.text() or "Mamdani" in tested_widget.conversion_button.text() or "translated" in tested_widget.conversion_button.text()
+        assert (
+            "Sugeno" in tested_widget.conversion_button.text()
+            or "Mamdani" in tested_widget.conversion_button.text()
+            or "translated" in tested_widget.conversion_button.text()
+        )

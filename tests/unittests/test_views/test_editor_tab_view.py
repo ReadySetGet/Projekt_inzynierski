@@ -78,7 +78,13 @@ def test_tabs_structure(tested_widget):
     assert tested_widget.count() >= 3
     assert tested_widget.tabText(0) in ["FIS Plot", "translated_FIS_PLOT", "FIS_PLOT"]
     if tested_widget.count() > 1:
-        assert tested_widget.tabText(1) in ["MF Editor", "translated_MF_EDITOR", "MF_EDITOR", "MF Plot", "translated_MF_PLOT"]
+        assert tested_widget.tabText(1) in [
+            "MF Editor",
+            "translated_MF_EDITOR",
+            "MF_EDITOR",
+            "MF Plot",
+            "translated_MF_PLOT",
+        ]
     assert tested_widget.widget(0).objectName() == "fis_plot"
 
 
@@ -104,7 +110,11 @@ def test_mf_plot_widgets(tested_widget):
     system_label = mf_tab.findChild(QtWidgets.QLabel, "system_name_label")
     if system_label:
         assert isinstance(system_label, QtWidgets.QLabel)
-        assert "SYSTEM" in system_label.text() or "System" in system_label.text() or "translated_SYSTEM" in system_label.text()
+        assert (
+            "SYSTEM" in system_label.text()
+            or "System" in system_label.text()
+            or "translated_SYSTEM" in system_label.text()
+        )
 
 
 def test_editor_tab(tested_widget):
@@ -119,17 +129,33 @@ def test_editor_tab(tested_widget):
             add_rules_button = editor_tab.findChild(QtWidgets.QPushButton, "add_all_rules")
             if add_rules_button:
                 assert isinstance(add_rules_button, QtWidgets.QPushButton)
-                assert add_rules_button.text() in ["Add All Possible Rules", "translated_ADD_ALL_POSSIBLE_RULES", "ADD_ALL_POSSIBLE_RULES", "translated_ADD_ALL_RULES", "ADD_ALL_RULES"]
+                assert add_rules_button.text() in [
+                    "Add All Possible Rules",
+                    "translated_ADD_ALL_POSSIBLE_RULES",
+                    "ADD_ALL_POSSIBLE_RULES",
+                    "translated_ADD_ALL_RULES",
+                    "ADD_ALL_RULES",
+                ]
 
             if table.columnCount() > 0 and table.horizontalHeaderItem(0):
                 header_text = table.horizontalHeaderItem(0).text()
-                assert header_text in ["Rule", "translated_RULE", "RULE", "Name", "translated_NAME", "NAME", "Weight", "translated_WEIGHT", "WEIGHT"]
+                assert header_text in [
+                    "Rule",
+                    "translated_RULE",
+                    "RULE",
+                    "Name",
+                    "translated_NAME",
+                    "NAME",
+                    "Weight",
+                    "translated_WEIGHT",
+                    "WEIGHT",
+                ]
 
 
 def test_add_rules_button(qtbot, tested_widget):
     if not hasattr(tested_widget, "set_rules"):
         pytest.skip("set_rules method not available")
-    
+
     tested_widget.set_rules(rules)
     editor_tab = tested_widget.findChild(QtWidgets.QWidget, "rule_editor")
     if editor_tab:

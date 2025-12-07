@@ -1,3 +1,4 @@
+import os
 import unittest
 import fuzzylab as fl
 from app.models.fis_model import FISModel
@@ -9,6 +10,7 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
         self.model = None
         self.new_model = None
         self.back_model = None
+        self.resources_dir = os.path.join(os.path.dirname(__file__), "resources")
 
     def test_model_validation(self) -> None:
         # Model creation
@@ -171,7 +173,9 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
 
         # Exporting model
         self.writer = FISReaderWriter(self.new_model)
-        result = self.writer.write_fis("./resources/model.fis")
+        os.makedirs(self.resources_dir, exist_ok=True)
+        model_path = os.path.join(self.resources_dir, "model.fis")
+        result = self.writer.write_fis(model_path)
         self.assertEqual(result, 1, "Wrong return value")
         self.assertNotEqual(self.writer.model, None, "Model not exported")
 
@@ -243,7 +247,8 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
 
         # Importing the previous model
         self.reader = FISReaderWriter()
-        result = self.reader.read_fis("./resources/model.fis")
+        model_path = os.path.join(self.resources_dir, "model.fis")
+        result = self.reader.read_fis(model_path)
         self.assertEqual(result, 1, "Wrong return value")
         self.assertNotEqual(self.reader.model, None, "Model not imported")
         self.new_model = self.reader.model
