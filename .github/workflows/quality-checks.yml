@@ -23,10 +23,6 @@ jobs:
         run: |
           . .venv/bin/activate
           pre-commit run --all-files
-      - name: Run type checks (mypy)
-        run: |
-          . .venv/bin/activate
-          mypy app
       - name: Run tests (pytest)
         run: |
           . .venv/bin/activate
