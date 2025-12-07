@@ -63,6 +63,8 @@ def test_theme_manager_available_themes(theme_manager, temp_themes_dir):
 def test_theme_manager_set_theme(theme_manager, temp_themes_dir):
     dark_json = temp_themes_dir / "dark.json"
     dark_json.write_text('{"colors": {"primary": "#000000"}}')
+    
+    theme_manager.palette_paths = theme_manager._discover_palettes()
 
     result = theme_manager.set_theme("dark")
     assert result is True
@@ -80,6 +82,7 @@ def test_theme_manager_get_current_theme(theme_manager, temp_themes_dir):
     dark_json = temp_themes_dir / "dark.json"
     dark_json.write_text('{"colors": {"primary": "#000000"}}')
 
+    theme_manager.palette_paths = theme_manager._discover_palettes()
     theme_manager.set_theme("dark")
     assert theme_manager.get_current_theme() == "dark"
 
@@ -90,6 +93,7 @@ def test_theme_manager_load_stylesheet_with_theme(theme_manager, temp_themes_dir
     qss_file = temp_themes_dir / "style.qss"
     qss_file.write_text("QWidget { background-color: {colors.primary}; }")
 
+    theme_manager.palette_paths = theme_manager._discover_palettes()
     theme_manager.set_theme("dark")
     result = theme_manager.load_stylesheet_with_theme("style.qss")
     assert "{colors.primary}" not in result
@@ -102,6 +106,7 @@ def test_theme_manager_load_stylesheet_with_theme_absolute_path(theme_manager, t
     qss_file = temp_themes_dir / "style.qss"
     qss_file.write_text("QWidget { background-color: {colors.primary}; }")
 
+    theme_manager.palette_paths = theme_manager._discover_palettes()
     theme_manager.set_theme("dark")
     result = theme_manager.load_stylesheet_with_theme(str(qss_file))
     assert "#000000" in result
