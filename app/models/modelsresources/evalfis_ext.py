@@ -8,6 +8,8 @@ Changed functions:
     eval_rules_mamdani
 """
 
+import warnings
+
 import numpy as np
 from fuzzylab.defuzz import defuzz
 from fuzzylab.evalmf import evalmf
@@ -208,7 +210,31 @@ def defuzzify_output_mamdani(fis, fuzzy_output):
         out_range = fis.Outputs[i].Range
         x = np.linspace(out_range[0], out_range[1], num_points)
         y = fuzzy_output[:, i]
-        output[i] = defuzz(x, y, fis.DefuzzificationMethod)
+
+        if np.all(y == 0):
+            output[i] = (out_range[0] + out_range[1]) / 2.0
+            continue
+
+        max_y = np.max(y)
+        if max_y == 0:
+            output[i] = (out_range[0] + out_range[1]) / 2.0
+            continue
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", category=RuntimeWarning, message=".*invalid value encountered in scalar divide.*"
+            )
+            try:
+                result = defuzz(x, y, fis.DefuzzificationMethod)
+                if np.isnan(result) or np.isinf(result):
+                    output[i] = (out_range[0] + out_range[1]) / 2.0
+                elif result < out_range[0] or result > out_range[1]:
+                    result = np.clip(result, out_range[0], out_range[1])
+                    output[i] = result
+                else:
+                    output[i] = result
+            except (ValueError, ZeroDivisionError, Exception):
+                output[i] = (out_range[0] + out_range[1]) / 2.0
 
     return output
 
@@ -300,7 +326,21 @@ def defuzzify_output_sugeno(fis, aggregated_output):
         next_agg_output = aggregated_output[i]
         x = next_agg_output[0]
         y = next_agg_output[1]
-        output[i] = defuzz(x, y, fis.DefuzzificationMethod)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", category=RuntimeWarning, message=".*invalid value encountered in scalar divide.*"
+            )
+            try:
+                result = defuzz(x, y, fis.DefuzzificationMethod)
+                if np.isnan(result) or np.isinf(result):
+                    out_range = fis.Outputs[i].Range
+                    output[i] = (out_range[0] + out_range[1]) / 2.0 if len(out_range) >= 2 else 0.0
+                else:
+                    output[i] = result
+            except (ValueError, ZeroDivisionError):
+                out_range = fis.Outputs[i].Range
+                output[i] = (out_range[0] + out_range[1]) / 2.0 if len(out_range) >= 2 else 0.0
 
     return output
 

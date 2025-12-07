@@ -39,8 +39,7 @@ class TopMenu(BaseTabView):
         self._retranslate_ui()
         self._update_system_type_from_model()
 
-        if self.view_model:
-            self.view_model.notify_data_changed.connect(self._on_data_changed)
+        self.view_model.notify_data_changed.connect(self._on_data_changed)
 
     def _setup_ui(self):
         """Set up all the GUI sub elements."""
@@ -182,76 +181,67 @@ class TopMenu(BaseTabView):
 
         Only one such window can exist at any given time.
         """
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_OPENED_AREA_PLOT"))
-        if self.w is None:
+        self.status_bar.showMessage(self.t("LAST_ACTION_OPENED_AREA_PLOT"))
+        if self.w is None or not self.w.isVisible():
+            if self.w is not None:
+                self.w.deleteLater()
             self.w = AreaPlot()
+            self.w.destroyed.connect(lambda: setattr(self, "w", None))
         self.w.show()
+        self.w.raise_()
+        self.w.activateWindow()
 
     def _show_settings_window(self):
         """Show and hide the settings window.
 
         Only one such window can exist at any given time.
         """
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_OPENED_SETTINGS"))
-        if self.s is None:
+        self.status_bar.showMessage(self.t("LAST_ACTION_OPENED_SETTINGS"))
+        if not self.s:
             self.s = SettingsView()
         self.s.show()
 
     def _add_input_button_clicked(self):
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_ADD_INPUT"))
+        self.status_bar.showMessage(self.t("LAST_ACTION_ADD_INPUT"))
         self.view_model.add_input()
 
     def _del_input_button_clicked(self):
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_DELETE_INPUT"))
+        self.status_bar.showMessage(self.t("LAST_ACTION_DELETE_INPUT"))
         self.view_model.delete_input()
 
     def _add_output_button_clicked(self):
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_ADD_OUTPUT"))
+        self.status_bar.showMessage(self.t("LAST_ACTION_ADD_OUTPUT"))
         self.view_model.add_output()
 
     def _del_output_button_clicked(self):
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_DELETE_OUTPUT"))
+        self.status_bar.showMessage(self.t("LAST_ACTION_DELETE_OUTPUT"))
         self.view_model.delete_output()
 
     def _help_button_clicked(self):
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_HELP"))
-        if hasattr(self, "help_clicked"):
-            self.help_clicked.emit()
+        self.status_bar.showMessage(self.t("LAST_ACTION_HELP"))
+        self.help_clicked.emit()
 
     def _conversion_button_clicked(self):
         """Convert system from Mamdani to Sugeno and vice versa."""
-        if not hasattr(self, "system_type"):
+        if not self.system_type:
             self.system_type = "Mamdani"
 
         success = self.view_model.convert_inference_system()
         if success:
             self._update_system_type_from_model()
             self._update_conversion_button_text()
-            if self.status_bar:
-                self.status_bar.showMessage(f"{self.t('LAST_ACTION_CONVERSION_SUCCESS')} {self.system_type}", 5000)
+            self.status_bar.showMessage(f"{self.t('LAST_ACTION_CONVERSION_SUCCESS')} {self.system_type}", 5000)
         else:
-            if self.status_bar:
-                self.status_bar.showMessage(self.t("LAST_ACTION_CONVERSION_FAILED"), 5000)
+            self.status_bar.showMessage(self.t("LAST_ACTION_CONVERSION_FAILED"), 5000)
 
-        if hasattr(self, "conversion_clicked"):
-            self.conversion_clicked.emit()
+        self.conversion_clicked.emit()
 
     def _update_system_type_from_model(self):
         """Update system_type from the FIS model."""
-        try:
-            fis_type = self.view_model.get_fis_type()
-            if fis_type.lower() == "sugeno":
-                self.system_type = "Sugeno"
-            else:
-                self.system_type = "Mamdani"
-        except Exception:
+        fis_type = self.view_model.get_fis_type()
+        if fis_type.lower() == "sugeno":
+            self.system_type = "Sugeno"
+        else:
             self.system_type = "Mamdani"
 
     def _update_conversion_button_text(self):
@@ -272,8 +262,7 @@ class TopMenu(BaseTabView):
     def _interpolation_spinbox_changed(self, value: int):
         """Handle interpolation spinbox value change."""
         self.view_model.set_interpolation_points(value)
-        if self.status_bar:
-            self.status_bar.showMessage(f"{self.t('INTERPOLATION_POINTS_SET_TO')} {value}", 2000)
+        self.status_bar.showMessage(f"{self.t('INTERPOLATION_POINTS_SET_TO')} {value}", 2000)
 
     def _update_interpolation_spinbox(self):
         """Update interpolation spinbox value from model."""
@@ -284,18 +273,13 @@ class TopMenu(BaseTabView):
             self.interpolation_spinbox.blockSignals(False)
 
     def _new_button_clicked(self):
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_NEW"))
-        if hasattr(self, "new_clicked"):
-            self.new_clicked.emit()
+        self.status_bar.showMessage(self.t("LAST_ACTION_NEW"))
+        self.new_clicked.emit()
 
     def _export_button_clicked(self):
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_EXPORT"))
+        self.status_bar.showMessage(self.t("LAST_ACTION_EXPORT"))
         self.export_clicked.emit()
 
     def _import_button_clicked(self):
-        if self.status_bar:
-            self.status_bar.showMessage(self.t("LAST_ACTION_IMPORT"))
-        if hasattr(self, "import_clicked"):
-            self.import_clicked.emit()
+        self.status_bar.showMessage(self.t("LAST_ACTION_IMPORT"))
+        self.import_clicked.emit()

@@ -133,9 +133,8 @@ class CentralTabViewModel(BaseViewModel):
 
     def clear_rules(self) -> None:
         """Clear all rules."""
-        if self._model:
-            self._model.clear_all_rules()
-            self._update_rules()
+        self._model.clear_all_rules()
+        self._update_rules()
         self.clear_rules_requested.emit()
 
     def update_fis_plot(self) -> None:
@@ -202,7 +201,7 @@ class CentralTabViewModel(BaseViewModel):
         self._mf_editor = mf_editor
         self.mf_editor_connected.emit()
 
-        if hasattr(mf_editor, "view_model"):
+        if mf_editor.view_model:
             mf_editor.view_model.variable_selected.connect(self._on_mf_editor_variable_selected)
             mf_editor.view_model.mf_list_updated.connect(self._on_mf_list_updated)
             mf_editor.view_model.mf_added.connect(self._on_mf_added)

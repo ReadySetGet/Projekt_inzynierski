@@ -152,8 +152,7 @@ class BrowserFrameWidget(BaseFrameView):
         self.set_active_design_button.setText(self.t("SET_ACTIVE_DESIGN"))
         self.duplicate_design_button.setText(self.t("DUPLICATE"))
         self.delete_design_button.setText(self.t("DELETE"))
-        if hasattr(self, "design_table"):
-            self.design_table.setHorizontalHeaderLabels([self.t("ACTIVE"), self.t("DESIGN"), self.t("TYPE")])
+        self.design_table.setHorizontalHeaderLabels([self.t("ACTIVE"), self.t("DESIGN"), self.t("TYPE")])
 
     def selection_changed(self):
         """Handle selection change in the tree widget."""
@@ -165,23 +164,44 @@ class BrowserFrameWidget(BaseFrameView):
                 category = payload.get("category")
                 name = payload.get("name", item.text(0))
                 data = payload.get("data", {})
-                if self.view_model:
-                    if category == "system":
-                        self.view_model.select_system_item(name, data)
-                    elif category == "design":
-                        self.view_model.select_design_item(name, data)
+            if category == "system":
+                self.view_model.select_system_item(name, data)
+            elif category == "design":
+                self.view_model.select_design_item(name, data)
             self.status_bar.showMessage(f"{self.t('LAST_ACTION_SELECTED_ITEM')} {item.text(0)}")
 
     def clear_inputs(self):
-        """Clear all inputs from the tree widget."""
-        for i in range(self.tree_data_input.childCount()):
-            self.tree_data_input.removeChild(self.tree_data_input.child(0))
+        """Clear all inputs from the FIS model and tree widget."""
+        if not self.view_model or not self.view_model.fuzzy_service:
+            return
+
+        fis_model = self.view_model.fuzzy_service.get_fis_model()
+        if not fis_model or not fis_model._fis:
+            return
+
+        input_count = len(fis_model._fis.Inputs)
+        for i in range(input_count - 1, -1, -1):
+            self.view_model.fuzzy_service.delete_input_variable(i)
+
+        self.view_model.refresh_browser()
+        self.view_model.notify_data_changed.emit()
         self.del_inputs.emit()
 
     def clear_outputs(self):
-        """Clear all outputs from the tree widget."""
-        for i in range(self.tree_data_output.childCount()):
-            self.tree_data_output.removeChild(self.tree_data_output.child(0))
+        """Clear all outputs from the FIS model and tree widget."""
+        if not self.view_model or not self.view_model.fuzzy_service:
+            return
+
+        fis_model = self.view_model.fuzzy_service.get_fis_model()
+        if not fis_model or not fis_model._fis:
+            return
+
+        output_count = len(fis_model._fis.Outputs)
+        for i in range(output_count - 1, -1, -1):
+            self.view_model.fuzzy_service.delete_output_variable(i)
+
+        self.view_model.refresh_browser()
+        self.view_model.notify_data_changed.emit()
         self.del_outputs.emit()
 
     def _populate_system_items(self, items: list) -> None:
@@ -505,7 +525,7 @@ class BrowserFrameWidget(BaseFrameView):
         # Check if this is a Sugeno output
         is_sugeno_output = False
         fis_model = self.view_model.fuzzy_service.get_fis_model()
-        if fis_model and hasattr(fis_model, "_fis"):
+        if fis_model and fis_model._fis:
             from fuzzylab import sugfis
 
             if isinstance(fis_model._fis, sugfis) and variable_type == "output":
@@ -608,7 +628,7 @@ class BrowserFrameWidget(BaseFrameView):
             fis_plot = None
             for i in range(central_tab.count()):
                 widget = central_tab.widget(i)
-                if widget and hasattr(widget, "objectName") and widget.objectName() == "fis_plot":
+                if widget and widget.objectName() == "fis_plot":
                     fis_plot = widget
                     break
                 # Also check by class name
@@ -616,7 +636,7 @@ class BrowserFrameWidget(BaseFrameView):
                     fis_plot = widget
                     break
 
-            if fis_plot and hasattr(fis_plot, "refresh_selection"):
+            if fis_plot:
                 fis_plot.refresh_selection()
 
     def _find_central_tab(self):
@@ -629,14 +649,14 @@ class BrowserFrameWidget(BaseFrameView):
         # Traverse up the parent hierarchy
         parent = self.parent()
         while parent:
-            if hasattr(parent, "objectName") and parent.objectName() == "centralTab":
+            if parent.objectName() == "centralTab":
                 return parent
 
             # Check if parent is a splitter and look for central tab in siblings
             if isinstance(parent, QtWidgets.QSplitter):
                 for i in range(parent.count()):
                     widget = parent.widget(i)
-                    if widget and hasattr(widget, "objectName") and widget.objectName() == "centralTab":
+                    if widget and widget.objectName() == "centralTab":
                         return widget
                     # Also check children
                     if widget:
@@ -656,7 +676,7 @@ class BrowserFrameWidget(BaseFrameView):
 
     def _update_property_editor(self, editor_tab):
         """Update the property editor in the editor tab."""
-        if editor_tab and hasattr(editor_tab, "update_property_editor"):
+        if editor_tab:
             editor_tab.update_property_editor()
 
     def _find_editor_tab(self):
@@ -669,14 +689,14 @@ class BrowserFrameWidget(BaseFrameView):
         # Traverse up the parent hierarchy
         parent = self.parent()
         while parent:
-            if hasattr(parent, "objectName") and parent.objectName() == "editorTab":
+            if parent.objectName() == "editorTab":
                 return parent
 
             # Check if parent is a splitter and look for editor tab in siblings
             if isinstance(parent, QtWidgets.QSplitter):
                 for i in range(parent.count()):
                     widget = parent.widget(i)
-                    if widget and hasattr(widget, "objectName") and widget.objectName() == "editorTab":
+                    if widget and widget.objectName() == "editorTab":
                         return widget
                     # Also check children of splitter widgets
                     if widget:
@@ -711,7 +731,7 @@ class BrowserFrameWidget(BaseFrameView):
 
             # Find the RulesEditorTab and trigger add rule
             rule_editor_tab = self._find_rule_editor_tab(editor_tab)
-            if rule_editor_tab and hasattr(rule_editor_tab, "_on_add_rule_clicked"):
+            if rule_editor_tab:
                 QtCore.QTimer.singleShot(50, lambda: rule_editor_tab._on_add_rule_clicked())
 
     def _edit_rule(self, data: dict):
@@ -735,7 +755,7 @@ class BrowserFrameWidget(BaseFrameView):
 
             # Find the RulesEditorTab and load the rule
             rule_editor_tab = self._find_rule_editor_tab(editor_tab)
-            if rule_editor_tab and hasattr(rule_editor_tab, "_load_rule_into_editor"):
+            if rule_editor_tab:
                 # Use QTimer to ensure the tab is fully loaded before selecting
                 QtCore.QTimer.singleShot(100, lambda: self._select_rule_in_editor(rule_editor_tab, rule_index))
 
@@ -748,7 +768,7 @@ class BrowserFrameWidget(BaseFrameView):
         if editor_tab.count() > 2:
             rule_tab = editor_tab.widget(2)
             # Check if it's a RulesEditorTab or contains one
-            if rule_tab and hasattr(rule_tab, "_load_rule_into_editor"):
+            if rule_tab:
                 return rule_tab
             # Also check children
             rule_editor = rule_tab.findChild(QtWidgets.QWidget, "rules_properties_tab")
@@ -759,7 +779,7 @@ class BrowserFrameWidget(BaseFrameView):
 
     def _select_rule_in_editor(self, rule_editor_tab, rule_index: int):
         """Select a rule in the rule editor tab."""
-        if not rule_editor_tab or not hasattr(rule_editor_tab, "rules_list"):
+        if not rule_editor_tab or not rule_editor_tab.rules_list:
             return
 
         # Find the rule in the list and select it
@@ -771,8 +791,7 @@ class BrowserFrameWidget(BaseFrameView):
                     rules_list.setCurrentItem(item)
                     rules_list.scrollToItem(item)
                     # Load the rule into the editor
-                    if hasattr(rule_editor_tab, "_load_rule_into_editor"):
-                        rule_editor_tab._load_rule_into_editor(rule_index)
+                    rule_editor_tab._load_rule_into_editor(rule_index)
                     break
 
     def _edit_mf_properties(self, data: dict):
@@ -867,12 +886,11 @@ class BrowserFrameWidget(BaseFrameView):
         payload = item.data(QtCore.Qt.ItemDataRole.UserRole)
         if isinstance(payload, dict) and payload.get("type") == "project":
             project_name = payload.get("name", "")
-            if self.view_model:
-                success = self.view_model.load_project(project_name)
-                if success and self.status_bar:
-                    msg = f"{self.t('LOADED_PROJECT')} {project_name}"
-                    self.status_bar.showMessage(msg, 3000)
-                self.view_model.refresh_projects()
+            success = self.view_model.load_project(project_name)
+            if success:
+                msg = f"{self.t('LOADED_PROJECT')} {project_name}"
+                self.status_bar.showMessage(msg, 3000)
+            self.view_model.refresh_projects()
 
     def _on_project_switched(self, project_name: str) -> None:
         """Handle project switch event."""
@@ -976,27 +994,24 @@ class BrowserFrameWidget(BaseFrameView):
         """Set the selected design as active (load it)."""
         selected_items = self.design_table.selectedItems()
         if not selected_items:
-            if self.status_bar:
-                self.status_bar.showMessage(self.t("NO_DESIGN_SELECTED"), 3000)
+            self.status_bar.showMessage(self.t("NO_DESIGN_SELECTED"), 3000)
             return
 
         item = selected_items[0]
         payload = item.data(QtCore.Qt.ItemDataRole.UserRole)
         if isinstance(payload, dict) and payload.get("type") == "project":
             project_name = payload.get("name", "")
-            if self.view_model:
-                success = self.view_model.load_project(project_name)
-                if success and self.status_bar:
-                    msg = f"{self.t('LOADED_PROJECT')} {project_name}"
-                    self.status_bar.showMessage(msg, 3000)
-                self.view_model.refresh_projects()
+            success = self.view_model.load_project(project_name)
+            if success:
+                msg = f"{self.t('LOADED_PROJECT')} {project_name}"
+                self.status_bar.showMessage(msg, 3000)
+            self.view_model.refresh_projects()
 
     def _duplicate_design(self) -> None:
         """Duplicate the selected design."""
         selected_items = self.design_table.selectedItems()
         if not selected_items:
-            if self.status_bar:
-                self.status_bar.showMessage(self.t("NO_DESIGN_SELECTED"), 3000)
+            self.status_bar.showMessage(self.t("NO_DESIGN_SELECTED"), 3000)
             return
 
         item = selected_items[0]
@@ -1009,19 +1024,17 @@ class BrowserFrameWidget(BaseFrameView):
             self, self.t("DUPLICATE_DESIGN"), self.t("NEW_NAME") + ":", text=f"{old_name}_copy"
         )
         if ok and new_name:
-            if self.view_model:
-                success = self.view_model.duplicate_project(old_name, new_name)
-                if success and self.status_bar:
-                    self.status_bar.showMessage(f"{self.t('DUPLICATED_DESIGN')} {old_name} -> {new_name}", 3000)
-                elif self.status_bar:
-                    self.status_bar.showMessage(self.t("DUPLICATE_DESIGN_FAILED"), 3000)
+            success = self.view_model.duplicate_project(old_name, new_name)
+            if success:
+                self.status_bar.showMessage(f"{self.t('DUPLICATED_DESIGN')} {old_name} -> {new_name}", 3000)
+            else:
+                self.status_bar.showMessage(self.t("DUPLICATE_DESIGN_FAILED"), 3000)
 
     def _delete_design(self) -> None:
         """Delete the selected design."""
         selected_items = self.design_table.selectedItems()
         if not selected_items:
-            if self.status_bar:
-                self.status_bar.showMessage(self.t("NO_DESIGN_SELECTED"), 3000)
+            self.status_bar.showMessage(self.t("NO_DESIGN_SELECTED"), 3000)
             return
 
         item = selected_items[0]
@@ -1038,23 +1051,21 @@ class BrowserFrameWidget(BaseFrameView):
         )
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            if self.view_model:
-                success = self.view_model.delete_project(project_name)
-                if success and self.status_bar:
-                    self.status_bar.showMessage(f"{self.t('DELETED_PROJECT')} {project_name}", 3000)
-                elif self.status_bar:
-                    self.status_bar.showMessage(self.t("DELETE_PROJECT_FAILED"), 3000)
+            success = self.view_model.delete_project(project_name)
+            if success:
+                self.status_bar.showMessage(f"{self.t('DELETED_PROJECT')} {project_name}", 3000)
+            else:
+                self.status_bar.showMessage(self.t("DELETE_PROJECT_FAILED"), 3000)
 
     def _load_project_from_menu(self, item: QtWidgets.QTableWidgetItem) -> None:
         """Load a project from the context menu."""
         payload = item.data(QtCore.Qt.ItemDataRole.UserRole)
         if isinstance(payload, dict) and payload.get("type") == "project":
             project_name = payload.get("name", "")
-            if self.view_model:
-                success = self.view_model.load_project(project_name)
-                if success and self.status_bar:
-                    self.status_bar.showMessage(f"{self.t('LOADED_PROJECT')} {project_name}", 3000)
-                    self.view_model.refresh_projects()
+            success = self.view_model.load_project(project_name)
+            if success:
+                self.status_bar.showMessage(f"{self.t('LOADED_PROJECT')} {project_name}", 3000)
+                self.view_model.refresh_projects()
 
     def _save_current_project_from_menu(self) -> None:
         """Save the current project from the context menu."""
@@ -1066,9 +1077,9 @@ class BrowserFrameWidget(BaseFrameView):
         )
         if ok and project_name:
             success = self.view_model.save_current_project(project_name)
-            if success and self.status_bar:
+            if success:
                 self.status_bar.showMessage(f"{self.t('SAVED_PROJECT')} {project_name}", 3000)
-            elif self.status_bar:
+            else:
                 self.status_bar.showMessage(self.t("SAVE_PROJECT_FAILED"), 3000)
 
     def _rename_project_from_menu(self, item: QtWidgets.QTableWidgetItem) -> None:
@@ -1082,12 +1093,11 @@ class BrowserFrameWidget(BaseFrameView):
             self, self.t("RENAME_PROJECT"), self.t("NEW_NAME") + ":", text=old_name.replace(".fis", "")
         )
         if ok and new_name and new_name != old_name.replace(".fis", ""):
-            if self.view_model:
-                success = self.view_model.rename_project(old_name, new_name)
-                if success and self.status_bar:
-                    self.status_bar.showMessage(f"{self.t('RENAMED_PROJECT')} {old_name} -> {new_name}", 3000)
-                elif self.status_bar:
-                    self.status_bar.showMessage(self.t("RENAME_PROJECT_FAILED"), 3000)
+            success = self.view_model.rename_project(old_name, new_name)
+            if success:
+                self.status_bar.showMessage(f"{self.t('RENAMED_PROJECT')} {old_name} -> {new_name}", 3000)
+            else:
+                self.status_bar.showMessage(self.t("RENAME_PROJECT_FAILED"), 3000)
 
     def _delete_project_from_menu(self, item: QtWidgets.QTableWidgetItem) -> None:
         """Delete a project from the context menu."""
@@ -1104,9 +1114,8 @@ class BrowserFrameWidget(BaseFrameView):
         )
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            if self.view_model:
-                success = self.view_model.delete_project(project_name)
-                if success and self.status_bar:
-                    self.status_bar.showMessage(f"{self.t('DELETED_PROJECT')} {project_name}", 3000)
-                elif self.status_bar:
-                    self.status_bar.showMessage(self.t("DELETE_PROJECT_FAILED"), 3000)
+            success = self.view_model.delete_project(project_name)
+            if success:
+                self.status_bar.showMessage(f"{self.t('DELETED_PROJECT')} {project_name}", 3000)
+            else:
+                self.status_bar.showMessage(self.t("DELETE_PROJECT_FAILED"), 3000)

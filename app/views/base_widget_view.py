@@ -47,15 +47,14 @@ class BaseWidgetView(QWidget):
             view_model: The view model instance.
         """
         self.view_model = view_model
-        if self.view_model:
-            self.view_model.theme_changed.connect(self.reload_stylesheet)
-            self.view_model.theme_changed.connect(self._apply_pyqtgraph_theme)
-            self.view_model.data_changed.connect(self.refresh_ui)
-            self.view_model.notify_data_changed.connect(self.update_ui)
-            self.view_model.translate_manager.language_changed.connect(self._on_language_changed)
-            # Initial stylesheet and theme load
-            self.reload_stylesheet()
-            self._apply_pyqtgraph_theme()
+        self.view_model.theme_changed.connect(self.reload_stylesheet)
+        self.view_model.theme_changed.connect(self._apply_pyqtgraph_theme)
+        self.view_model.data_changed.connect(self.refresh_ui)
+        self.view_model.notify_data_changed.connect(self.update_ui)
+        self.view_model.translate_manager.language_changed.connect(self._on_language_changed)
+        # Initial stylesheet and theme load
+        self.reload_stylesheet()
+        self._apply_pyqtgraph_theme()
 
     def reload_stylesheet(self) -> None:
         """Reload and apply the local stylesheet if qss_filename is set and exists."""
@@ -78,10 +77,8 @@ class BaseWidgetView(QWidget):
 
     def t(self, key: str) -> str:
         """Get translation for a key via view model."""
-        if self.view_model:
-            result = self.view_model.t(key)
-            return str(result) if result is not None else key
-        return key
+        result = self.view_model.t(key)
+        return str(result) if result is not None else key
 
     def request_global_update(self) -> None:
         """Request a global update across all components."""
@@ -106,8 +103,7 @@ class BaseWidgetView(QWidget):
 
     def _on_language_changed(self) -> None:
         """Handle language change event."""
-        if hasattr(self, "_retranslate_ui"):
-            self._retranslate_ui()
+        self._retranslate_ui()
 
     def _apply_pyqtgraph_theme(self) -> None:
         """Apply the current theme colors to pyqtgraph plots."""

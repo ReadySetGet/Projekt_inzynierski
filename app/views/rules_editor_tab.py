@@ -4,10 +4,29 @@ Classes:
     RulesEditorTab: button area element inheriting from QTabWidget.
 """
 
+import re
+
 from PyQt6 import QtCore, QtWidgets
 
 from app.view_models.rules_editor_view_model import RulesEditorViewModel
 from app.views.base_widget_view import BaseWidgetView
+
+
+def _regex_func(match) -> str:
+    """Function responsible for substituting the antecedent ==.
+
+    Substitutes with consequent = after the => symbol.
+
+    Args:
+        match: Regex match object.
+
+    Returns:
+        Modified string.
+    """
+    then = match.group(1)
+    after = match.group(2)
+    consequent = re.sub(r"==", r"=", after)
+    return then + consequent
 
 
 class RulesEditorTab(BaseWidgetView):
@@ -20,6 +39,8 @@ class RulesEditorTab(BaseWidgetView):
         __init__(parent): create an instance of RulesEditorTab and bind it to the
             parent window.
     """
+
+    _symbols = {"is": "==", "is not": "~=", "then": "=>", "and": "&", "or": "|"}
 
     def __init__(self, parent=None):
         """Initialize a new class instance.
@@ -37,6 +58,10 @@ class RulesEditorTab(BaseWidgetView):
 
         self._updating_rule = False
         self._current_rule_index = -1
+        self.input_dropdowns = []
+        self.input_is_dropdowns = []
+        self.output_dropdowns = []
+        self.output_is_dropdowns = []
 
         self._setup_ui()
         self._retranslate_ui()
@@ -70,12 +95,15 @@ class RulesEditorTab(BaseWidgetView):
 
     def _on_data_changed(self):
         """Handle data changed signal from view model."""
-        self.refresh_ui()
+        self._build_rule_editor_dropdowns()
+        self._update_rules_list(self.view_model.rules)
+        if self._current_rule_index >= 0:
+            if self._current_rule_index < len(self.view_model.rules):
+                self._load_rule_into_editor(self._current_rule_index)
 
     def refresh_ui(self) -> None:
         """Refresh the UI elements."""
-        if hasattr(self, "view_model") and self.view_model:
-            self.view_model.refresh_data()
+        self.view_model.refresh_data()
 
     def update_ui(self) -> None:
         """Update UI elements."""
@@ -182,15 +210,54 @@ class RulesEditorTab(BaseWidgetView):
         if not self.view_model or not self.view_model.fuzzy_service:
             return
 
+        for dropdown in self.input_dropdowns:
+            if dropdown:
+                dropdown.setParent(None)
+                dropdown.deleteLater()
+        for dropdown in self.input_is_dropdowns:
+            if dropdown:
+                dropdown.setParent(None)
+                dropdown.deleteLater()
+        for dropdown in self.output_dropdowns:
+            if dropdown:
+                dropdown.setParent(None)
+                dropdown.deleteLater()
+        for dropdown in self.output_is_dropdowns:
+            if dropdown:
+                dropdown.setParent(None)
+                dropdown.deleteLater()
+
         while self.antecedent_layout.count():
             item = self.antecedent_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            widget = item.widget()
+            if widget:
+                widget.setParent(None)
+                widget.deleteLater()
+            layout = item.layout()
+            if layout:
+                while layout.count():
+                    layout_item = layout.takeAt(0)
+                    layout_widget = layout_item.widget()
+                    if layout_widget:
+                        layout_widget.setParent(None)
+                        layout_widget.deleteLater()
+                layout.setParent(None)
 
         while self.consequent_layout.count():
             item = self.consequent_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            widget = item.widget()
+            if widget:
+                widget.setParent(None)
+                widget.deleteLater()
+            layout = item.layout()
+            if layout:
+                while layout.count():
+                    layout_item = layout.takeAt(0)
+                    layout_widget = layout_item.widget()
+                    if layout_widget:
+                        layout_widget.setParent(None)
+                        layout_widget.deleteLater()
+                layout.setParent(None)
 
         self.input_dropdowns = []
         self.input_is_dropdowns = []
@@ -250,19 +317,50 @@ class RulesEditorTab(BaseWidgetView):
         """Update the rules list from view model."""
         self.rules_list.clear()
 
+        if not rules_list:
+            return
+
         display_mode = self.display_mode_combo.currentText()
 
         for rule in rules_list:
             rule_index = rule.get("index", 0)
 
-            if display_mode == self.t("SYMBOLIC"):
-                text = self.view_model.get_rule_text(rule_index)
-            elif display_mode == self.t("INDEXED"):
+            try:
+                if display_mode == self.t("SYMBOLIC"):
+                    rule_text = self.view_model.get_rule_text(rule_index)
+                    if rule_text and not rule_text.startswith("Error:") and not rule_text.startswith("Rule"):
+                        pattern = r"\b({})\b".format("|".join(sorted(re.escape(k) for k in self._symbols)))
+                        symbolic_rule = re.sub(pattern, lambda m: self._symbols.get(m.group(0)), rule_text)
+                        symbolic_rule = re.sub(r"(=>)(.*)", _regex_func, symbolic_rule)
+                        if not symbolic_rule or symbolic_rule == rule_text:
+                            symbolic_rule = rule_text
+                        text = symbolic_rule
+                    else:
+                        ant = rule.get("antecedent", [])
+                        cons = rule.get("consequent", [])
+                        ant_str = ",".join(map(str, ant))
+                        cons_str = ",".join(map(str, cons))
+                        text = f"{self.t('RULE')}{rule_index + 1}: [{ant_str}] -> [{cons_str}]"
+                elif display_mode == self.t("INDEXED"):
+                    ant = rule.get("antecedent", [])
+                    cons = rule.get("consequent", [])
+                    ant_str = ",".join(map(str, ant))
+                    cons_str = ",".join(map(str, cons))
+                    text = f"{self.t('RULE')}{rule_index + 1}: [{ant_str}] -> [{cons_str}]"
+                else:
+                    text = self.view_model.get_rule_text(rule_index)
+                    if not text or text.startswith("Error:"):
+                        ant = rule.get("antecedent", [])
+                        cons = rule.get("consequent", [])
+                        ant_str = ",".join(map(str, ant))
+                        cons_str = ",".join(map(str, cons))
+                        text = f"{self.t('RULE')}{rule_index + 1}: [{ant_str}] -> [{cons_str}]"
+            except Exception:
                 ant = rule.get("antecedent", [])
                 cons = rule.get("consequent", [])
-                text = f"{self.t('RULE')}{rule_index + 1}: [{','.join(map(str, ant))}] -> [{','.join(map(str, cons))}]"
-            else:
-                text = self.view_model.get_rule_text(rule_index)
+                ant_str = ",".join(map(str, ant))
+                cons_str = ",".join(map(str, cons))
+                text = f"{self.t('RULE')}{rule_index + 1}: [{ant_str}] -> [{cons_str}]"
 
             item = QtWidgets.QListWidgetItem(text)
             item.setData(QtCore.Qt.ItemDataRole.UserRole, rule_index)
@@ -278,63 +376,44 @@ class RulesEditorTab(BaseWidgetView):
 
     def _retranslate_ui(self):
         """Add text to all the respective GUI elements."""
-        if hasattr(self, "name_label"):
-            self.name_label.setText(self.t("NAME") + ":")
-        if hasattr(self, "weight_label"):
-            self.weight_label.setText(self.t("WEIGHT") + ":")
-        if hasattr(self, "connection_label"):
-            self.connection_label.setText(self.t("CONNECTION") + ":")
-        if hasattr(self, "and_radio_button"):
-            self.and_radio_button.setText(self.t("AND"))
-        if hasattr(self, "or_radio_button"):
-            self.or_radio_button.setText(self.t("OR"))
-        if hasattr(self, "if_label"):
-            self.if_label.setText(self.t("IF"))
-        if hasattr(self, "then_label"):
-            self.then_label.setText(self.t("THEN"))
-        if hasattr(self, "add_rule_button"):
-            self.add_rule_button.setText(self.t("ADD_RULE"))
-        if hasattr(self, "update_rule_button"):
-            self.update_rule_button.setText(self.t("UPDATE_RULE"))
-        if hasattr(self, "delete_rule_button"):
-            self.delete_rule_button.setText(self.t("DELETE_RULE"))
-        if hasattr(self, "rules_group"):
-            self.rules_group.setTitle(self.t("RULES_LIST"))
-        if hasattr(self, "rule_editor_group"):
-            self.rule_editor_group.setTitle(self.t("RULE_EDITOR"))
-        if hasattr(self, "title_label"):
-            self.title_label.setText(self.t("RULE_EDITOR"))
-        if hasattr(self, "display_mode_label"):
-            self.display_mode_label.setText(self.t("DISPLAY_MODE") + ":")
-        if hasattr(self, "add_all_rules_button"):
-            self.add_all_rules_button.setText(self.t("ADD_ALL_RULES"))
-        if hasattr(self, "clear_rules_button"):
-            self.clear_rules_button.setText(self.t("CLEAR_RULES"))
-        if hasattr(self, "display_mode_combo"):
-            self.display_mode_combo.clear()
-            self.display_mode_combo.addItems([self.t("SYMBOLIC"), self.t("INDEXED"), self.t("VERBOSE")])
+        self.name_label.setText(self.t("NAME") + ":")
+        self.weight_label.setText(self.t("WEIGHT") + ":")
+        self.connection_label.setText(self.t("CONNECTION") + ":")
+        self.and_radio_button.setText(self.t("AND"))
+        self.or_radio_button.setText(self.t("OR"))
+        self.if_label.setText(self.t("IF"))
+        self.then_label.setText(self.t("THEN"))
+        self.add_rule_button.setText(self.t("ADD_RULE"))
+        self.update_rule_button.setText(self.t("UPDATE_RULE"))
+        self.delete_rule_button.setText(self.t("DELETE_RULE"))
+        self.rules_group.setTitle(self.t("RULES_LIST"))
+        self.rule_editor_group.setTitle(self.t("RULE_EDITOR"))
+        self.title_label.setText(self.t("RULE_EDITOR"))
+        self.display_mode_label.setText(self.t("DISPLAY_MODE") + ":")
+        self.add_all_rules_button.setText(self.t("ADD_ALL_RULES"))
+        self.clear_rules_button.setText(self.t("CLEAR_RULES"))
+        self.display_mode_combo.clear()
+        self.display_mode_combo.addItems([self.t("SYMBOLIC"), self.t("INDEXED"), self.t("VERBOSE")])
 
     def _on_add_all_rules_clicked(self):
         """Handle Add All Rules button click."""
-        if self.view_model:
-            success = self.view_model.add_all_possible_rules()
-            if success:
-                QtWidgets.QMessageBox.information(self, self.t("SUCCESS"), self.t("ALL_RULES_ADDED"))
+        success = self.view_model.add_all_possible_rules()
+        if success:
+            QtWidgets.QMessageBox.information(self, self.t("SUCCESS"), self.t("ALL_RULES_ADDED"))
 
     def _on_clear_rules_clicked(self):
         """Handle Clear Rules button click."""
-        if self.view_model:
-            reply = QtWidgets.QMessageBox.question(
-                self,
-                self.t("CONFIRM"),
-                self.t("CLEAR_ALL_RULES_CONFIRM"),
-                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-            )
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            self.t("CONFIRM"),
+            self.t("CLEAR_ALL_RULES_CONFIRM"),
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+        )
 
-            if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-                success = self.view_model.clear_all_rules()
-                if success:
-                    self._clear_rule_editor()
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            success = self.view_model.clear_all_rules()
+            if success:
+                self._clear_rule_editor()
 
     def _on_add_rule_clicked(self):
         """Handle Add Rule button click."""

@@ -30,7 +30,6 @@ class RuleInterferenceViewModel(BaseViewModel):
             Tuple[List[float], List[float]],
         ] = {}
         self._last_rules_hash: int = 0
-        self._connect_to_fuzzy_service()
 
     # ---------------------------------------------------------------------- #
     # Public API                                                             #
@@ -115,22 +114,6 @@ class RuleInterferenceViewModel(BaseViewModel):
     # ------------------------------------------------------------------ #
     # Internal helpers                                                   #
     # ------------------------------------------------------------------ #
-    def _connect_to_fuzzy_service(self) -> None:
-        """Attach listeners to fuzzy service change notifications."""
-        try:
-            fuzzy_service = self.fuzzy_service
-        except RuntimeError:
-            fuzzy_service = None
-
-        if fuzzy_service and hasattr(fuzzy_service, "system_changed"):
-            fuzzy_service.system_changed.connect(self._on_system_changed)
-
-    def _on_system_changed(self) -> None:
-        """Handle incoming system change notifications."""
-        self._curve_cache.clear()
-        self._last_rules_hash = 0
-        self.refresh_data()
-
     def _reset_cache(self) -> None:
         """Reset all cached data."""
         self._inputs = []
@@ -193,9 +176,8 @@ class RuleInterferenceViewModel(BaseViewModel):
             return []
 
         # Handle numpy arrays/scalars via tolist()
-        if hasattr(outputs, "tolist"):
+        if isinstance(outputs, np.ndarray):
             converted = outputs.tolist()
-            # Recursively normalise in case tolist() returned a scalar
             return self._normalize_outputs(converted)
 
         if isinstance(outputs, (list, tuple)):
@@ -430,13 +412,20 @@ class RuleInterferenceViewModel(BaseViewModel):
         aggregated_outputs = []
         for idx, variable in enumerate(outputs_payload):
             aggregated = aggregated_curves.get(idx, {"curve_x": [], "curve_y": []})
+            curve_y = aggregated.get("curve_y", [])
+            value = variable.get("value")
+
+            if value is not None:
+                if not curve_y or all(y == 0.0 for y in curve_y):
+                    value = None
+
             aggregated_outputs.append(
                 {
                     "variable_index": idx,
                     "variable_name": variable.get("name"),
                     "curve_x": aggregated.get("curve_x", []),
-                    "curve_y": aggregated.get("curve_y", []),
-                    "value": variable.get("value"),
+                    "curve_y": curve_y,
+                    "value": value,
                 }
             )
         return aggregated_outputs

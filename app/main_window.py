@@ -1,13 +1,13 @@
 import os
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWidgets import QMainWindow
 
 from app.app_context import AppContext
 
 # CentralEventBus is now accessed through context.event_bus
 from app.utils.config import AppConfig
-from app.utils.paths import local_path
+from app.utils.paths import IMAGES_DIR, local_path
 from app.utils.shortcut_manager import ShortcutManager
 from app.view_models.browser_frame_view_model import BrowserFrameViewModel
 from app.view_models.central_tab_view_model import CentralTabViewModel
@@ -48,6 +48,9 @@ class MainWindow(QMainWindow):
             # Set up the main UI
             self.setupViewModels()
             self.setupUi()
+
+            # Set window icon after UI is set up (for Windows taskbar)
+            self._set_window_icon()
 
             # Theme support
             self.context.theme_manager.theme_changed.connect(self.reload_stylesheet)
@@ -427,3 +430,50 @@ class MainWindow(QMainWindow):
                 self._handle_export_clicked,
                 description="Save/Export FIS Model",
             )
+
+    def _set_window_icon(self) -> None:
+        """Set the window icon for the application."""
+        app_icon = QtWidgets.QApplication.instance().windowIcon()
+        if not app_icon.isNull():
+            self.setWindowIcon(app_icon)
+        else:
+            icon_path = IMAGES_DIR / "app_icon.ico"
+
+            if icon_path.exists():
+                icon = QtGui.QIcon(str(icon_path))
+            else:
+                icon_path = IMAGES_DIR / "app_icon.png"
+                if icon_path.exists():
+                    icon = QtGui.QIcon(str(icon_path))
+                else:
+                    icon = MainWindow._create_default_icon()
+
+            self.setWindowIcon(icon)
+
+    @staticmethod
+    def _create_default_icon() -> QtGui.QIcon:
+        """Create a default fuzzy logic icon programmatically."""
+        pixmap = QtGui.QPixmap(64, 64)
+        pixmap.fill(QtCore.Qt.GlobalColor.transparent)
+
+        painter = QtGui.QPainter(pixmap)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+
+        pen = QtGui.QPen(QtGui.QColor(70, 130, 180), 3)
+        painter.setPen(pen)
+        brush = QtGui.QBrush(QtGui.QColor(70, 130, 180, 200))
+        painter.setBrush(brush)
+
+        center_x, center_y = 32, 32
+
+        for i in range(3):
+            radius = 20 - i * 5
+            alpha = 150 + i * 30
+            brush.setColor(QtGui.QColor(70, 130, 180, alpha))
+            painter.setBrush(brush)
+            painter.drawEllipse(center_x - radius, center_y - radius, radius * 2, radius * 2)
+
+        painter.end()
+
+        icon = QtGui.QIcon(pixmap)
+        return icon
