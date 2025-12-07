@@ -1,6 +1,8 @@
 import os
 import unittest
+
 import fuzzylab as fl
+
 from app.models.fis_model import FISModel
 from app.models.fis_reader_writer import FISReaderWriter
 
@@ -16,8 +18,7 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
         # Model creation
         self.model = FISModel(fis_type="sugeno")
         self.assertNotEqual(self.model, None, "No model created")
-        self.assertEqual(type(self.model._fis), fl.sugfis,
-                         "Wrong model type created")
+        self.assertEqual(type(self.model._fis), fl.sugfis, "Wrong model type created")
 
         # Adding io variables
         nr_inputs = len(self.model._fis.Inputs)
@@ -90,20 +91,15 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
         # Changing different MF parameters
         result = self.model.change_mf_name("output0", "output", 0, "newname")
         self.assertEqual(result, 1, "Wrong result value")
-        self.assertEqual(
-            self.model._fis.Outputs[0].MembershipFunctions[0].Name, "newname",
-            "Wrong name of MF")
+        self.assertEqual(self.model._fis.Outputs[0].MembershipFunctions[0].Name, "newname", "Wrong name of MF")
 
-        result = self.model.change_mf_parameters("input0", "input", 0,
-                                                 [1, 2, 3])
+        result = self.model.change_mf_parameters("input0", "input", 0, [1, 2, 3])
         self.assertEqual(result, 1, "Wrong result value")
         self.assertEqual(
-            self.model._fis.Inputs[0].MembershipFunctions[0].Parameters,
-            [1, 2, 3], "Wrong parameters of MF"
+            self.model._fis.Inputs[0].MembershipFunctions[0].Parameters, [1, 2, 3], "Wrong parameters of MF"
         )
 
-        result = self.model.change_mf_type("input1", "input", 0,
-                                           "gaussowska")
+        result = self.model.change_mf_type("input1", "input", 0, "gaussowska")
         self.assertEqual(result, 1, "Wrong result code")
         self.assertEqual(
             self.model._fis.Inputs[1].MembershipFunctions[0].Type,
@@ -114,62 +110,50 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
         # Adding rules
         result = self.model.add_rule(is_mf=[1, 0, 1], rule_data=[1, 1, 1, 1, 1])
         self.assertEqual(result, 1, "Rule not added correctly")
-        self.assertEqual(len(self.model._fis.Rules), 1,
-                         "Rule not added to fis")
+        self.assertEqual(len(self.model._fis.Rules), 1, "Rule not added to fis")
 
-        result = self.model.add_rule(is_mf=[1, 1, 1],
-                                     rule_data=[2, 1, 2, 0.4, 0])
+        result = self.model.add_rule(is_mf=[1, 1, 1], rule_data=[2, 1, 2, 0.4, 0])
         self.assertEqual(result, 1, "Rule not added correctly")
-        self.assertEqual(len(self.model._fis.Rules), 2,
-                         "Rule not added to fis")
+        self.assertEqual(len(self.model._fis.Rules), 2, "Rule not added to fis")
 
         # Some additional operations a user might want to do before proceeding
         # to inferring
         result = self.model.change_variable_range("input0", "input", [-3, 8])
-        self.assertEqual(self.model._fis.Inputs[0].Range, [-3, 8],
-                         "Range of input variable not changed")
+        self.assertEqual(self.model._fis.Inputs[0].Range, [-3, 8], "Range of input variable not changed")
         self.assertEqual(result, 1, "Wrong return value")
 
         result = self.model.update_logic_methods(or_method="probor")
         self.assertEqual(result, 1, "Wrong return value")
-        self.assertEqual(self.model._fis.OrMethod, "probor",
-                         "Or method not updated")
+        self.assertEqual(self.model._fis.OrMethod, "probor", "Or method not updated")
 
         result = self.model.update_logic_methods(imp_method="prod")
         self.assertEqual(result, 1, "Wrong return value")
-        self.assertEqual(self.model._fis.ImplicationMethod, "prod",
-                         "Implication method not updated")
+        self.assertEqual(self.model._fis.ImplicationMethod, "prod", "Implication method not updated")
 
         result = self.model.change_defuzzification_method("wtaver")
-        self.assertEqual(self.model._fis.DefuzzificationMethod, "wtaver",
-                         "Defuzzification method not changed")
+        self.assertEqual(self.model._fis.DefuzzificationMethod, "wtaver", "Defuzzification method not changed")
         self.assertEqual(result, 1, "Wrong return value")
 
         result = self.model.set_interpolation_points(50)
         self.assertEqual(result, 1, "Problems with return value")
-        self.assertEqual(self.model._interpolation_points_nr, 50,
-                         "Interpolation points not set")
+        self.assertEqual(self.model._interpolation_points_nr, 50, "Interpolation points not set")
 
         # Generating all rules and updating some of them
         result = self.model.generate_all_rules()
-        self.assertEqual(len(self.model._fis.Rules), 2,
-                         "Wrong nr of rules generated")
+        self.assertEqual(len(self.model._fis.Rules), 2, "Wrong nr of rules generated")
         self.assertEqual(result, 1, "Wrong result code returned")
 
         self.model.update_rule(1, [1, 1, 1], [1, 1, 1, 0.3, 1])
-        self.assertEqual(self.model._fis.Rules[1].Weight, 0.3,
-                         "Rule weight not updated")
+        self.assertEqual(self.model._fis.Rules[1].Weight, 0.3, "Rule weight not updated")
 
         self.model.update_rule(1, [1, 1, 1], [2, 1, 1, 1, 1])
-        self.assertEqual(self.model._fis.Rules[1].Antecedent[0], 2,
-                         "Rule MF used not updated")
+        self.assertEqual(self.model._fis.Rules[1].Antecedent[0], 2, "Rule MF used not updated")
 
         # Converting to Mamdani model
         self.new_model = self.model.convert_inference_system("new_model")
         self.assertNotEqual(self.new_model, None, "Conversion failed")
         self.assertEqual(self.new_model._fis.Name, "new_model", "Wrong name")
-        self.assertEqual(type(self.new_model._fis), fl.mamfis,
-                         "Wrong type of fis")
+        self.assertEqual(type(self.new_model._fis), fl.mamfis, "Wrong type of fis")
 
         # Exporting model
         self.writer = FISReaderWriter(self.new_model)
@@ -189,8 +173,7 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
         self.back_model = self.new_model.convert_inference_system("back_model")
         self.assertNotEqual(self.back_model, None, "Conversion failed")
         self.assertEqual(self.back_model._fis.Name, "back_model", "Wrong name")
-        self.assertEqual(type(self.back_model._fis), fl.sugfis,
-                         "Wrong type of fis")
+        self.assertEqual(type(self.back_model._fis), fl.sugfis, "Wrong type of fis")
         for rule in self.back_model._fis.Rules:
             self.assertEqual(rule.IsMFOutput, [1], "Invalid IS NOT present")
         for mf in self.back_model._fis.Outputs[0].MembershipFunctions:
@@ -200,12 +183,10 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
         nr_rules = len(self.back_model._fis.Rules)
         result = self.back_model.delete_rule(1)
         self.assertEqual(result, 1, "Wrong result code")
-        self.assertEqual(len(self.back_model._fis.Rules), nr_rules - 1,
-                         "Rule not deleted")
+        self.assertEqual(len(self.back_model._fis.Rules), nr_rules - 1, "Rule not deleted")
 
         self.back_model.clear_all_rules()
-        self.assertEqual(len(self.back_model._fis.Rules), 0,
-                         "Not all rules deleted")
+        self.assertEqual(len(self.back_model._fis.Rules), 0, "Not all rules deleted")
 
         nr_mfs = len(self.back_model._fis.Inputs[0].MembershipFunctions)
         result = self.back_model.delete_mf("input0", "input", 1)
@@ -228,22 +209,17 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
         nr_outputs = len(self.back_model._fis.Outputs)
         result = self.back_model.delete_output(0)
         self.assertEqual(result, 1, "Wrong result code")
-        self.assertEqual(len(self.back_model._fis.Outputs), nr_outputs - 1,
-                         "Output not deleted")
+        self.assertEqual(len(self.back_model._fis.Outputs), nr_outputs - 1, "Output not deleted")
 
         nr_inputs = len(self.back_model._fis.Inputs)
         result = self.back_model.delete_input(1)
         self.assertEqual(result, 1, "Wrong result code")
-        self.assertEqual(len(self.back_model._fis.Inputs), nr_inputs - 1,
-                         "Input not deleted")
+        self.assertEqual(len(self.back_model._fis.Inputs), nr_inputs - 1, "Input not deleted")
 
         self.back_model.clear_all_io_variables()
-        self.assertEqual(len(self.back_model._fis.Inputs), 0,
-                         "Not all inputs deleted")
-        self.assertEqual(len(self.back_model._fis.Outputs), 0,
-                         "Not all outputs deleted")
-        self.assertEqual(len(self.back_model._fis.Rules), 0,
-                         "Not all rules deleted")
+        self.assertEqual(len(self.back_model._fis.Inputs), 0, "Not all inputs deleted")
+        self.assertEqual(len(self.back_model._fis.Outputs), 0, "Not all outputs deleted")
+        self.assertEqual(len(self.back_model._fis.Rules), 0, "Not all rules deleted")
 
         # Importing the previous model
         self.reader = FISReaderWriter()
@@ -259,26 +235,21 @@ class ModelValidationSugenoTestCase(unittest.TestCase):
 
         input_vars = self.new_model.return_all_input_variables()
         self.assertEqual(len(input_vars), 2, "Not all inputs returned")
-        self.assertEqual(len(input_vars[0].MembershipFunctions), 2,
-                         "Inputs returned without mfs")
-        self.assertEqual(len(input_vars[1].MembershipFunctions), 1,
-                         "Inputs returned without mfs")
+        self.assertEqual(len(input_vars[0].MembershipFunctions), 2, "Inputs returned without mfs")
+        self.assertEqual(len(input_vars[1].MembershipFunctions), 1, "Inputs returned without mfs")
 
         output_vars = self.new_model.return_all_output_variables()
         self.assertEqual(len(output_vars), 1, "Not all outputs returned")
-        self.assertEqual(len(output_vars[0].MembershipFunctions), 2,
-                         "Outputs returned without mfs")
+        self.assertEqual(len(output_vars[0].MembershipFunctions), 2, "Outputs returned without mfs")
 
-        input_mfs = self.new_model.return_all_mfs_of_io_variable("input0",
-                                                                 "input")
+        input_mfs = self.new_model.return_all_mfs_of_io_variable("input0", "input")
         self.assertEqual(len(input_mfs), 2, "Not all mfs returned")
 
         rules = self.new_model.return_all_rules()
         self.assertEqual(len(rules), 2, "Wrong length of rule list")
 
         points = self.new_model.get_interpolation_points()
-        self.assertEqual(points, 100,
-                         "Wrong number of interpolation points received")
+        self.assertEqual(points, 100, "Wrong number of interpolation points received")
 
         name = self.new_model.return_system_name()
         self.assertEqual(name, "new_model", "Wrong name returned")

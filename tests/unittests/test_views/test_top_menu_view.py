@@ -74,7 +74,6 @@ def test_spinbox_interaction_valid(qtbot, tested_widget):
     interpolation_spinbox = tested_widget.findChild(QtWidgets.QSpinBox, "interpolation_spinbox")
     if interpolation_spinbox:
         assert isinstance(interpolation_spinbox, QtWidgets.QSpinBox)
-        initial_value = interpolation_spinbox.value()
         assert interpolation_spinbox.minimum() == 10
         assert interpolation_spinbox.maximum() == 1000
         interpolation_spinbox.setValue(20)
@@ -89,7 +88,6 @@ def test_spinbox_interaction_invalid(qtbot, tested_widget):
     interpolation_spinbox = tested_widget.findChild(QtWidgets.QSpinBox, "interpolation_spinbox")
     if interpolation_spinbox:
         assert isinstance(interpolation_spinbox, QtWidgets.QSpinBox)
-        initial_value = interpolation_spinbox.value()
         interpolation_spinbox.setValue(-10)
         assert interpolation_spinbox.value() >= 0
     else:
