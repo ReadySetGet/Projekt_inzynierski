@@ -41,31 +41,20 @@ def get_writable_path(*parts: str) -> Path:
     return base_path.joinpath(*parts)
 
 
-# Project root directory
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-
-# App root
 APP_DIR = PROJECT_ROOT / "app"
-
-# Assets and subdirectories
 ASSETS_DIR = get_resource_path("assets")
 THEMES_DIR = get_resource_path("assets", "themes")
 LOCALES_DIR = get_resource_path("assets", "locales")
 FONTS_DIR = get_resource_path("assets", "fonts")
 IMAGES_DIR = get_resource_path("assets", "images")
-
-# App subdirectories
 UTILS_DIR = APP_DIR / "utils"
 VIEWS_DIR = APP_DIR / "views"
 VIEW_MODELS_DIR = APP_DIR / "view_models"
 MODELS_DIR = APP_DIR / "models"
-
-# Config and other important files
 CONFIG_PATH = PROJECT_ROOT / "config.ini"
 PYPROJECT_TOML = PROJECT_ROOT / "pyproject.toml"
 REQUIREMENTS_TXT = PROJECT_ROOT / "requirements.txt"
-
-# Projects directory - writable location (next to .exe when frozen, or in project root when running as script)
 PROJECTS_DIR = get_writable_path("projects")
 
 
@@ -80,8 +69,3 @@ def local_path(module_file: str, *parts: str) -> Path:
         Path: The absolute path resolved from the module's directory and parts.
     """
     return Path(module_file).parent.joinpath(*parts)
-
-
-# Example usage:
-# from app.utils.paths import THEMES_DIR, CONFIG_PATH
-# theme_path = THEMES_DIR / "dark.json"

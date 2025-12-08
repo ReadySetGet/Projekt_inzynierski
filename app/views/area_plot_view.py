@@ -9,10 +9,7 @@ from app.views.base_widget_view import BaseWidgetView
 
 
 class AreaPlot(BaseWidgetView):
-    """Class used to display area plot widget.
-
-    It does not have a Parent attribute as to be displayed in a separate window.
-    """
+    """Area plot widget for visualizing control surfaces in a separate window."""
 
     def __init__(self):
         """Initialize the area plot widget."""

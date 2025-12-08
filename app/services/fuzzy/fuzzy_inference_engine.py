@@ -30,11 +30,9 @@ class FuzzyInferenceEngine:
             if fis_model is None:
                 fis_model = self._fis_model
 
-            # Check if system is ready
             if not self._is_system_ready_for_inference(fis_model):
                 return [], False
 
-            # Perform inference using the evalfis function
             outputs = evalfis(fis_model._fis, inputs)
 
             if hasattr(outputs, "tolist"):
@@ -114,11 +112,9 @@ class FuzzyInferenceEngine:
 
             fis = fis_model._fis
 
-            # Check if we have the right number of inputs
             if len(inputs) != len(fis.Inputs):
                 return False, f"Expected {len(fis.Inputs)} inputs, got {len(inputs)}"
 
-            # Check if inputs are within valid ranges
             for i, (input_val, input_var) in enumerate(zip(inputs, fis.Inputs)):
                 if not isinstance(input_val, (int, float)):
                     return False, f"Input {i} must be a number, got {type(input_val)}"
@@ -149,7 +145,6 @@ class FuzzyInferenceEngine:
         try:
             fis = fis_model._fis
 
-            # Count membership functions
             total_mfs = 0
             for inp in fis.Inputs:
                 total_mfs += len(inp.MembershipFunctions)

@@ -106,7 +106,7 @@ class RulesEditorTab(BaseWidgetView):
         self.view_model.refresh_data()
 
     def update_ui(self) -> None:
-        """Update UI elements."""
+        """Update UI elements from view model."""
         pass
 
     def handle_global_update(self) -> None:

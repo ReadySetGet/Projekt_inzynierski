@@ -177,11 +177,35 @@ class FISModel:
             self._fis = fl.mamfis(fis_name)
         else:
             self._fis = fis
+            self._normalize_rule_names()
+
+    def _normalize_rule_names(self) -> None:
+        """Normalize rule names to ensure they are unique (rule1, rule2, etc.).
+
+        This is called when loading a FIS from file to fix cases where
+        multiple rules have the same name (e.g., all named "Rule").
+        """
+        if not hasattr(self._fis, "Rules") or not self._fis.Rules:
+            return
+
+        rule_names = [rule.Name if hasattr(rule, "Name") else "Rule" for rule in self._fis.Rules]
+        name_counts = {}
+        for name in rule_names:
+            name_counts[name] = name_counts.get(name, 0) + 1
+
+        has_duplicates = any(count > 1 for count in name_counts.values())
+        if has_duplicates:
+            for i, rule in enumerate(self._fis.Rules):
+                new_name = f"rule{i + 1}"
+                try:
+                    rule.Name = new_name
+                except Exception:
+                    setattr(rule, "Name", new_name)
 
     def add_input(self) -> None:
         """Add a new input variable to the system."""
         next_input_number = self._find_available_element_number("input")
-        input_name = "input" + str(next_input_number)  # values like "input0", "input1"
+        input_name = "input" + str(next_input_number)
         self._fis.addInput(DEFAULT_IO_RANGE, Name=input_name)
 
         for rule in self._fis.Rules:
@@ -374,18 +398,14 @@ class FISModel:
 
         old_mf = io_variable.MembershipFunctions[mf_idx]
 
-        # Try to modify the existing MF in place instead of creating a new one
         try:
-            # Try to change the type and parameters of the existing MF
             old_mf.Type = mf_changing_validity_check[1]
-            # Use default parameters for the new type
             old_mf.Parameters = mf_changing_validity_check[2]
         except Exception:
-            # Fallback to the old method
             old_mf = io_variable.MembershipFunctions.pop(mf_idx)
             new_mf = fl.fismf(
                 mf_changing_validity_check[1],
-                mf_changing_validity_check[2],  # Use default parameters for new type
+                mf_changing_validity_check[2],
             )
             try:
                 new_mf.Name = old_mf.Name

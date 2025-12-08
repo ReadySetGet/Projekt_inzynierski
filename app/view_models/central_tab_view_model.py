@@ -8,24 +8,13 @@ from app.view_models.base_view_model import BaseViewModel
 class CentralTabViewModel(BaseViewModel):
     """View model for the central tab view."""
 
-    # Signals for tab changes
     current_tab_changed = pyqtSignal(int)
-
-    # Signals for FIS plot updates
     fis_plot_updated = pyqtSignal()
-
-    # Signals for MF plot updates
-    mf_plot_updated = pyqtSignal(str, int)  # variable_name, mf_index
-
-    # Signals for rule editor updates
+    mf_plot_updated = pyqtSignal(str, int)
     rules_updated = pyqtSignal(list)
     rule_selected = pyqtSignal(int)
     clear_rules_requested = pyqtSignal()
-
-    # Signals for system updates
     system_name_changed = pyqtSignal(str)
-
-    # Signals for MF Editor communication
     mf_editor_connected = pyqtSignal()
     selected_variable_changed = pyqtSignal(str, bool)
 
@@ -94,7 +83,6 @@ class CentralTabViewModel(BaseViewModel):
             self._rules = []
             return
 
-        # Use the service API to get rules
         rules_data = self.fuzzy_service.get_rules()
         self._rules = []
 
@@ -154,7 +142,7 @@ class CentralTabViewModel(BaseViewModel):
 
         antecedent_parts = []
         for i, mf_idx in enumerate(rule["antecedent"]):
-            if mf_idx > 0:  # 0 means no condition
+            if mf_idx > 0:
                 if i < len(self._model._fis.Inputs):
                     input_name = self._model._fis.Inputs[i].Name
                     if mf_idx <= len(self._model._fis.Inputs[i].MembershipFunctions):
@@ -164,7 +152,7 @@ class CentralTabViewModel(BaseViewModel):
 
         consequent_parts = []
         for i, mf_idx in enumerate(rule["consequent"]):
-            if mf_idx > 0:  # 0 means no condition
+            if mf_idx > 0:
                 output_idx = i + len(rule["antecedent"])
                 if output_idx < len(self._model._fis.Outputs):
                     output_name = self._model._fis.Outputs[i].Name
@@ -182,8 +170,6 @@ class CentralTabViewModel(BaseViewModel):
     def refresh_data(self) -> None:
         """Refresh all data from the model - only updates logic, no signal emission."""
         self._update_data()
-        # Note: update_fis_plot() emits signals, so we don't call it here
-        # The view should handle plot updates through other mechanisms
 
     def set_fuzzy_service(self, fuzzy_service) -> None:
         """Set the fuzzy calculation service."""

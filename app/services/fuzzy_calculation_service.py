@@ -36,7 +36,6 @@ class FuzzyCalculationService:
         self._inference_engine = FuzzyInferenceEngine(model)
         self._reader_writer.model = model
 
-    # FIS Model Access
     @property
     def fis_model(self):
         """Get the FIS model."""
@@ -46,7 +45,6 @@ class FuzzyCalculationService:
         """Get the FIS model instance."""
         return self._state_manager.fis_model
 
-    # System Status
     def get_system_status(self) -> Dict[str, Any]:
         """Get the current system status."""
         return self._state_manager.get_system_status()
@@ -66,7 +64,6 @@ class FuzzyCalculationService:
         """Set the inference state."""
         self._state_manager.set_inference_state(state)
 
-    # Variable Management
     def get_input_variables(self) -> List[Dict[str, Any]]:
         """Get list of input variables."""
         return self._variable_manager.get_input_variables()
@@ -120,19 +117,16 @@ class FuzzyCalculationService:
         range_min, range_max = new_range[0], new_range[1]
 
         if variable_type == "input":
-            # Find the input variable by name and get its index
             for i, input_var in enumerate(self._state_manager.fis_model._fis.Inputs):
                 if input_var.Name == variable_name:
                     return self._variable_manager.update_input_variable_range(i, range_min, range_max)
         else:
-            # Find the output variable by name and get its index
             for i, output_var in enumerate(self._state_manager.fis_model._fis.Outputs):
                 if output_var.Name == variable_name:
                     return self._variable_manager.update_output_variable_range(i, range_min, range_max)
 
         return False
 
-    # Membership Function Management
     def get_membership_functions(self, variable_name: str, variable_type: str) -> List[Dict[str, Any]]:
         """Get membership functions for a specific variable."""
         return self._mf_manager.get_membership_functions(variable_name, variable_type)
@@ -184,7 +178,6 @@ class FuzzyCalculationService:
         """Update the name of a membership function."""
         return self._mf_manager.update_membership_function_name(variable_name, mf_index, new_name, variable_type)
 
-    # Rule Management
     def get_rules(self) -> List[Dict[str, Any]]:
         """Get all rules."""
         return self._rule_manager.get_rules()
@@ -240,7 +233,6 @@ class FuzzyCalculationService:
         """Add all possible rules based on current inputs and outputs."""
         return self._rule_manager.add_all_possible_rules()
 
-    # Inference Operations
     def perform_inference(self, inputs: List[float]) -> Tuple[List[float], bool]:
         """Perform fuzzy inference with given inputs."""
         outputs, success = self._inference_engine.perform_inference(inputs)
@@ -264,7 +256,6 @@ class FuzzyCalculationService:
         """Validate input values for inference."""
         return self._inference_engine.validate_inputs(inputs)
 
-    # Interpolation Points Management
     def get_interpolation_points(self) -> int:
         """Get the number of interpolation points."""
         return self._state_manager.fis_model.get_interpolation_points()
@@ -274,7 +265,6 @@ class FuzzyCalculationService:
         result = self._state_manager.fis_model.set_interpolation_points(points)
         return result == 1
 
-    # FIS Type Management
     def get_fis_type(self) -> str:
         """Get the current FIS type."""
         return self._state_manager.fis_type
@@ -332,7 +322,6 @@ class FuzzyCalculationService:
             return result == 1
         return False
 
-    # Legacy compatibility methods
     def get_input_count(self) -> int:
         """Get the number of input variables."""
         return len(self.get_input_variables())
@@ -349,7 +338,6 @@ class FuzzyCalculationService:
         """Check if the system is ready for inference."""
         return self._state_manager.get_system_status()["is_ready"]
 
-    # Selection Management
     def set_selected_input(self, input_name: str) -> None:
         """Set the selected input variable.
 
@@ -370,7 +358,6 @@ class FuzzyCalculationService:
         """Clear all variable selections."""
         self._state_manager.clear_selection()
 
-    # Import/Export Management
     def import_model(self, path: str) -> bool:
         """Import a FIS model from the given file path."""
         result = self._reader_writer.read_fis(path)

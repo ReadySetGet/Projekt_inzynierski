@@ -32,19 +32,11 @@ class AppContext:
         """Initialize the AppContext with config, translation, and theme manager."""
         if hasattr(self, "_initialized") and self._initialized:
             return
-        # Initialize config
         AppConfig.initialize()
         self.config = AppConfig
-
-        # Initialize translation manager
         self.translate_manager = TranslateManager(str(LOCALES_DIR), default_language="en")
-        # Theme manager (not global)
         self.theme_manager = ThemeManager(str(THEMES_DIR))
-
-        # Fuzzy calculation service
         self.fuzzy_service = FuzzyCalculationService()
-
-        # Central event bus for global updates (singleton)
         self.event_bus = CentralEventBus()
 
         self._initialized = True

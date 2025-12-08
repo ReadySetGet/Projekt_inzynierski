@@ -56,9 +56,6 @@ class RuleInterferenceTabWidget(BaseTabView):
         self._update_system_name()
         self.view_model.refresh_data()
 
-    # ------------------------------------------------------------------ #
-    # UI setup                                                           #
-    # ------------------------------------------------------------------ #
     def _setup_ui(self) -> None:
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(12, 12, 12, 12)
@@ -123,7 +120,6 @@ class RuleInterferenceTabWidget(BaseTabView):
         self.rules_list_layout.setSpacing(16)
         self.rules_layout.addWidget(self.rules_list_container)
 
-        # Aggregated output section (displayed below rule rows)
         self.aggregated_section = QtWidgets.QWidget(parent=self.rules_container)
         self.aggregated_layout = QtWidgets.QVBoxLayout(self.aggregated_section)
         self.aggregated_layout.setContentsMargins(0, 0, 0, 0)
@@ -163,9 +159,6 @@ class RuleInterferenceTabWidget(BaseTabView):
             system_name = None
         self.name_label.setText(str(system_name) if system_name else str(self.t("PLACEHOLDER")))
 
-    # ------------------------------------------------------------------ #
-    # View model connections                                             #
-    # ------------------------------------------------------------------ #
     def _connect_view_model_signals(self) -> None:
         self.view_model.inputs_updated.connect(self._on_data_changed)
         self.view_model.outputs_updated.connect(self._on_data_changed)
@@ -173,9 +166,6 @@ class RuleInterferenceTabWidget(BaseTabView):
         self.view_model.inference_updated.connect(self._on_data_changed)
         self.view_model.status_message.connect(self._show_status_message)
 
-    # ------------------------------------------------------------------ #
-    # Slots                                                              #
-    # ------------------------------------------------------------------ #
     def _on_data_changed(self, *_args) -> None:
         self._pending_refresh = True
         self._update_timer.start(150)
@@ -186,9 +176,6 @@ class RuleInterferenceTabWidget(BaseTabView):
             self._update_system_name()
             self._refresh_visualization()
 
-    # ------------------------------------------------------------------ #
-    # Data-driven UI updates                                             #
-    # ------------------------------------------------------------------ #
     def _refresh_visualization(self) -> None:
         payload = self.view_model.build_visualization_payload()
         if payload:
@@ -706,9 +693,6 @@ class RuleInterferenceTabWidget(BaseTabView):
                 if idx < len(output_plots):
                     self._render_output_condition_plot(output_plots[idx], output_vis)
 
-    # ------------------------------------------------------------------ #
-    # Interaction handlers                                               #
-    # ------------------------------------------------------------------ #
     def _update_from_sliders(self) -> None:
         if self._updating_controls or not self._input_sliders:
             return
@@ -757,9 +741,6 @@ class RuleInterferenceTabWidget(BaseTabView):
         if self.view_model.set_input_values(current_values):
             self._show_status_message(self.t("UPDATED_INFERENCE_INPUTS"))
 
-    # ------------------------------------------------------------------ #
-    # Utility helpers                                                    #
-    # ------------------------------------------------------------------ #
     def _slider_to_value(self, slider_value: int, range_min: float, range_max: float) -> float:
         span = range_max - range_min
         if span <= 0:

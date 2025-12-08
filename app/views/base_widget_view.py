@@ -21,7 +21,6 @@ class BaseWidgetView(QWidget):
     MVVM architecture and global update functionality.
     """
 
-    # Global update signals
     global_update_requested = pyqtSignal()
     ui_refresh_needed = pyqtSignal()
 
@@ -52,14 +51,12 @@ class BaseWidgetView(QWidget):
         self.view_model.data_changed.connect(self.refresh_ui)
         self.view_model.notify_data_changed.connect(self.update_ui)
         self.view_model.translate_manager.language_changed.connect(self._on_language_changed)
-        # Initial stylesheet and theme load
         self.reload_stylesheet()
         self._apply_pyqtgraph_theme()
 
     def reload_stylesheet(self) -> None:
         """Reload and apply the local stylesheet if qss_filename is set and exists."""
         if self.qss_filename and self.view_model:
-            # Use absolute path if provided, otherwise resolve relative to this file
             if os.path.isabs(self.qss_filename) and os.path.exists(self.qss_filename):
                 qss_path = self.qss_filename
             else:
@@ -89,11 +86,11 @@ class BaseWidgetView(QWidget):
         self.ui_refresh_needed.emit()
 
     def refresh_ui(self) -> None:
-        """Refresh the UI. Override in subclasses."""
+        """Refresh the UI when data changes. Override in subclasses."""
         pass
 
     def update_ui(self) -> None:
-        """Update UI elements. Override in subclasses."""
+        """Update UI elements when notified. Override in subclasses."""
         pass
 
     def handle_global_update(self) -> None:
@@ -116,14 +113,12 @@ class BaseWidgetView(QWidget):
 
         colors = palette["colors"]
 
-        # Set pyqtgraph background and foreground
         background = colors.get("background", "#ffffff")
         foreground = colors.get("text", "#000000")
 
         pg.setConfigOption("background", background)
         pg.setConfigOption("foreground", foreground)
 
-        # Update axis colors and plot styling
         self._update_plot_widgets_theme(colors)
 
     def _update_plot_widgets_theme(self, colors: dict) -> None:
@@ -132,14 +127,11 @@ class BaseWidgetView(QWidget):
         Args:
             colors: Dictionary of theme colors.
         """
-        # Find all PlotWidget children recursively
         plot_widgets = self.findChildren(pg.PlotWidget)
 
         for plot_widget in plot_widgets:
-            # Update plot background
             plot_widget.setBackground(colors.get("background", "#ffffff"))
 
-            # Update axis label colors
             for axis_name in ["left", "bottom", "right", "top"]:
                 axis = plot_widget.getAxis(axis_name)
                 if axis:
@@ -147,5 +139,4 @@ class BaseWidgetView(QWidget):
                     axis.setTextPen(colors.get("text", "#000000"))
 
 
-# Alias for backward compatibility
 BaseWidget = BaseWidgetView

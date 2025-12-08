@@ -8,25 +8,20 @@ from app.view_models.base_view_model import BaseViewModel
 class FisPropertiesViewModel(BaseViewModel):
     """View model for the FIS properties tab view."""
 
-    # Signals for FIS system updates
     fis_system_updated = pyqtSignal()
     system_name_changed = pyqtSignal(str)
     system_type_changed = pyqtSignal(str)
-
-    # Signals for input/output management
-    input_added = pyqtSignal(str, int)  # input_name, input_index
-    input_deleted = pyqtSignal(int)  # input_index
-    output_added = pyqtSignal(str, int)  # output_name, output_index
-    output_deleted = pyqtSignal(int)  # output_index
-
-    # Signals for variable selection
-    variable_selected = pyqtSignal(str, str)  # variable_name, variable_type
+    input_added = pyqtSignal(str, int)
+    input_deleted = pyqtSignal(int)
+    output_added = pyqtSignal(str, int)
+    output_deleted = pyqtSignal(int)
+    variable_selected = pyqtSignal(str, str)
 
     def __init__(self) -> None:
         """Initialize the FisPropertiesViewModel."""
         super().__init__()
         self._system_name = "fis"
-        self._system_type = "mamfis"  # mamfis or sugfis
+        self._system_type = "mamfis"
         self._selected_variable = None
         self._selected_variable_type = None
 
@@ -123,7 +118,6 @@ class FisPropertiesViewModel(BaseViewModel):
 
     def add_input(self) -> None:
         """Add a new input variable."""
-        # Use fuzzy_service method to match TopMenu functionality
         input_count = self.fuzzy_service.get_input_count()
         success = self.fuzzy_service.add_input_variable(f"input{input_count + 1}", 0.0, 1.0)
         if success:
@@ -139,15 +133,13 @@ class FisPropertiesViewModel(BaseViewModel):
         fis_model = self.fuzzy_service.get_fis_model()
         if fis_model and 0 <= input_index < len(fis_model._fis.Inputs):
             result = fis_model.delete_input(input_index)
-            if result == 1:  # Success
+            if result == 1:
                 self.input_deleted.emit(input_index)
                 self._update_system_info()
-                # Notify other components of data change
                 self.notify_data_changed.emit()
 
     def add_output(self) -> None:
         """Add a new output variable."""
-        # Use fuzzy_service method to match TopMenu functionality
         output_count = self.fuzzy_service.get_output_count()
         success = self.fuzzy_service.add_output_variable(f"output{output_count + 1}", 0.0, 1.0)
         if success:
@@ -163,10 +155,9 @@ class FisPropertiesViewModel(BaseViewModel):
         fis_model = self.fuzzy_service.get_fis_model()
         if fis_model and 0 <= output_index < len(fis_model._fis.Outputs):
             result = fis_model.delete_output(output_index)
-            if result == 1:  # Success
+            if result == 1:
                 self.output_deleted.emit(output_index)
                 self._update_system_info()
-                # Notify other components of data change
                 self.notify_data_changed.emit()
 
     def select_variable(self, variable_name: str, variable_type: str) -> None:
@@ -232,7 +223,7 @@ class FisPropertiesViewModel(BaseViewModel):
             return "Mamdani"
         elif fis_type == "sugeno":
             return "Sugeno"
-        return "Mamdani"  # Default
+        return "Mamdani"
 
     def get_defuzzification_method(self) -> str:
         """Get the current defuzzification method."""

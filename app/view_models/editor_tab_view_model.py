@@ -6,16 +6,9 @@ from app.view_models.base_view_model import BaseViewModel
 class EditorTabViewModel(BaseViewModel):
     """View model for the editor tab view."""
 
-    # Signals for tab changes
     current_tab_changed = pyqtSignal(int)
-
-    # Signals for FIS properties tab
     fis_properties_updated = pyqtSignal()
-
-    # Signals for MF properties tab
     mf_properties_updated = pyqtSignal()
-
-    # Signals for rule properties tab
     rule_properties_updated = pyqtSignal()
 
     def __init__(self) -> None:

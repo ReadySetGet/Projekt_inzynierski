@@ -23,10 +23,10 @@ from app.views.mf import MembershipFunction
 
 
 def hide_axi(plot):
-    """Hide the left and bottom axis of the plot.
+    """Hide the left and bottom axes of a pyqtgraph plot.
 
     Args:
-        plot: the plot which will have its axis removed.
+        plot: The pyqtgraph PlotWidget to hide axes for.
     """
     left_axis = plot.getAxis("left")
     left_axis.hide()
@@ -35,40 +35,11 @@ def hide_axi(plot):
 
 
 class FisTabView(BaseTabView):
-    """Class inheriting from QWidget.
+    """Displays FIS system inputs and outputs as plots with connecting lines."""
 
-    Displays the inputs and outputs inside fis system as plots.
-
-    Methods:
-        __init__(parent): create an instance of MFPropertiesWidget and bind it to
-            the parent window.
-        remove_plots(): remove every single plot and label from the widget. Clear
-            the graphic scene.
-        add_input(inp): add a new input to the system, recalculate plot positions,
-            redraw plots and labels.
-        add_output(out): add a new output to the system, recalculate plot positions,
-            redraw plots and labels.
-        remove_input(inp): remove an input to the system, recalculate plot positions,
-            redraw plots and labels.
-        remove_output(out): remove an output to the system, recalculate plot positions,
-            redraw plots and labels.
-
-    Attributes:
-        membership_functions: membership functions present within the system.
-        inputs: fis inputs present within the system.
-        outputs: fis outputs present within the system.
-        points: list of points to draw lines between in order to show connections.
-        plots: list of plots created and displayed by the class.
-        labels: list of labels of aforementioned plots.
-        middle_height: the middle point of the frame taken as a baseline for plotting.
-        gap: the gap between plots.
-        colors: table of colours used to differentiate different membership functions.
-    """
-
-    # Signals for variable selection
-    input_selected = QtCore.pyqtSignal(object)  # Emits selected input InOutput object
-    output_selected = QtCore.pyqtSignal(object)  # Emits selected output InOutput object
-    selection_cleared = QtCore.pyqtSignal()  # Emits when selection is cleared
+    input_selected = QtCore.pyqtSignal(object)
+    output_selected = QtCore.pyqtSignal(object)
+    selection_cleared = QtCore.pyqtSignal()
 
     membership_functions = []
     inputs = []
@@ -79,26 +50,26 @@ class FisTabView(BaseTabView):
     middle_height = 180
     gap = 160
     colors = [
-        "#0027FF",  # Blue
-        "#FF0000",  # Red
-        "#3D7A00",  # Green
-        "#FF2BE7",  # Magenta
-        "#FFAE21",  # Orange
-        "#2AFF83",  # Light Green
-        "#DF79FF",  # Purple
-        "#09FF24",  # Bright Green
-        "#FF723B",  # Red-Orange
-        "#FF6CBA",  # Pink
-        "#00FFFF",  # Cyan
-        "#FFFF00",  # Yellow
-        "#8B4513",  # Brown
-        "#FF1493",  # Deep Pink
-        "#00FF7F",  # Spring Green
-        "#FFD700",  # Gold
-        "#DC143C",  # Crimson
-        "#32CD32",  # Lime Green
-        "#FF4500",  # Orange Red
-        "#9370DB",  # Medium Purple
+        "#0027FF",
+        "#FF0000",
+        "#3D7A00",
+        "#FF2BE7",
+        "#FFAE21",
+        "#2AFF83",
+        "#DF79FF",
+        "#09FF24",
+        "#FF723B",
+        "#FF6CBA",
+        "#00FFFF",
+        "#FFFF00",
+        "#8B4513",
+        "#FF1493",
+        "#00FF7F",
+        "#FFD700",
+        "#DC143C",
+        "#32CD32",
+        "#FF4500",
+        "#9370DB",
     ]
 
     def __init__(self, parent=None):
@@ -118,18 +89,16 @@ class FisTabView(BaseTabView):
 
         self.view_model.fis_data_updated.connect(self._on_fis_data_updated)
 
-        # Selection state
         self._selected_input: Optional[InOutput] = None
         self._selected_output: Optional[InOutput] = None
-        self._plot_to_input_map = {}  # Maps plot widgets to input objects
-        self._plot_to_output_map = {}  # Maps plot widgets to output objects
+        self._plot_to_input_map = {}
+        self._plot_to_output_map = {}
+        self._first_show = True
 
-        # Don't set hardcoded background - theme will handle it
         self.setObjectName("fisTab")
         self._setup_ui()
         self._retranslate_ui()
 
-        # Load initial data from view model
         self.view_model.refresh_data()
 
     def _on_fis_data_updated(self, fis_data: dict):
@@ -158,7 +127,6 @@ class FisTabView(BaseTabView):
             if output_obj:
                 self.outputs.append(output_obj)
 
-        # Redraw all plots
         self._redraw_all_plots()
 
     def _create_inoutput_from_data(self, var_data: dict) -> InOutput:
@@ -222,10 +190,25 @@ class FisTabView(BaseTabView):
             for i in range(len(self.outputs)):
                 self._plot_graphs(position_y=output_pos[i], position_x=330, data=self.outputs[i])
 
+        QtWidgets.QApplication.processEvents()
+
         self._draw_lines()
 
-        # Restore selection highlighting after plots are redrawn
         self._restore_selection_highlighting()
+
+    def showEvent(self, event):
+        """Handle show event to refresh UI on first display."""
+        super().showEvent(event)
+        if self._first_show:
+            self._first_show = False
+            QtCore.QTimer.singleShot(50, self._refresh_ui_on_first_show)
+
+    def _refresh_ui_on_first_show(self):
+        """Refresh the UI after first show to ensure lines are drawn correctly."""
+        if self.inputs or self.outputs:
+            self._draw_lines()
+            if self.scene:
+                self.scene.update()
 
     def _restore_selection_highlighting(self):
         """Restore selection highlighting based on fuzzy service state."""
@@ -239,21 +222,18 @@ class FisTabView(BaseTabView):
         self._selected_input = None
         self._selected_output = None
 
-        # Find and restore input selection
         if selected_input_name:
             for input_data in self.inputs:
                 if input_data.GetName() == selected_input_name:
                     self._selected_input = input_data
                     break
 
-        # Find and restore output selection
         if selected_output_name:
             for output_data in self.outputs:
                 if output_data.GetName() == selected_output_name:
                     self._selected_output = output_data
                     break
 
-        # Apply visual highlighting
         self._update_plot_styling()
 
     def refresh_selection(self):
@@ -300,7 +280,6 @@ class FisTabView(BaseTabView):
         self.graph_frame.setGeometry(QtCore.QRect(10, 60, 490, 510))
         self.graph_frame.setFrameShape(QtWidgets.QGraphicsView.Shape.StyledPanel)
         self.graph_frame.setFrameShadow(QtWidgets.QGraphicsView.Shadow.Raised)
-        # Styling will be applied by theme
         self.graph_frame.setObjectName("graph_frame")
 
         self.scene = QtWidgets.QGraphicsScene(parent=self.graph_frame)
@@ -341,7 +320,6 @@ class FisTabView(BaseTabView):
         in_out_plot = pg.PlotWidget(parent=self.graph_frame)
         mfs = data.GetMfs()
         for i in range(len(mfs)):
-            # Cycle through colors if we have more MFs than colors
             color_index = i % len(self.colors)
             color = self.colors[color_index]
             x_data = mfs[i].getX()
@@ -349,16 +327,13 @@ class FisTabView(BaseTabView):
             in_out_plot.plot(x_data, y_data, pen=color)
         self.plots.append(in_out_plot)
 
-        # Styling will be applied by theme
         in_out_plot.setGeometry(QtCore.QRect(position_x, position_y, 140, 140))
 
-        # Enable mouse events for click handling
         in_out_plot.scene().sigMouseClicked.connect(lambda event, plot=in_out_plot: self._on_plot_clicked(event, plot))
 
-        # Determine if this is an input or output based on position
-        if position_x == 20:  # Input position
+        if position_x == 20:
             self._plot_to_input_map[in_out_plot] = data
-        elif position_x == 330:  # Output position
+        elif position_x == 330:
             self._plot_to_output_map[in_out_plot] = data
 
         name_label = QtWidgets.QLabel(parent=self.graph_frame)
@@ -440,11 +415,9 @@ class FisTabView(BaseTabView):
             plot: The plot widget that was clicked
         """
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            # Check if this is an input plot
             if plot in self._plot_to_input_map:
                 input_data = self._plot_to_input_map[plot]
                 self._select_input(input_data)
-            # Check if this is an output plot
             elif plot in self._plot_to_output_map:
                 output_data = self._plot_to_output_map[plot]
                 self._select_output(output_data)
@@ -464,11 +437,9 @@ class FisTabView(BaseTabView):
 
         self._update_plot_styling()
 
-        # Notify data refresh
         if self.view_model.notify_data_changed:
             self.view_model.notify_data_changed.emit()
 
-        # Emit signal
         self.input_selected.emit(input_data)
 
     def _select_output(self, output_data: InOutput):
@@ -486,11 +457,9 @@ class FisTabView(BaseTabView):
 
         self._update_plot_styling()
 
-        # Notify data refresh
         if self.view_model.notify_data_changed:
             self.view_model.notify_data_changed.emit()
 
-        # Emit signal
         self.output_selected.emit(output_data)
 
     def _clear_selection(self):
@@ -503,7 +472,6 @@ class FisTabView(BaseTabView):
 
         self._update_plot_styling()
 
-        # Notify data refresh
         if self.view_model.notify_data_changed:
             self.view_model.notify_data_changed.emit()
 
@@ -511,7 +479,6 @@ class FisTabView(BaseTabView):
 
     def _update_plot_styling(self):
         """Update the visual styling of plots based on selection state."""
-        # Get theme colors
         bg_color = "#E5E8E8"
         border_color = "gray"
 
@@ -522,7 +489,6 @@ class FisTabView(BaseTabView):
                 bg_color = colors.get("surface", "#E5E8E8")
                 border_color = colors.get("border", "gray")
 
-        # Reset all plots to default styling
         default_style = "; ".join(
             [
                 f"background-color: {bg_color}",
@@ -532,7 +498,6 @@ class FisTabView(BaseTabView):
         for plot in self.plots:
             plot.setStyleSheet(default_style)
 
-        # Highlight selected input
         if self._selected_input:
             for plot, input_data in self._plot_to_input_map.items():
                 if input_data == self._selected_input:
@@ -545,7 +510,6 @@ class FisTabView(BaseTabView):
                     plot.setStyleSheet(highlight_style)
                     break
 
-        # Highlight selected output
         if self._selected_output:
             for plot, output_data in self._plot_to_output_map.items():
                 if output_data == self._selected_output:
@@ -576,10 +540,8 @@ class FisTabView(BaseTabView):
 
     def _apply_pyqtgraph_theme(self) -> None:
         """Apply the current theme colors to pyqtgraph plots and FIS elements."""
-        # Call parent method to handle pyqtgraph plots
         super()._apply_pyqtgraph_theme()
 
-        # Apply theme to FIS-specific elements
         self._apply_fis_theme()
 
     def _apply_initial_box_styling(self) -> None:
@@ -617,7 +579,6 @@ class FisTabView(BaseTabView):
         border_color = colors.get("border", "#cccccc")
         text_color = colors.get("text", "#000000")
 
-        # Update graph frame background
         if self.graph_frame:
             graph_style = "; ".join(
                 [
@@ -627,7 +588,6 @@ class FisTabView(BaseTabView):
             )
             self.graph_frame.setStyleSheet(graph_style)
 
-        # Update center system label (Mamdani Type 1 box)
         self.box_system_label.setStyleSheet(
             "; ".join(
                 [
@@ -640,11 +600,9 @@ class FisTabView(BaseTabView):
             )
         )
 
-        # Update pen color for lines
         if self.pen:
             self.pen.setColor(QtGui.QColor(text_color))
 
-        # Update all plot styling to match theme
         self._update_plot_styling()
 
     def remove_plots(self):

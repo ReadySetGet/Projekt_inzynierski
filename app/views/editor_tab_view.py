@@ -8,11 +8,7 @@ from app.views.rules_editor_tab import RulesEditorTab
 
 
 class EditorTabWidget(BaseTabView):
-    """Class responsible for the editor tab on the right side of the main window.
-
-    The class allows selecting shape of mfs, their range, defuzzification method
-    as well as properties of rules.
-    """
+    """Editor tab widget for editing FIS properties, membership functions, and rules."""
 
     add_mf_clicked = QtCore.pyqtSignal()
     remove_mf_clicked = QtCore.pyqtSignal()
@@ -29,7 +25,7 @@ class EditorTabWidget(BaseTabView):
         super().__init__(parent=parent)
         self.setObjectName("editorTab")
         self.status_bar = status_bar
-        self._updating_mf = False  # Flag to prevent recursive updates
+        self._updating_mf = False
         self._setup_ui()
         self._retranslate_ui()
 
@@ -70,9 +66,7 @@ class EditorTabWidget(BaseTabView):
         self.mf_table = QtWidgets.QTableWidget(parent=self.editor_frame)
         self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
         self.mf_table.setObjectName("mf_table")
-
-        """Table displaying all MFs"""
-        self.mf_table.setRowCount(0)  # Start with empty table
+        self.mf_table.setRowCount(0)
         self.mf_table.setColumnCount(3)
         self.mf_table.setColumnWidth(0, 80)
         self.mf_table.setColumnWidth(1, 80)
@@ -131,7 +125,6 @@ class EditorTabWidget(BaseTabView):
         self.mf_range_label.setText(self.t("RANGE"))
         self.add_mf_button.setText(self.t("ADD_MF"))
         self.remove_mf_button.setText(self.t("REMOVE_MF"))
-        # Update number of MF label - preserve count if available
         self._update_number_of_mf_label()
         self.setTabText(
             self.indexOf(self.mf_properties_tab),
@@ -153,24 +146,18 @@ class EditorTabWidget(BaseTabView):
 
     def _update_number_of_mf_label(self):
         """Update the number of MF label, preserving the count if available."""
-        # Try to get current count from label text
         current_text = self.number_of_mf_label.text()
         count = 0
 
-        # Try to extract count from current text (format: "Number of MF: X" or "NUMBER_OF_MF X")
         if current_text:
-            # Look for a number at the end
             match = re.search(r"(\d+)$", current_text.strip())
             if match:
                 count = int(match.group(1))
             else:
-                # If no count found, try to get it from the table
                 count = self.mf_table.rowCount()
         else:
-            # If label is empty, get count from table
             count = self.mf_table.rowCount()
 
-        # Update with base text and count
         base_text = self.t("NUMBER_OF_MF")
         self.number_of_mf_label.setText(f"{base_text} {count}")
 
@@ -371,9 +358,9 @@ class EditorTabWidget(BaseTabView):
         row = item.row()
         column = item.column()
 
-        if column == 0:  # Name column
+        if column == 0:
             self._on_mf_name_changed(row, item.text())
-        elif column == 2:  # Parameters column
+        elif column == 2:
             self._on_mf_parameters_changed(row, item.text())
 
     def _on_mf_name_changed(self, mf_index, new_name):
@@ -396,7 +383,6 @@ class EditorTabWidget(BaseTabView):
 
             if success:
                 self.update_property_editor()
-                # Also trigger a global refresh to update plots
                 self.view_model.notify_data_changed.emit()
                 self.status_bar.showMessage(f"{self.t('MF_NAME_CHANGED_TO')} {new_name.strip()}")
             else:
@@ -456,7 +442,6 @@ class EditorTabWidget(BaseTabView):
 
             if success:
                 self.update_property_editor()
-                # Also trigger a global refresh to update plots
                 self.view_model.notify_data_changed.emit()
                 self.status_bar.showMessage(f"{self.t('MF_PARAMETERS_UPDATED')}: {new_params}")
             else:
@@ -626,7 +611,6 @@ class EditorTabWidget(BaseTabView):
         var_range = var_data.get("range", [0, 10])
         range_min, range_max = var_range[0], var_range[1]
 
-        # Default parameters for triangle (scaled to range)
         default_params = [range_min, (range_min + range_max) / 2, range_max]
 
         success = self.view_model.fuzzy_service.add_membership_function(
@@ -660,7 +644,6 @@ class EditorTabWidget(BaseTabView):
         mfs = var_data.get("membership_functions", [])
         mf_name = mfs[current_row].get("name", f"MF{current_row}") if current_row < len(mfs) else "MF"
 
-        # Delete the MF using fuzzy service
         success = self.view_model.fuzzy_service.delete_membership_function(var_name, current_row, var_type)
 
         if success:

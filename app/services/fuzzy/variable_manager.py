@@ -26,7 +26,6 @@ class VariableManager:
         for i, input_var in enumerate(self._fis_model._fis.Inputs):
             mfs = []
             for j, mf in enumerate(input_var.MembershipFunctions):
-                # Normalize constant type parameters to list format
                 params = mf.Parameters
                 if mf.Type == "constant" and isinstance(params, (int, float)):
                     params = [float(params)]
@@ -65,7 +64,6 @@ class VariableManager:
         for i, output_var in enumerate(self._fis_model._fis.Outputs):
             mfs = []
             for j, mf in enumerate(output_var.MembershipFunctions):
-                # Normalize constant type parameters to list format
                 params = mf.Parameters
                 if mf.Type == "constant" and isinstance(params, (int, float)):
                     params = [float(params)]
@@ -107,7 +105,6 @@ class VariableManager:
         """
         try:
             self._fis_model.add_input()
-            # Check if input was successfully added
             if self._fis_model._fis.Inputs:
                 new_input = self._fis_model._fis.Inputs[-1]
                 new_input.Name = name
@@ -133,7 +130,6 @@ class VariableManager:
         """
         try:
             self._fis_model.add_output()
-            # Check if output was successfully added
             if self._fis_model._fis.Outputs:
                 new_output = self._fis_model._fis.Outputs[-1]
                 new_output.Name = name
@@ -153,7 +149,7 @@ class VariableManager:
             variable_name: Name of the input variable
         """
         try:
-            var_range = [0, 10]  # Default range
+            var_range = [0, 10]
             if self._fis_model._fis.Inputs:
                 for var in self._fis_model._fis.Inputs:
                     if var.Name == variable_name:
@@ -162,7 +158,6 @@ class VariableManager:
 
             range_min, range_max = var_range[0], var_range[1]
 
-            # Low: [range_min, range_min, mid] for the variable's range
             self._fis_model.add_mf(variable_name, "input", "trojkatna")
             if self._fis_model._fis.Inputs:
                 for var in self._fis_model._fis.Inputs:
@@ -175,7 +170,6 @@ class VariableManager:
                         var.MembershipFunctions[0].Name = "low"
                         break
 
-            # Medium: [range_min, mid, range_max] for the variable's range
             self._fis_model.add_mf(variable_name, "input", "trojkatna")
             if self._fis_model._fis.Inputs:
                 for var in self._fis_model._fis.Inputs:
@@ -188,7 +182,6 @@ class VariableManager:
                         var.MembershipFunctions[1].Name = "medium"
                         break
 
-            # High: [mid, range_max, range_max] for the variable's range
             self._fis_model.add_mf(variable_name, "input", "trojkatna")
             if self._fis_model._fis.Inputs:
                 for var in self._fis_model._fis.Inputs:
@@ -210,7 +203,7 @@ class VariableManager:
             variable_name: Name of the output variable
         """
         try:
-            var_range = [0, 10]  # Default range
+            var_range = [0, 10]
             if self._fis_model._fis.Outputs:
                 for var in self._fis_model._fis.Outputs:
                     if var.Name == variable_name:
@@ -219,7 +212,6 @@ class VariableManager:
 
             range_min, range_max = var_range[0], var_range[1]
 
-            # Low: [range_min, range_min, mid] for the variable's range
             self._fis_model.add_mf(variable_name, "output", "trojkatna")
             if self._fis_model._fis.Outputs:
                 for var in self._fis_model._fis.Outputs:
@@ -232,7 +224,6 @@ class VariableManager:
                         var.MembershipFunctions[0].Name = "low"
                         break
 
-            # Medium: [range_min, mid, range_max] for the variable's range
             self._fis_model.add_mf(variable_name, "output", "trojkatna")
             if self._fis_model._fis.Outputs:
                 for var in self._fis_model._fis.Outputs:
@@ -245,7 +236,6 @@ class VariableManager:
                         var.MembershipFunctions[1].Name = "medium"
                         break
 
-            # High: [mid, range_max, range_max] for the variable's range
             self._fis_model.add_mf(variable_name, "output", "trojkatna")
             if self._fis_model._fis.Outputs:
                 for var in self._fis_model._fis.Outputs:

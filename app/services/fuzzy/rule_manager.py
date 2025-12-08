@@ -290,7 +290,6 @@ class RuleManager:
             output_combinations = list(itertools.product(*[range(1, count + 1) for count in output_mf_counts]))
 
             rule_count = 0
-            # Generate ALL combinations: each input combo with EACH output combo
             for input_combo in input_combinations:
                 for output_combo in output_combinations:
                     antecedent = list(input_combo)

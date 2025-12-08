@@ -12,17 +12,12 @@ from app.view_models.base_view_model import BaseViewModel
 class BrowserFrameViewModel(BaseViewModel):
     """View model for the browser frame view."""
 
-    # Signals for system browser updates
     system_browser_updated = pyqtSignal(list)
     design_browser_updated = pyqtSignal(list)
-
-    # Signals for selection changes
-    system_item_selected = pyqtSignal(str, dict)  # item_name, item_data
-    design_item_selected = pyqtSignal(str, dict)  # item_name, item_data
-
-    # Signals for design browser updates
-    design_projects_updated = pyqtSignal(list)  # list of project info dicts
-    project_switched = pyqtSignal(str)  # project_name
+    system_item_selected = pyqtSignal(str, dict)
+    design_item_selected = pyqtSignal(str, dict)
+    design_projects_updated = pyqtSignal(list)
+    project_switched = pyqtSignal(str)
 
     def __init__(self) -> None:
         """Initialize the BrowserFrameViewModel."""
@@ -324,7 +319,6 @@ class BrowserFrameViewModel(BaseViewModel):
             if not source_path.exists():
                 return False
 
-            # Get the FIS name from the file to use as project name
             reader = FISReaderWriter()
             result = reader.read_fis(str(source_path))
 
@@ -333,13 +327,10 @@ class BrowserFrameViewModel(BaseViewModel):
                 if fis_name:
                     project_name = f"{fis_name}.fis"
                 else:
-                    # Fallback to filename if no name in file
                     project_name = source_path.name
             else:
-                # Fallback to filename if can't read
                 project_name = source_path.name
 
-            # Ensure unique name if file already exists
             dest_path = self._projects_dir / project_name
             counter = 1
             while dest_path.exists():
@@ -348,20 +339,14 @@ class BrowserFrameViewModel(BaseViewModel):
                 dest_path = self._projects_dir / project_name
                 counter += 1
 
-            # Copy file to projects directory
             shutil.copy2(source_path, dest_path)
-
-            # Refresh projects list first to include the new project
             self.refresh_projects()
 
-            # Load the project (this will set it as active and load the FIS model)
             project_name_without_ext = project_name.replace(".fis", "")
             if self.load_project(project_name_without_ext):
-                # Ensure projects list is refreshed again after loading
                 self.refresh_projects()
                 return True
             else:
-                # If load fails, at least refresh the projects list
                 self.refresh_projects()
                 return False
         except Exception as e:
@@ -442,7 +427,6 @@ class BrowserFrameViewModel(BaseViewModel):
 
         for project in default_projects:
             project_file = self._projects_dir / f"{project['name']}.fis"
-            # Always recreate default projects to ensure they have the correct format
             if project_file.exists():
                 project_file.unlink()
             self._create_fis_file_with_data(project_file, project["type"], project["display_name"])
@@ -594,7 +578,6 @@ class BrowserFrameViewModel(BaseViewModel):
 
     def _add_rules(self, model: FISModel, fis_type: str) -> None:
         """Add rules to the FIS model."""
-        # With 2 inputs and 1 output: is_mf = [1, 1, 1] (input1, input2, output1)
         is_mf = [1, 1, 1]
 
         rule1_data = [1, 1, 1, 1, 1]
