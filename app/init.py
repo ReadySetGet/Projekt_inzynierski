@@ -28,15 +28,10 @@ def run() -> int:
 
     app.setWindowIcon(app_icon)
 
-    # Initialize configuration
     AppConfig.initialize()
-
-    # Centralized app context
     context = AppContext()
     BaseViewModel.set_context_provider(lambda *a, **kw: context)
     context.theme_manager.set_theme("light", app)
-
-    # Create main window with context
     window: MainWindow = MainWindow(context)
 
     if sys.platform == "win32":

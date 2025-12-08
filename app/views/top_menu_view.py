@@ -11,10 +11,7 @@ from app.views.settings_view import SettingsView
 
 
 class TopMenu(BaseTabView):
-    """Class responsible for the rectangle widget at the top of the window.
-
-    Its main function is to display buttons essential for functioning of the app.
-    """
+    """Top menu widget with buttons for file operations, system conversion, and settings."""
 
     new_clicked = QtCore.pyqtSignal()
     import_clicked = QtCore.pyqtSignal()
@@ -46,12 +43,10 @@ class TopMenu(BaseTabView):
         self.designTab = QtWidgets.QWidget()
         self.designTab.setObjectName("designTab")
 
-        # Create main layout for design tab
         main_layout = QtWidgets.QHBoxLayout(self.designTab)
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
 
-        # Left section - File management buttons
         files_group = QtWidgets.QGroupBox(self.t("FILE_MANAGEMENT"))
         files_layout = QtWidgets.QVBoxLayout(files_group)
         files_layout.setContentsMargins(5, 5, 5, 5)
@@ -74,12 +69,10 @@ class TopMenu(BaseTabView):
         files_group.setMaximumWidth(200)
         main_layout.addWidget(files_group)
 
-        # Center section - Input/Output management
         io_group = QtWidgets.QGroupBox(self.t("INPUT_OUTPUT_MANAGEMENT"))
         io_layout = QtWidgets.QVBoxLayout(io_group)
         io_layout.setContentsMargins(5, 5, 5, 5)
 
-        # Create grid for IO buttons
         io_grid = QtWidgets.QGridLayout()
 
         self.add_input_button = QtWidgets.QPushButton()
@@ -105,7 +98,6 @@ class TopMenu(BaseTabView):
         io_layout.addLayout(io_grid)
         main_layout.addWidget(io_group)
 
-        # Center-right section - Conversion and surface
         control_group = QtWidgets.QGroupBox(self.t("CONTROLS"))
         control_layout = QtWidgets.QVBoxLayout(control_group)
         control_layout.setContentsMargins(5, 5, 5, 5)
@@ -120,7 +112,6 @@ class TopMenu(BaseTabView):
         self.surface_button.clicked.connect(self._show_area_plot_window)
         control_layout.addWidget(self.surface_button)
 
-        # Interpolation controls
         interpolation_layout = QtWidgets.QHBoxLayout()
         self.interpolation_label = QtWidgets.QLabel()
         self.interpolation_label.setObjectName("interpolation_label")
@@ -138,7 +129,6 @@ class TopMenu(BaseTabView):
         control_layout.addLayout(interpolation_layout)
         main_layout.addWidget(control_group)
 
-        # Right section - Help and Settings
         help_group = QtWidgets.QGroupBox(self.t("HELP_SETTINGS"))
         help_layout = QtWidgets.QVBoxLayout(help_group)
         help_layout.setContentsMargins(5, 5, 5, 5)
@@ -156,7 +146,6 @@ class TopMenu(BaseTabView):
         help_group.setMaximumWidth(150)
         main_layout.addWidget(help_group)
 
-        # Add stretch to push everything to the left
         main_layout.addStretch()
 
         self.addTab(self.designTab, "")

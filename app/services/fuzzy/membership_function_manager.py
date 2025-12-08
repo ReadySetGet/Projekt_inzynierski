@@ -36,7 +36,6 @@ class MembershipFunctionManager:
             for var in var_list:
                 if var.Name == variable_name:
                     for i, mf in enumerate(var.MembershipFunctions):
-                        # Normalize constant type parameters to list format
                         params = mf.Parameters
                         if mf.Type == "constant" and isinstance(params, (int, float)):
                             params = [float(params)]
@@ -90,16 +89,15 @@ class MembershipFunctionManager:
 
                     if result == 1:
                         if len(var.MembershipFunctions) > 0:
-                            new_mf = var.MembershipFunctions[-1]  # Get the last (newly added) MF
+                            new_mf = var.MembershipFunctions[-1]
                             new_mf.Name = mf_name
-                            # Handle Sugeno constant type - needs single float, not list
                             if new_mf.Type == "constant":
                                 if isinstance(parameters, list) and len(parameters) > 0:
                                     new_mf.Parameters = float(parameters[0])
                                 elif isinstance(parameters, (int, float)):
                                     new_mf.Parameters = float(parameters)
                                 else:
-                                    new_mf.Parameters = 0.5  # Default fallback
+                                    new_mf.Parameters = 0.5
                             else:
                                 new_mf.Parameters = parameters
                         return True
@@ -144,7 +142,6 @@ class MembershipFunctionManager:
             bool: True if successful, False otherwise.
         """
         try:
-            # FIS model expects: io_variable_name, input_or_output, mf_idx, new_mf_type
             result = self._fis_model.change_mf_type(variable_name, variable_type, mf_index, new_type)
             return result == 1
         except Exception:
@@ -178,14 +175,13 @@ class MembershipFunctionManager:
                 if var.Name == variable_name:
                     if 0 <= mf_index < len(var.MembershipFunctions):
                         mf = var.MembershipFunctions[mf_index]
-                        # Handle Sugeno constant type - needs single float, not list
                         if mf.Type == "constant":
                             if isinstance(new_parameters, list) and len(new_parameters) > 0:
                                 mf.Parameters = float(new_parameters[0])
                             elif isinstance(new_parameters, (int, float)):
                                 mf.Parameters = float(new_parameters)
                             else:
-                                mf.Parameters = 0.5  # Default fallback
+                                mf.Parameters = 0.5
                         else:
                             mf.Parameters = new_parameters
                         return True
@@ -252,7 +248,6 @@ class MembershipFunctionManager:
                 if var.Name == variable_name:
                     if 0 <= mf_index < len(var.MembershipFunctions):
                         mf = var.MembershipFunctions[mf_index]
-                        # Normalize constant type parameters to list format
                         params = mf.Parameters
                         if mf.Type == "constant" and isinstance(params, (int, float)):
                             params = [float(params)]

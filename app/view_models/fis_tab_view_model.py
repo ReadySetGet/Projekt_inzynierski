@@ -1,8 +1,4 @@
-"""View model for the FIS plot tab.
-
-This view model manages the data and state for the FIS visualization,
-handling input/output variables, membership functions, and system information.
-"""
+"""View model for the FIS plot tab."""
 
 from typing import Dict, List, Tuple
 
@@ -14,8 +10,7 @@ from app.view_models.base_view_model import BaseViewModel
 class FisTabViewModel(BaseViewModel):
     """View model for the FIS plot tab."""
 
-    # Signals for FIS plot updates
-    fis_data_updated = pyqtSignal(dict)  # Emits complete FIS data
+    fis_data_updated = pyqtSignal(dict)
 
     def __init__(self) -> None:
         """Initialize the FisTabViewModel."""
@@ -43,7 +38,7 @@ class FisTabViewModel(BaseViewModel):
         """Update FIS data from the fuzzy service."""
         system_status = self.fuzzy_service.get_system_status()
         self._system_info = {
-            "name": "FIS System",  # Default name since no name method exists
+            "name": "FIS System",
             "type": system_status.get("fis_type", "mamdani"),
             "has_inputs": system_status.get("has_inputs", False),
             "has_outputs": system_status.get("has_outputs", False),
@@ -56,7 +51,6 @@ class FisTabViewModel(BaseViewModel):
 
         self._outputs = self._get_variables_data("output")
 
-        # Emit complete data
         fis_data = {
             "system_info": self._system_info,
             "inputs": self._inputs,
@@ -87,7 +81,7 @@ class FisTabViewModel(BaseViewModel):
         """Get membership functions data for a specific variable."""
         mfs = self.fuzzy_service.get_membership_functions(variable_name, variable_type)
 
-        var_range = [0, 100]  # Default range
+        var_range = [0, 100]
         if variable_type == "input":
             inputs = self.fuzzy_service.get_input_variables()
             for var in inputs:
@@ -147,18 +141,14 @@ class FisTabViewModel(BaseViewModel):
         y = np.zeros_like(x)
 
         if mf_type == "trimf" and len(parameters) >= 3:
-            # Triangular membership function
             a, b, c = parameters[0], parameters[1], parameters[2]
 
-            # Check if parameters are in [0,1] range and need scaling
             if max(parameters) <= 1.0 and min(parameters) >= 0.0:
-                # Scale parameters to match x range
                 x_min, x_max = min(x), max(x)
                 a = x_min + a * (x_max - x_min)
                 b = x_min + b * (x_max - x_min)
                 c = x_min + c * (x_max - x_min)
 
-            # Avoid division by zero for degenerate triangles
             if abs(b - a) > 1e-10:
                 y[(x >= a) & (x <= b)] = (x[(x >= a) & (x <= b)] - a) / (b - a)
             else:
@@ -170,12 +160,9 @@ class FisTabViewModel(BaseViewModel):
                 y[(x > b) & (x <= c)] = 1.0 if c == b else 0.0
 
         elif mf_type == "trapmf" and len(parameters) >= 4:
-            # Trapezoidal membership function
             a, b, c, d = parameters[0], parameters[1], parameters[2], parameters[3]
 
-            # Check if parameters are in [0,1] range and need scaling
             if max(parameters) <= 1.0 and min(parameters) >= 0.0:
-                # Scale parameters to match x range
                 x_min, x_max = min(x), max(x)
                 a = x_min + a * (x_max - x_min)
                 b = x_min + b * (x_max - x_min)
@@ -187,26 +174,19 @@ class FisTabViewModel(BaseViewModel):
             y[(x > c) & (x <= d)] = (d - x[(x > c) & (x <= d)]) / (d - c)
 
         elif mf_type == "gaussmf" and len(parameters) >= 2:
-            # Gaussian membership function
             sigma, c = parameters[0], parameters[1]
 
-            # Check if parameters need scaling
             if c <= 1.0 and c >= 0.0:
-                # Scale center parameter to match x range
                 x_min, x_max = min(x), max(x)
                 c = x_min + c * (x_max - x_min)
-                # Scale sigma proportionally
                 sigma = sigma * (x_max - x_min)
 
             y = np.exp(-((x - c) ** 2) / (2 * sigma**2))
 
         elif mf_type == "gbellmf" and len(parameters) >= 3:
-            # Generalized bell membership function
             a, b, c = parameters[0], parameters[1], parameters[2]
 
-            # Check if parameters need scaling
             if c <= 1.0 and c >= 0.0:
-                # Scale parameters to match x range
                 x_min, x_max = min(x), max(x)
                 c = x_min + c * (x_max - x_min)
                 a = a * (x_max - x_min)
@@ -214,15 +194,11 @@ class FisTabViewModel(BaseViewModel):
             y = 1 / (1 + ((x - c) / a) ** (2 * b))
 
         elif mf_type == "sigmf" and len(parameters) >= 2:
-            # Sigmoidal membership function
             a, c = parameters[0], parameters[1]
 
-            # Check if parameters need scaling
             if c <= 1.0 and c >= 0.0:
-                # Scale center parameter to match x range
                 x_min, x_max = min(x), max(x)
                 c = x_min + c * (x_max - x_min)
-                # Scale slope parameter inversely
                 a = a / (x_max - x_min)
 
             y = 1 / (1 + np.exp(-a * (x - c)))

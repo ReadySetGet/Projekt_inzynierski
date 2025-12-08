@@ -24,7 +24,7 @@ class TrianglePlot:
         self.central_x = central_x
 
         self.triangle_plot_line = self.plot_widget.plot(self.tri_x, self.tri_y, pen=self.color)
-        # Anchors are interaction points provided to the user.
+
         self.triangle_central_anchor = pg.TargetItem(
             pos=(self.tri_x[2], self.tri_y[2]),
             size=10,

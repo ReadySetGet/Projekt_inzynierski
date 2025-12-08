@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 class CentralEventBus(QObject):
     """Manages global updates across all views and view models."""
 
-    # Global update signals
     data_refresh_requested = pyqtSignal()
 
     def __init__(self, parent: Optional[QObject] = None) -> None:

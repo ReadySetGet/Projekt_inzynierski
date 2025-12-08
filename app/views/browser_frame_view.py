@@ -4,10 +4,7 @@ from app.views.base_frame_view import BaseFrameView
 
 
 class BrowserFrameWidget(BaseFrameView):
-    """Class responsible for displaying the system browser.
-
-    Displays the system browser in the left window of the program.
-    """
+    """System browser widget displaying FIS structure and project management."""
 
     del_inputs = QtCore.pyqtSignal()
     del_outputs = QtCore.pyqtSignal()
@@ -54,17 +51,14 @@ class BrowserFrameWidget(BaseFrameView):
         self.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
 
-        # Create main layout
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
 
-        # Design browser label
         self.design_browser_label = QtWidgets.QLabel()
         self.design_browser_label.setObjectName("design_browser_label")
         main_layout.addWidget(self.design_browser_label)
 
-        # Design Browser buttons
         design_buttons_layout = QtWidgets.QHBoxLayout()
         design_buttons_layout.setSpacing(5)
 
@@ -86,7 +80,6 @@ class BrowserFrameWidget(BaseFrameView):
         design_buttons_layout.addStretch()
         main_layout.addLayout(design_buttons_layout)
 
-        # Design Browser table (for projects)
         self.design_table = QtWidgets.QTableWidget()
         self.design_table.setColumnCount(3)
         self.design_table.setHorizontalHeaderLabels([self.t("ACTIVE"), self.t("DESIGN"), self.t("TYPE")])
@@ -99,12 +92,10 @@ class BrowserFrameWidget(BaseFrameView):
         self.design_table.customContextMenuRequested.connect(self._show_design_context_menu)
         main_layout.addWidget(self.design_table)
 
-        # System browser label
         self.system_browser_label = QtWidgets.QLabel()
         self.system_browser_label.setObjectName("system_browser_label")
         main_layout.addWidget(self.system_browser_label)
 
-        # Tree view
         self.system_browser_tree_view = QtWidgets.QTreeView()
         self.system_browser_tree_view.setObjectName("system_browser_tree_view")
 
@@ -114,7 +105,6 @@ class BrowserFrameWidget(BaseFrameView):
         self.tree.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._show_context_menu)
 
-        # Add tree items (will be translated in _retranslate_ui)
         self.tree_data_input = QtWidgets.QTreeWidgetItem()
         self.tree.insertTopLevelItem(0, self.tree_data_input)
         self.tree_data_output = QtWidgets.QTreeWidgetItem()
@@ -123,10 +113,8 @@ class BrowserFrameWidget(BaseFrameView):
         self.tree_data_rules = QtWidgets.QTreeWidgetItem()
         self.tree.insertTopLevelItem(2, self.tree_data_rules)
 
-        # Add tree to layout
         main_layout.addWidget(self.tree)
 
-        # Button layout
         button_layout = QtWidgets.QHBoxLayout()
 
         self.delete_all_inputs_button = QtWidgets.QPushButton()
@@ -328,7 +316,6 @@ class BrowserFrameWidget(BaseFrameView):
         if not item:
             return
 
-        # Check if this is a category header (INPUTS, OUTPUTS, RULES)
         if item in [self.tree_data_input, self.tree_data_output, self.tree_data_rules]:
             menu = QtWidgets.QMenu(self)
             if item == self.tree_data_input:
@@ -522,7 +509,6 @@ class BrowserFrameWidget(BaseFrameView):
         variable_type = item_type
         mfs = data.get("membership_functions", [])
 
-        # Check if this is a Sugeno output
         is_sugeno_output = False
         fis_model = self.view_model.fuzzy_service.get_fis_model()
         if fis_model and fis_model._fis:
@@ -531,19 +517,15 @@ class BrowserFrameWidget(BaseFrameView):
             if isinstance(fis_model._fis, sugfis) and variable_type == "output":
                 is_sugeno_output = True
 
-        # Generate default MF name
         new_mf_name = f"mf{len(mfs) + 1}"
 
-        # Get variable range for default parameters
         var_range = data.get("range", [0, 1])
         range_min, range_max = var_range[0], var_range[1]
 
         if is_sugeno_output:
-            # For Sugeno, default to constant type
             mf_type = "stala"
             default_params = [0.5]
         else:
-            # For Mamdani, default to triangle
             mf_type = "trojkatna"
             default_params = [range_min, (range_min + range_max) / 2, range_max]
 
@@ -560,16 +542,11 @@ class BrowserFrameWidget(BaseFrameView):
         if not variable_name or not self.view_model or not self.view_model.fuzzy_service:
             return
 
-        # Set the selected input in the fuzzy service
         self.view_model.fuzzy_service.set_selected_input(variable_name)
-
-        # Refresh FIS plot highlighting
         self._refresh_fis_plot_selection()
 
-        # Find the editor tab widget and switch to MF Properties tab (index 1)
         editor_tab = self._find_editor_tab()
         if editor_tab:
-            # Activate the main window if possible
             main_window = self._find_main_window()
             if main_window:
                 main_window.activateWindow()
@@ -579,7 +556,6 @@ class BrowserFrameWidget(BaseFrameView):
             editor_tab.setFocus()
             editor_tab.show()
 
-            # Use QTimer to ensure the update happens after tab switch
             QtCore.QTimer.singleShot(50, lambda: self._update_property_editor(editor_tab))
 
     def _edit_output_properties(self, data: dict):
@@ -588,16 +564,11 @@ class BrowserFrameWidget(BaseFrameView):
         if not variable_name or not self.view_model or not self.view_model.fuzzy_service:
             return
 
-        # Set the selected output in the fuzzy service
         self.view_model.fuzzy_service.set_selected_output(variable_name)
-
-        # Refresh FIS plot highlighting
         self._refresh_fis_plot_selection()
 
-        # Find the editor tab widget and switch to MF Properties tab (index 1)
         editor_tab = self._find_editor_tab()
         if editor_tab:
-            # Activate the main window if possible
             main_window = self._find_main_window()
             if main_window:
                 main_window.activateWindow()
@@ -607,7 +578,6 @@ class BrowserFrameWidget(BaseFrameView):
             editor_tab.setFocus()
             editor_tab.show()
 
-            # Use QTimer to ensure the update happens after tab switch
             QtCore.QTimer.singleShot(50, lambda: self._update_property_editor(editor_tab))
 
     def _find_main_window(self):
@@ -621,17 +591,14 @@ class BrowserFrameWidget(BaseFrameView):
 
     def _refresh_fis_plot_selection(self):
         """Refresh the FIS plot selection highlighting."""
-        # Find the central tab widget (contains FIS plot)
         central_tab = self._find_central_tab()
         if central_tab:
-            # Find the FIS plot tab (usually index 0)
             fis_plot = None
             for i in range(central_tab.count()):
                 widget = central_tab.widget(i)
                 if widget and widget.objectName() == "fis_plot":
                     fis_plot = widget
                     break
-                # Also check by class name
                 if widget and widget.__class__.__name__ == "FisTabView":
                     fis_plot = widget
                     break
@@ -641,30 +608,25 @@ class BrowserFrameWidget(BaseFrameView):
 
     def _find_central_tab(self):
         """Find the central tab widget."""
-        # Try to find it in the current widget tree
         central_tab = self.findChild(QtWidgets.QWidget, "centralTab")
         if central_tab:
             return central_tab
 
-        # Traverse up the parent hierarchy
         parent = self.parent()
         while parent:
             if parent.objectName() == "centralTab":
                 return parent
 
-            # Check if parent is a splitter and look for central tab in siblings
             if isinstance(parent, QtWidgets.QSplitter):
                 for i in range(parent.count()):
                     widget = parent.widget(i)
                     if widget and widget.objectName() == "centralTab":
                         return widget
-                    # Also check children
                     if widget:
                         central_tab = widget.findChild(QtWidgets.QWidget, "centralTab")
                         if central_tab:
                             return central_tab
 
-            # Check children of current parent
             if isinstance(parent, QtWidgets.QWidget):
                 central_tabs = parent.findChildren(QtWidgets.QWidget, "centralTab")
                 if central_tabs:
@@ -681,30 +643,25 @@ class BrowserFrameWidget(BaseFrameView):
 
     def _find_editor_tab(self):
         """Find the editor tab widget by traversing parent hierarchy."""
-        # First, try to find it in the current widget tree
         editor_tab = self.findChild(QtWidgets.QWidget, "editorTab")
         if editor_tab:
             return editor_tab
 
-        # Traverse up the parent hierarchy
         parent = self.parent()
         while parent:
             if parent.objectName() == "editorTab":
                 return parent
 
-            # Check if parent is a splitter and look for editor tab in siblings
             if isinstance(parent, QtWidgets.QSplitter):
                 for i in range(parent.count()):
                     widget = parent.widget(i)
                     if widget and widget.objectName() == "editorTab":
                         return widget
-                    # Also check children of splitter widgets
                     if widget:
                         editor_tab = widget.findChild(QtWidgets.QWidget, "editorTab")
                         if editor_tab:
                             return editor_tab
 
-            # Check children of current parent
             if isinstance(parent, QtWidgets.QWidget):
                 editor_tabs = parent.findChildren(QtWidgets.QWidget, "editorTab")
                 if editor_tabs:
@@ -716,10 +673,8 @@ class BrowserFrameWidget(BaseFrameView):
 
     def _add_rule_from_menu(self):
         """Add a new rule from context menu."""
-        # Find the editor tab widget and switch to Rule Properties tab (index 2)
         editor_tab = self._find_editor_tab()
         if editor_tab:
-            # Activate the main window if possible
             main_window = self._find_main_window()
             if main_window:
                 main_window.activateWindow()
@@ -729,7 +684,6 @@ class BrowserFrameWidget(BaseFrameView):
             editor_tab.setFocus()
             editor_tab.show()
 
-            # Find the RulesEditorTab and trigger add rule
             rule_editor_tab = self._find_rule_editor_tab(editor_tab)
             if rule_editor_tab:
                 QtCore.QTimer.singleShot(50, lambda: rule_editor_tab._on_add_rule_clicked())
@@ -740,10 +694,8 @@ class BrowserFrameWidget(BaseFrameView):
         if rule_index is None or not self.view_model or not self.view_model.fuzzy_service:
             return
 
-        # Find the editor tab widget and switch to Rule Properties tab (index 2)
         editor_tab = self._find_editor_tab()
         if editor_tab:
-            # Activate the main window if possible
             main_window = self._find_main_window()
             if main_window:
                 main_window.activateWindow()
@@ -753,10 +705,8 @@ class BrowserFrameWidget(BaseFrameView):
             editor_tab.setFocus()
             editor_tab.show()
 
-            # Find the RulesEditorTab and load the rule
             rule_editor_tab = self._find_rule_editor_tab(editor_tab)
             if rule_editor_tab:
-                # Use QTimer to ensure the tab is fully loaded before selecting
                 QtCore.QTimer.singleShot(100, lambda: self._select_rule_in_editor(rule_editor_tab, rule_index))
 
     def _find_rule_editor_tab(self, editor_tab):
@@ -764,13 +714,10 @@ class BrowserFrameWidget(BaseFrameView):
         if not editor_tab:
             return None
 
-        # Rule Properties tab is at index 2
         if editor_tab.count() > 2:
             rule_tab = editor_tab.widget(2)
-            # Check if it's a RulesEditorTab or contains one
             if rule_tab:
                 return rule_tab
-            # Also check children
             rule_editor = rule_tab.findChild(QtWidgets.QWidget, "rules_properties_tab")
             if rule_editor:
                 return rule_editor
@@ -782,7 +729,6 @@ class BrowserFrameWidget(BaseFrameView):
         if not rule_editor_tab or not rule_editor_tab.rules_list:
             return
 
-        # Find the rule in the list and select it
         rules_list = rule_editor_tab.rules_list
         if rules_list:
             for i in range(rules_list.count()):
@@ -790,7 +736,6 @@ class BrowserFrameWidget(BaseFrameView):
                 if item and item.data(QtCore.Qt.ItemDataRole.UserRole) == rule_index:
                     rules_list.setCurrentItem(item)
                     rules_list.scrollToItem(item)
-                    # Load the rule into the editor
                     rule_editor_tab._load_rule_into_editor(rule_index)
                     break
 
@@ -803,22 +748,17 @@ class BrowserFrameWidget(BaseFrameView):
         if not variable_name or mf_index is None or not self.view_model or not self.view_model.fuzzy_service:
             return
 
-        # Determine variable type
         variable_type = "input" if item_type == "input_mf" else "output"
 
-        # Set the selected variable in the fuzzy service
         if variable_type == "input":
             self.view_model.fuzzy_service.set_selected_input(variable_name)
         else:
             self.view_model.fuzzy_service.set_selected_output(variable_name)
 
-        # Refresh FIS plot highlighting
         self._refresh_fis_plot_selection()
 
-        # Find the editor tab widget and switch to MF Properties tab (index 1)
         editor_tab = self._find_editor_tab()
         if editor_tab:
-            # Activate the main window if possible
             main_window = self._find_main_window()
             if main_window:
                 main_window.activateWindow()
@@ -828,11 +768,7 @@ class BrowserFrameWidget(BaseFrameView):
             editor_tab.setFocus()
             editor_tab.show()
 
-            # Use QTimer to ensure the update happens after tab switch
             QtCore.QTimer.singleShot(50, lambda: self._update_property_editor(editor_tab))
-
-            # Select the specific MF row in the table
-            # Use a longer delay to ensure the table is populated before selecting
             QtCore.QTimer.singleShot(150, lambda: self._select_mf_row(editor_tab, mf_index))
 
     def _select_mf_row(self, editor_tab, mf_index: int):
@@ -840,11 +776,9 @@ class BrowserFrameWidget(BaseFrameView):
         if not editor_tab:
             return
 
-        # Find the MF table in the editor tab
         mf_table = None
         mf_properties_tab = editor_tab.widget(1) if editor_tab.count() > 1 else None
         if mf_properties_tab:
-            # The table is inside editor_frame
             editor_frame = mf_properties_tab.findChild(QtWidgets.QFrame, "editor_frame")
             if editor_frame:
                 mf_table = editor_frame.findChild(QtWidgets.QTableWidget, "mf_table")

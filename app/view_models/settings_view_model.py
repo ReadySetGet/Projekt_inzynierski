@@ -12,17 +12,15 @@ class SettingsViewModel(BaseViewModel):
     between the settings UI and the underlying services.
     """
 
-    # Signals
-    theme_list_changed = pyqtSignal(list)  # Emits list of available themes
-    language_list_changed = pyqtSignal(list)  # Emits list of available languages
-    current_theme_changed = pyqtSignal(str)  # Emits current theme name
-    current_language_changed = pyqtSignal(str)  # Emits current language code
+    theme_list_changed = pyqtSignal(list)
+    language_list_changed = pyqtSignal(list)
+    current_theme_changed = pyqtSignal(str)
+    current_language_changed = pyqtSignal(str)
 
     def __init__(self) -> None:
         """Initialize the SettingsViewModel."""
         super().__init__()
 
-        # Connect to service signals
         self.theme_manager.theme_changed.connect(self._on_theme_changed_internal)
         self.translate_manager.language_changed.connect(self._on_language_changed_internal)
 
@@ -70,7 +68,6 @@ class SettingsViewModel(BaseViewModel):
         """
         success = self.theme_manager.set_theme(theme_name)
         if success:
-            # Save to config if available
             if self.context.config:
                 self.context.config.set_value("theme", "current", theme_name)
         return success
@@ -86,10 +83,8 @@ class SettingsViewModel(BaseViewModel):
         """
         success = self.translate_manager.set_language(language_code)
         if success:
-            # Save to config if available
             if self.context.config:
                 self.context.config.set_value("language", "current", language_code)
-            # Emit signal to notify all views to update their translations
             self.notify_data_changed.emit()
         return success
 
@@ -97,7 +92,6 @@ class SettingsViewModel(BaseViewModel):
         """Handle theme change from theme manager."""
         current_theme = self.get_current_theme()
         self.current_theme_changed.emit(current_theme)
-        # Propagate to base class handler
         self._on_theme_changed()
 
     def _on_language_changed_internal(self) -> None:
@@ -107,7 +101,6 @@ class SettingsViewModel(BaseViewModel):
 
     def refresh_data(self) -> None:
         """Refresh settings data - updates internal state from services."""
-        # Emit current states to update UI
         themes = self.get_available_themes()
         languages = self.get_available_languages()
 

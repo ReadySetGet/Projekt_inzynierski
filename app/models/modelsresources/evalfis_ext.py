@@ -1,7 +1,5 @@
 """Extension module for inferring functionalities provided in 'fuzzylab' library.
 
-TODO: finish documentation of this module if used in the final solution
-
 Changed functions:
 
     fuzzify_input
@@ -59,9 +57,6 @@ def fuzzify_input(fis, user_input):
     num_inputs = len(fis.Inputs)
     rule_input = np.zeros((num_rules, num_inputs))
 
-    # For each rule i and each input j, compute the value of mu
-    # in the result.
-
     for i in range(num_rules):
         antecedent = fis.Rules[i].Antecedent
         for j in range(num_inputs):
@@ -70,16 +65,11 @@ def fuzzify_input(fis, user_input):
             mf_index = antecedent[j] - 1
             mf = fis.Inputs[j].MembershipFunctions[mf_index]
 
-            # start of changes -------------------------------
-
             if fis.Rules[i].IsMFInput[j]:
                 mu = evalmf(mf, crisp_x)
             else:
                 mu = 1 - evalmf(mf, crisp_x)
 
-            # end of changes ------------------------------------
-
-            # Store the fuzzified input in rule_input.
             rule_input[i, j] = mu
 
     return rule_input
@@ -89,25 +79,16 @@ def eval_firing_strength(fis, rule_input):
     """Evaluate firing strength for each rule."""
     num_rules = len(fis.Rules)
     num_inputs = len(fis.Inputs)
-
-    # Initialize output matrix to prevent inefficient resizing.
     firing_strength = np.zeros(num_rules)
-
-    # For each rule
-    #    1. Apply connection to find matching degree of the antecedent.
-    #    2. Multiply by weight of the rule to find degree of the rule.
 
     for i in range(num_rules):
         rule = fis.Rules[i]
-
-        # Collect mu values for all input variables in the antecedent.
         antecedent_mus = []
         for j in range(num_inputs):
             if rule.Antecedent[j] != 0:
                 mu = rule_input[i, j]
                 antecedent_mus.append(mu)
 
-        # Compute matching degree of the rule.
         if rule.Connection == 1:
             connect = fis.AndMethod
         else:
@@ -131,14 +112,7 @@ def eval_rules_mamdani(fis, firing_strength, num_points):
     """Evaluate rules for Mamdani type fuzzy inference system."""
     num_rules = len(fis.Rules)
     num_outputs = len(fis.Outputs)
-
-    # Initialize output matrix to prevent inefficient resizing.
     rule_output = np.zeros((num_points, num_rules * num_outputs))
-
-    # Compute the fuzzy output for each (rule, output) pair:
-    #   1. Apply the FIS implication method to find the fuzzy outputs
-    #      for the current (rule, output) pair.
-    #   2. Store the result as a column in the rule_output matrix.
 
     for i in range(num_rules):
         rule = fis.Rules[i]
@@ -146,31 +120,15 @@ def eval_rules_mamdani(fis, firing_strength, num_points):
 
         if rule_matching_degree != 0:
             for j in range(num_outputs):
-                # Compute the fuzzy output for this (rule, output) pair.
-
                 mf_index = rule.Consequent[j] - 1
-                # mf_index, hedge, not_flag = get_mf_index_and_hedge(
-                #     rule.Consequent[j] - 1)
-
-                # if mf_index != 0:
-
-                # First, get the fuzzy output, adjusting for the hedge and
-                # not_flag, but not for the rule matching degree.
-
                 out_range = fis.Outputs[j].Range
                 mf = fis.Outputs[j].MembershipFunctions[mf_index]
                 x = np.linspace(out_range[0], out_range[1], num_points)
-
-                # start of changes -------------------------------
 
                 if fis.Rules[i].IsMFOutput[j]:
                     fuzzy_out = evalmf(mf, x)
                 else:
                     fuzzy_out = 1 - evalmf(mf, x)
-
-                # end of changes ------------------------------------
-
-                # Adjust the fuzzy output for the rule matching degree.
 
                 if fis.ImplicationMethod == "min":
                     fuzzy_out = np.minimum(rule_matching_degree, fuzzy_out)
@@ -185,12 +143,8 @@ def aggregate_output_mamdani(fis, rule_output):
     num_rules = len(fis.Rules)
     num_outputs = len(fis.Outputs)
     num_points = len(rule_output)
-
-    # Initialize output matrix to prevent inefficient resizing.
     fuzzy_output = np.zeros((num_points, num_outputs))
 
-    # Compute the ith fuzzy output values, then store the values in the
-    # ith column of the fuzzy_output matrix.
     for i in range(num_outputs):
         indiv_fuzzy_out = rule_output[:, i * num_rules : (i + 1) * num_rules]
         if fis.AggregationMethod == "max":
@@ -243,20 +197,7 @@ def eval_rules_sugeno(fis, firing_strength, user_input):
     """Evaluate rules for Sugeno type fuzzy inference system."""
     num_rules = len(fis.Rules)
     num_outputs = len(fis.Outputs)
-
-    # Initialize output matrix to prevent inefficient resizing.
     rule_output = np.zeros((2, num_rules * num_outputs))
-
-    # Compute the (location, height) of the singleton output by each
-    # (rule, output) pair:
-    #   1. The height is given by the firing strength of the rule, and
-    #      by the hedge and the not flag for the (rule, output) pair.
-    #   2. If the consequent membership function is constant, then the
-    #      membership function's parameter gives the location of the
-    #      singleton. If the consequent membership function is linear,
-    #      then the location is the inner product of the the membership
-    #      function's parameters and the vector formed by appending a 1
-    #      to the user input vector.
 
     for i in range(num_rules):
         rule = fis.Rules[i]
@@ -268,31 +209,21 @@ def eval_rules_sugeno(fis, firing_strength, user_input):
 
                 height = rule_firing_strength
 
-                # Compute the singleton location for this (rule, output) pair.
-
                 mf = fis.Outputs[j].MembershipFunctions[mf_index]
 
                 if mf.Type == "constant":
-                    # Handle both list and single value parameters
                     if hasattr(mf.Parameters, "__getitem__"):
                         location = mf.Parameters[0]
                     else:
                         location = mf.Parameters
                 elif mf.Type == "linear":
-                    # For linear functions: location = p0*x1 + p1*x2 + ... + pn
-                    # where pn is the constant term
                     if hasattr(mf.Parameters, "__len__") and len(mf.Parameters) > len(user_input):
-                        # Parameters include coefficients for inputs + constant term
                         location = np.dot(mf.Parameters[:-1], user_input) + mf.Parameters[-1]
                     else:
-                        # Fallback: just use the first parameter
                         if hasattr(mf.Parameters, "__getitem__"):
                             location = mf.Parameters[0]
                         else:
                             location = mf.Parameters
-
-                # Store result in column of rule_output corresponding
-                # to the (rule, output) pair.
 
                 rule_output[0, (j - 1) * num_rules + i] = location
                 rule_output[1, (j - 1) * num_rules + i] = height
@@ -305,9 +236,6 @@ def aggregate_output_sugeno(fis, rule_output):
     fuzzy_output = []
     num_outputs = len(fis.Outputs)
     num_rules = len(fis.Rules)
-
-    # For each FIS output, aggregate the slice of the rule_output matrix,
-    # then store the result as a structure in fuzzy_output.
 
     for i in range(num_outputs):
         unagg_output = rule_output[:, i * num_rules : (i + 1) * num_rules]
@@ -347,12 +275,8 @@ def defuzzify_output_sugeno(fis, aggregated_output):
 
 def aggregate_fis_output(fis_aggmethod, rule_output):
     """Aggregate FIS output based on the specified aggregation method."""
-    # Initialize output matrix (multiple_singletons).
     rule_output = np.transpose(rule_output)
     mult_singletons = rule_output[rule_output[:, 0].argsort()]
-
-    # If adjacent rows represent singletons at the same location, then
-    # combine them using the FIS aggregation method.
 
     for i in range(len(mult_singletons) - 1):
         if mult_singletons[i, 0] == mult_singletons[i + 1, 0]:
@@ -360,9 +284,6 @@ def aggregate_fis_output(fis_aggmethod, rule_output):
                 mult_singletons[i + 1, 1] = mult_singletons[i, 1] + mult_singletons[i + 1, 1]
 
             mult_singletons[i, 1] = 0
-
-    # Return the transpose of the matrix after removing 0-height
-    # singletons.
 
     mult_singletons = np.transpose(remove_null_rows(mult_singletons))
 

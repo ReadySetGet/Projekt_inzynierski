@@ -31,8 +31,6 @@ class BellPlot:
 
         self.bell_plot_line = self.plot_widget.plot(self.bell_x, self.bell_y, pen=self.color)
 
-        # Anchors are interaction points provided to the user.
-        # 'A' anchors are responsible for management of the width of the bell plot.
         self.left_a_anchor = pg.TargetItem(
             pos=(self.c - self.a, 0.5),
             size=10,

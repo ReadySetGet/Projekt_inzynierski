@@ -28,8 +28,6 @@ class GaussPlot:
 
         self.gauss_plot_line = self.plot_widget.plot(self.gauss_x, self.gauss_y, pen=self.color)
 
-        # Left and right anchors are interaction points
-        # which can be used by the user to change the width of the plot.
         self.gauss_left_anchor = pg.TargetItem(
             pos=(self.mu - self.sigma, np.exp(-0.5)),
             size=10,
@@ -48,7 +46,6 @@ class GaussPlot:
         )
         self.gauss_right_anchor.sigPositionChanged.connect(self._right_gauss_interaction)
 
-        # Interaction point responsible for moving the entire plot.
         self.position_anchor = pg.TargetItem(pos=(self.mu, 0), size=10, symbol="s", pen=self.color, brush=self.color)
         self.position_anchor.sigPositionChanged.connect(self._change_position)
 

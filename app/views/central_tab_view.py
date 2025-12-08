@@ -24,15 +24,13 @@ from app.views.triangle_plot import TrianglePlot
 
 
 def _regex_func(match) -> str:
-    """Function responsible for substituting the antecedent ==.
-
-    Substitutes with consequent = after the => symbol.
+    """Replace == with = in the consequent part of a rule string.
 
     Args:
-        match: Regex match object.
+        match: Regex match object containing rule parts.
 
     Returns:
-        Modified string.
+        String with == replaced by = in the consequent.
     """
     then = match.group(1)
     after = match.group(2)
@@ -66,7 +64,6 @@ class CentralTabWidget(BaseTabView):
         self.view_model = CentralTabViewModel()
         self.view_model.setParent(self)
 
-        # Store MF plots
         self.mf_plots = []
 
         self._setup_ui()
@@ -81,18 +78,14 @@ class CentralTabWidget(BaseTabView):
         self.mf_plot = QtWidgets.QWidget()
         self.mf_plot.setObjectName("mf_plot")
 
-        # Creation of the plot frame in which membership functions will be displayed.
         self.plot_frame = QtWidgets.QFrame(parent=self.mf_plot)
         self.plot_frame.setGeometry(QtCore.QRect(-5, 40, 521, 521))
         self.plot_frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.plot_frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.plot_frame.setObjectName("plot_frame")
 
-        # Creating layout and binding it to the frame.
         frame_layout = QtWidgets.QVBoxLayout(self.plot_frame)
 
-        # Creation of plot widget which is responsible for plotting
-        # the membership functions.
         self.mf_plot_graph = pg.PlotWidget()
         self.mf_plot_graph.setXRange(0, 100)
         self.mf_plot_graph.setYRange(0, 1)
@@ -105,10 +98,6 @@ class CentralTabWidget(BaseTabView):
 
         self.mf_plot_graph.showButtons()
 
-        # Plots will be created dynamically based on selected variable's MFs
-        # Placeholder plots removed - will be loaded from fuzzy service
-
-        # Plot title and labels will be styled by theme
         self.mf_plot_graph.setTitle(self.t("MEMBERSHIP_FUNCTION_PLOT"))
         self.mf_plot_graph.setLabel("left", self.t("DEGREE_OF_MEMBERSHIP"))
         self.mf_plot_graph.setLabel("bottom", self.t("VARIABLE"))
@@ -126,7 +115,6 @@ class CentralTabWidget(BaseTabView):
         self.addTab(self.mf_plot, "")
 
         self._connect_view_model_signals()
-        self._setup_sample_data()
 
         self.rule_editor = QtWidgets.QWidget()
         self.rule_editor.setObjectName("rule_editor")
@@ -210,7 +198,6 @@ class CentralTabWidget(BaseTabView):
         self.system_name_label.setText(display_text)
         self.system_label_2.setText(display_text)
 
-    # Placeholder bo nie mam danych z back endu jak to generować
     def generateRules(self):
         """Generate all possible rules based on inputs and outputs."""
         fuzzy_service = self.view_model.fuzzy_service
@@ -363,7 +350,6 @@ class CentralTabWidget(BaseTabView):
         """Connect view model signals to widget slots."""
         self.view_model.data_changed.connect(self._on_data_changed)
 
-        # Initial load of MF plots
         self._load_mf_plots()
 
     def _on_data_changed(self):
@@ -380,7 +366,6 @@ class CentralTabWidget(BaseTabView):
         if not fuzzy_service:
             return
 
-        # Check for selected input or output
         selected_input_name = fuzzy_service.get_selected_input_name()
         selected_output_name = fuzzy_service.get_selected_output_name()
 
@@ -389,17 +374,14 @@ class CentralTabWidget(BaseTabView):
         variable_data = None
 
         if selected_input_name:
-            # Input is selected
             variable_name = selected_input_name
             variable_type = "input"
             variable_data = fuzzy_service.get_selected_input_data()
         elif selected_output_name:
-            # Output is selected
             variable_name = selected_output_name
             variable_type = "output"
             variable_data = fuzzy_service.get_selected_output_data()
         else:
-            # No selection - don't force a selection, just return
             return
 
         if not variable_data:
@@ -414,7 +396,6 @@ class CentralTabWidget(BaseTabView):
         var_type_label = self.t("INPUT") if variable_type == "input" else self.t("OUTPUT")
         self.mf_plot_graph.setLabel("bottom", f"{var_type_label} {self.t('VARIABLE')}: {variable_name}", color="black")
 
-        # Define colors for different MFs
         colors = [
             "b",
             "r",
@@ -470,7 +451,6 @@ class CentralTabWidget(BaseTabView):
         """
         try:
             if mf_type == "trimf" and len(mf_params) >= 3:
-                # Triangle MF: [a, b, c]
                 a, b, c = mf_params[0], mf_params[1], mf_params[2]
                 x_data = [var_range[0], a, b, c, var_range[1]]
                 y_data = [0.0, 0, 1, 0, 0]
@@ -487,7 +467,6 @@ class CentralTabWidget(BaseTabView):
                 return plot
 
             elif mf_type == "trapmf" and len(mf_params) >= 4:
-                # Trapezoid MF: [a, b, c, d]
                 a, b, c, d = mf_params[0], mf_params[1], mf_params[2], mf_params[3]
                 x_data = [var_range[0], a, b, c, d, var_range[1]]
                 y_data = [0.0, 0, 1, 1, 0, 0]
@@ -504,7 +483,6 @@ class CentralTabWidget(BaseTabView):
                 return plot
 
             elif mf_type == "gaussmf" and len(mf_params) >= 2:
-                # Gaussian MF: [sigma, mu]
                 sigma, mu = mf_params[0], mf_params[1]
                 fuzzy_service = self.view_model.fuzzy_service
                 interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
@@ -523,7 +501,6 @@ class CentralTabWidget(BaseTabView):
                 return plot
 
             elif mf_type == "gbellmf" and len(mf_params) >= 3:
-                # Bell MF: [a, b, c]
                 a, b, c = mf_params[0], mf_params[1], mf_params[2]
                 fuzzy_service = self.view_model.fuzzy_service
                 interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
@@ -766,7 +743,6 @@ class CentralTabWidget(BaseTabView):
         if not fuzzy_service:
             return
 
-        # Determine which variable (input or output) is selected
         selected_input_name = fuzzy_service.get_selected_input_name()
         selected_output_name = fuzzy_service.get_selected_output_name()
 
@@ -787,7 +763,6 @@ class CentralTabWidget(BaseTabView):
         )
 
         if success:
-            # Optionally show status message
             self.status_bar.showMessage(f"{self.t('UPDATED_MF_PARAMETERS')}: {new_params}")
 
             self.view_model.notify_data_changed.emit()
@@ -800,21 +775,3 @@ class CentralTabWidget(BaseTabView):
                 plot_obj.plot_widget.clear()
 
         self.mf_plots = []
-
-    def _setup_sample_data(self):
-        """Set up sample data for the widget."""
-        # This method will be implemented when needed
-        # For now, it's a placeholder to prevent AttributeError
-        pass
-
-    def get_fuzzy_service(self):
-        """Get the fuzzy calculation service."""
-        # This method will be implemented when fuzzy service is connected
-        # For now, return None to prevent AttributeError
-        return None
-
-    def connect_mf_editor(self, mf_editor):
-        """Connect the MF editor to this widget."""
-        # This method will be implemented when MF editor integration is needed
-        # For now, it's a placeholder to prevent AttributeError
-        pass

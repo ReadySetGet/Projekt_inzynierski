@@ -39,16 +39,12 @@ class BarMenuWidget(QtWidgets.QMenuBar):
         self.menu_help = self.addMenu("Help")
         self.menu_help.setObjectName("menu_help")
 
-        # Submenu refers to 'secondary' categories which are visible to the user
-        # and can be hovered over to display additional options
         self.submenu_new = self.addMenu("New")
         self.submenu_new.setObjectName("submenu_new")
 
         self.submenu_convert = self.addMenu("Convert")
         self.submenu_convert.setObjectName("submenu_convert")
 
-        # Actions are the buttons the user will be pressing to access functions
-        # of the program.
         self.action_save = QtGui.QAction(parent=self)
         self.action_save.setObjectName("action_save")
 
