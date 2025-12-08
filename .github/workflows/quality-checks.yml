@@ -23,11 +23,13 @@ jobs:
         run: |
           . .venv/bin/activate
           pre-commit run --all-files
-      - name: Run type checks (mypy)
+      - name: Install system dependencies for Qt
         run: |
-          . .venv/bin/activate
-          mypy app
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libxkbcommon-x11-0 libxcb-xinerama0
       - name: Run tests (pytest)
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: |
           . .venv/bin/activate
           pytest

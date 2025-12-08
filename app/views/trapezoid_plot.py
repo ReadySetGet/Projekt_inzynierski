@@ -25,7 +25,6 @@ class TrapezoidPlot:
 
         self.trapezoid_plot_line = self.plot_widget.plot(self.trap_x, self.trap_y, pen=self.color)
 
-        # Anchors are interaction points provided to the user.
         self.trapezoid_left_down_anchor = pg.TargetItem(
             pos=(self.trap_x[1], self.trap_y[1]),
             size=10,

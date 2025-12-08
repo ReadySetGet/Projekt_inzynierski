@@ -38,7 +38,7 @@ def test_translate_manager_available_languages(translate_manager, temp_locales_d
 
 def test_translate_manager_load_language(translate_manager, temp_locales_dir):
     pl_json = temp_locales_dir / "pl" / "app.json"
-    pl_json.write_text('{"hello": "Witaj", "world": "Świat"}')
+    pl_json.write_text('{"hello": "Witaj", "world": "Świat"}', encoding="utf-8")
 
     result = translate_manager.load_language("pl")
     assert result is True

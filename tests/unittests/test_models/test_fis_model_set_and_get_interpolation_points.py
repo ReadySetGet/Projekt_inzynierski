@@ -3,7 +3,7 @@ import unittest
 from app.models.fis_model import FISModel
 
 
-class AddRuleTestCase(unittest.TestCase):
+class SetGetInterpolationPointsTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.model = FISModel()
 
@@ -13,7 +13,7 @@ class AddRuleTestCase(unittest.TestCase):
     def test_2_set_interpolation_points_number(self) -> None:
         result = self.model.set_interpolation_points(999)
         self.assertEqual(result, 1, "Problems with return value")
-        self.assertEqual(self.model._interpolation_points_nr, 999, "Interpolation points set incorrectly")
+        self.assertEqual(self.model._interpolation_points_nr, 999, "Interpolation points not set")
 
     def test_3_set_interpolation_points_too_high(self) -> None:
         result = self.model.set_interpolation_points(1001)

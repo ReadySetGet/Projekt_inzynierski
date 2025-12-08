@@ -14,7 +14,7 @@ class RuleInterferenceViewModel(BaseViewModel):
     inputs_updated = pyqtSignal(list)
     outputs_updated = pyqtSignal(list)
     rules_updated = pyqtSignal(list)
-    inference_updated = pyqtSignal(list, list)  # inputs, outputs
+    inference_updated = pyqtSignal(list, list)
     status_message = pyqtSignal(str)
 
     def __init__(self) -> None:
@@ -30,11 +30,7 @@ class RuleInterferenceViewModel(BaseViewModel):
             Tuple[List[float], List[float]],
         ] = {}
         self._last_rules_hash: int = 0
-        self._connect_to_fuzzy_service()
 
-    # ---------------------------------------------------------------------- #
-    # Public API                                                             #
-    # ---------------------------------------------------------------------- #
     @property
     def current_input_values(self) -> List[float]:
         """Return a copy of the current input values used for inference."""
@@ -112,25 +108,6 @@ class RuleInterferenceViewModel(BaseViewModel):
         self._emit_inference()
         return bool(self._current_outputs)
 
-    # ------------------------------------------------------------------ #
-    # Internal helpers                                                   #
-    # ------------------------------------------------------------------ #
-    def _connect_to_fuzzy_service(self) -> None:
-        """Attach listeners to fuzzy service change notifications."""
-        try:
-            fuzzy_service = self.fuzzy_service
-        except RuntimeError:
-            fuzzy_service = None
-
-        if fuzzy_service and hasattr(fuzzy_service, "system_changed"):
-            fuzzy_service.system_changed.connect(self._on_system_changed)
-
-    def _on_system_changed(self) -> None:
-        """Handle incoming system change notifications."""
-        self._curve_cache.clear()
-        self._last_rules_hash = 0
-        self.refresh_data()
-
     def _reset_cache(self) -> None:
         """Reset all cached data."""
         self._inputs = []
@@ -192,10 +169,8 @@ class RuleInterferenceViewModel(BaseViewModel):
         if outputs is None:
             return []
 
-        # Handle numpy arrays/scalars via tolist()
-        if hasattr(outputs, "tolist"):
+        if isinstance(outputs, np.ndarray):
             converted = outputs.tolist()
-            # Recursively normalise in case tolist() returned a scalar
             return self._normalize_outputs(converted)
 
         if isinstance(outputs, (list, tuple)):
@@ -218,9 +193,6 @@ class RuleInterferenceViewModel(BaseViewModel):
         except Exception:
             return ""
 
-    # ------------------------------------------------------------------ #
-    # Visualization Helpers                                              #
-    # ------------------------------------------------------------------ #
     def build_visualization_payload(self) -> Dict[str, Any]:
         """Build structured data used to render the rule interference view."""
         mf_data_hash = self._compute_mf_data_hash_from_variables()
@@ -371,9 +343,9 @@ class RuleInterferenceViewModel(BaseViewModel):
             return 0.0
 
         degrees = [cond["membership"] for cond in input_conditions]
-        if connection == 1:  # AND
+        if connection == 1:
             activation = min(degrees)
-        else:  # OR
+        else:
             activation = max(degrees)
         activation *= weight
         return float(np.clip(activation, 0.0, 1.0))
@@ -401,7 +373,6 @@ class RuleInterferenceViewModel(BaseViewModel):
             curve_x, curve_y = self._generate_curve(mf.get("type", ""), mf.get("parameters", []), var_range)
             clipped_y = [min(y, activation) for y in curve_y]
 
-            # Update aggregated curve for this output
             if idx not in aggregated_curves:
                 aggregated_curves[idx] = {"curve_x": curve_x, "curve_y": clipped_y.copy()}
             else:
@@ -430,13 +401,20 @@ class RuleInterferenceViewModel(BaseViewModel):
         aggregated_outputs = []
         for idx, variable in enumerate(outputs_payload):
             aggregated = aggregated_curves.get(idx, {"curve_x": [], "curve_y": []})
+            curve_y = aggregated.get("curve_y", [])
+            value = variable.get("value")
+
+            if value is not None:
+                if not curve_y or all(y == 0.0 for y in curve_y):
+                    value = None
+
             aggregated_outputs.append(
                 {
                     "variable_index": idx,
                     "variable_name": variable.get("name"),
                     "curve_x": aggregated.get("curve_x", []),
-                    "curve_y": aggregated.get("curve_y", []),
-                    "value": variable.get("value"),
+                    "curve_y": curve_y,
+                    "value": value,
                 }
             )
         return aggregated_outputs
@@ -459,7 +437,6 @@ class RuleInterferenceViewModel(BaseViewModel):
         if resolution is None:
             resolution = self.fuzzy_service.get_interpolation_points()
 
-        # Handle constant type - parameters might be a single float
         if mf_type.lower() == "constant":
             if isinstance(params, (int, float)):
                 params_tuple = (float(params),)
@@ -526,24 +503,17 @@ class RuleInterferenceViewModel(BaseViewModel):
             y_values = 1.0 / (1 + np.abs((x_values - c) / a) ** (2 * b))
 
         elif mf_type == "constant":
-            # Sugeno constant type - single value, flat line
             if isinstance(params, (int, float)):
                 const_value = float(params)
             elif isinstance(params, (list, tuple)) and len(params) > 0:
                 const_value = float(params[0])
             else:
                 const_value = 0.5
-            # For visualization, show as a flat line at the constant value (clipped to [0,1])
             y_values.fill(float(np.clip(const_value, 0.0, 1.0)))
 
         elif mf_type == "linear":
-            # Sugeno linear type - linear function of inputs
-            # For visualization purposes, show as a line from min to max of range
-            # In actual Sugeno inference, this would use: p0*x1 + p1*x2 + ... + pn
             if isinstance(params, (list, tuple)) and len(params) > 0:
-                # Use first parameter as baseline for visualization
                 base_value = float(params[0]) if len(params) > 0 else 0.5
-                # Create a simple linear visualization
                 y_values = np.linspace(base_value * 0.5, base_value * 1.5, len(x_values))
             else:
                 y_values.fill(0.5)
@@ -606,7 +576,6 @@ class RuleInterferenceViewModel(BaseViewModel):
                 return float(1.0 / (1 + abs((value - c) / a) ** (2 * b)))
 
             if mf_type == "constant":
-                # Sugeno constant type - always returns the constant value (clipped to [0,1])
                 if isinstance(params, (int, float)):
                     return float(np.clip(params, 0.0, 1.0))
                 elif isinstance(params, (list, tuple)) and len(params) > 0:
@@ -614,8 +583,6 @@ class RuleInterferenceViewModel(BaseViewModel):
                 return 0.5
 
             if mf_type == "linear":
-                # Sugeno linear type - for visualization, use first parameter
-                # In actual inference, this would be: p0*x1 + p1*x2 + ... + pn
                 if isinstance(params, (list, tuple)) and len(params) > 0:
                     return float(np.clip(params[0], 0.0, 1.0))
                 return 0.5

@@ -107,7 +107,7 @@ def test_editor_tab_view_model_get_selected_variable_info_none(editor_tab_view_m
     assert info is None
 
 
-def test_editor_tab_view_model_get_selected_variable_info_no_service(editor_tab_view_model):
-    editor_tab_view_model._fuzzy_service = None
+def test_editor_tab_view_model_get_selected_variable_info_no_service(editor_tab_view_model, mock_app_context):
+    mock_app_context.fuzzy_service = None
     info = editor_tab_view_model.get_selected_variable_info()
     assert info is None

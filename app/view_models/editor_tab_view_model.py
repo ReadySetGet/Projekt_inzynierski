@@ -6,16 +6,9 @@ from app.view_models.base_view_model import BaseViewModel
 class EditorTabViewModel(BaseViewModel):
     """View model for the editor tab view."""
 
-    # Signals for tab changes
     current_tab_changed = pyqtSignal(int)
-
-    # Signals for FIS properties tab
     fis_properties_updated = pyqtSignal()
-
-    # Signals for MF properties tab
     mf_properties_updated = pyqtSignal()
-
-    # Signals for rule properties tab
     rule_properties_updated = pyqtSignal()
 
     def __init__(self) -> None:
@@ -94,3 +87,13 @@ class EditorTabViewModel(BaseViewModel):
             }
 
         return None
+
+    def get_fis_type(self) -> str:
+        """Get the current FIS type.
+
+        Returns:
+            String indicating FIS type ("mamdani" or "sugeno")
+        """
+        if not self.fuzzy_service:
+            return "mamdani"
+        return self.fuzzy_service.get_fis_type()

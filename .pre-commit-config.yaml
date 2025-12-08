@@ -4,19 +4,19 @@ repos:
     hooks:
       - id: black
         always_run: true
-        args: ["app", "main.py"]
+        args: ["app", "tests", "main.py", ".githooks"]
   - repo: https://github.com/PyCQA/isort
     rev: 5.12.0
     hooks:
       - id: isort
         always_run: true
-        args: ["app", "main.py"]
+        args: ["app", "tests", "main.py", ".githooks"]
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
     hooks:
       - id: flake8
         always_run: true
-        args: ["app", "main.py"]
+        args: ["app", "tests", "main.py", ".githooks"]
   # - repo: https://github.com/pre-commit/mirrors-mypy
   #   rev: v1.7.1
   #   hooks:

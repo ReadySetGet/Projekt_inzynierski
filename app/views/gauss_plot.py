@@ -28,8 +28,6 @@ class GaussPlot:
 
         self.gauss_plot_line = self.plot_widget.plot(self.gauss_x, self.gauss_y, pen=self.color)
 
-        # Left and right anchors are interaction points
-        # which can be used by the user to change the width of the plot.
         self.gauss_left_anchor = pg.TargetItem(
             pos=(self.mu - self.sigma, np.exp(-0.5)),
             size=10,
@@ -48,7 +46,6 @@ class GaussPlot:
         )
         self.gauss_right_anchor.sigPositionChanged.connect(self._right_gauss_interaction)
 
-        # Interaction point responsible for moving the entire plot.
         self.position_anchor = pg.TargetItem(pos=(self.mu, 0), size=10, symbol="s", pen=self.color, brush=self.color)
         self.position_anchor.sigPositionChanged.connect(self._change_position)
 
@@ -59,19 +56,25 @@ class GaussPlot:
     def _left_gauss_interaction(self):
         """Change the width of the plot when interacting with left anchor."""
         new_pos = self.gauss_left_anchor.pos()
-        new_sigma = abs(new_pos.x() - self.mu)
-        if new_sigma > 0.01:
-            self.sigma = new_sigma
-            self.gauss_right_anchor.setPos(self.mu + self.sigma, np.exp(-0.5))
+        if new_pos.x() >= self.mu:
+            self.gauss_left_anchor.setPos(self.mu - self.sigma, np.exp(-0.5))
+        else:
+            new_sigma = abs(new_pos.x() - self.mu)
+            if new_sigma > 0.01:
+                self.sigma = new_sigma
+                self.gauss_right_anchor.setPos(self.mu + self.sigma, np.exp(-0.5))
         self._update_plot()
 
     def _right_gauss_interaction(self):
         """Change the width of the plot when interacting with right anchor."""
         new_pos = self.gauss_right_anchor.pos()
-        new_sigma = abs(new_pos.x() - self.mu)
-        if new_sigma > 0.01:
-            self.sigma = new_sigma
-            self.gauss_left_anchor.setPos(self.mu - self.sigma, np.exp(-0.5))
+        if new_pos.x() <= self.mu:
+            self.gauss_right_anchor.setPos(self.mu + self.sigma, np.exp(-0.5))
+        else:
+            new_sigma = abs(new_pos.x() - self.mu)
+            if new_sigma > 0.01:
+                self.sigma = new_sigma
+                self.gauss_left_anchor.setPos(self.mu - self.sigma, np.exp(-0.5))
         self._update_plot()
 
     def _change_position(self):

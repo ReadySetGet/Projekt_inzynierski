@@ -14,23 +14,23 @@ from PyQt6 import QtCore, QtWidgets
 from app.view_models.central_tab_view_model import CentralTabViewModel
 from app.views.base_tab_view import BaseTabView
 from app.views.bell_plot import BellPlot
+from app.views.constant_plot import ConstantPlot
 from app.views.fis_tab_view import FisTabView
 from app.views.gauss_plot import GaussPlot
+from app.views.linear_plot import LinearPlot
 from app.views.rule_interference_view import RuleInterferenceTabWidget
 from app.views.trapezoid_plot import TrapezoidPlot
 from app.views.triangle_plot import TrianglePlot
 
 
 def _regex_func(match) -> str:
-    """Function responsible for substituting the antecedent ==.
-
-    Substitutes with consequent = after the => symbol.
+    """Replace == with = in the consequent part of a rule string.
 
     Args:
-        match: Regex match object.
+        match: Regex match object containing rule parts.
 
     Returns:
-        Modified string.
+        String with == replaced by = in the consequent.
     """
     then = match.group(1)
     after = match.group(2)
@@ -64,7 +64,6 @@ class CentralTabWidget(BaseTabView):
         self.view_model = CentralTabViewModel()
         self.view_model.setParent(self)
 
-        # Store MF plots
         self.mf_plots = []
 
         self._setup_ui()
@@ -79,28 +78,29 @@ class CentralTabWidget(BaseTabView):
         self.mf_plot = QtWidgets.QWidget()
         self.mf_plot.setObjectName("mf_plot")
 
-        # Creation of the plot frame in which membership functions will be displayed.
         self.plot_frame = QtWidgets.QFrame(parent=self.mf_plot)
         self.plot_frame.setGeometry(QtCore.QRect(-5, 40, 521, 521))
         self.plot_frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.plot_frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.plot_frame.setObjectName("plot_frame")
 
-        # Creating layout and binding it to the frame.
         frame_layout = QtWidgets.QVBoxLayout(self.plot_frame)
 
-        # Creation of plot widget which is responsible for plotting
-        # the membership functions.
         self.mf_plot_graph = pg.PlotWidget()
         self.mf_plot_graph.setXRange(0, 100)
+        self.mf_plot_graph.setYRange(0, 1)
+        self.mf_plot_graph.enableAutoRange(axis="y", enable=False)
 
-        # Plots will be created dynamically based on selected variable's MFs
-        # Placeholder plots removed - will be loaded from fuzzy service
+        view_box = self.mf_plot_graph.getViewBox()
+        if view_box:
+            view_box.setMouseEnabled(x=False, y=False)
+            view_box.setLimits(minYRange=1.0, maxYRange=1.0)
 
-        # Plot title and labels will be styled by theme
-        self.mf_plot_graph.setTitle("Membership Function Plot")
-        self.mf_plot_graph.setLabel("left", "Degree of Membership")
-        self.mf_plot_graph.setLabel("bottom", "Variable")
+        self.mf_plot_graph.showButtons()
+
+        self.mf_plot_graph.setTitle(self.t("MEMBERSHIP_FUNCTION_PLOT"))
+        self.mf_plot_graph.setLabel("left", self.t("DEGREE_OF_MEMBERSHIP"))
+        self.mf_plot_graph.setLabel("bottom", self.t("VARIABLE"))
         frame_layout.addWidget(self.mf_plot_graph)
 
         self.seperator_line = QtWidgets.QFrame(parent=self.mf_plot)
@@ -115,7 +115,6 @@ class CentralTabWidget(BaseTabView):
         self.addTab(self.mf_plot, "")
 
         self._connect_view_model_signals()
-        self._setup_sample_data()
 
         self.rule_editor = QtWidgets.QWidget()
         self.rule_editor.setObjectName("rule_editor")
@@ -134,7 +133,7 @@ class CentralTabWidget(BaseTabView):
         self.table_widget.setColumnWidth(0, 100)
         self.table_widget.setColumnWidth(1, 60)
         self.table_widget.setColumnWidth(2, 271)
-        self.table_widget.setHorizontalHeaderLabels(["Name", "Weight", "Rule"])
+        self.table_widget.setHorizontalHeaderLabels([self.t("NAME"), self.t("WEIGHT"), self.t("RULE")])
 
         self.clear_rules_button = QtWidgets.QPushButton(parent=self.rule_editor)
         self.clear_rules_button.setGeometry(QtCore.QRect(180, 60, 100, 28))
@@ -144,7 +143,7 @@ class CentralTabWidget(BaseTabView):
         self.rule_style_dropdown = QtWidgets.QComboBox(parent=self.rule_editor)
         self.rule_style_dropdown.setGeometry(QtCore.QRect(300, 60, 100, 28))
         self.rule_style_dropdown.setObjectName("rule_style_dropdown")
-        self.rule_style_dropdown.addItems(["Verbose", "Symbolic", "Indexed"])
+        self.rule_style_dropdown.addItems([self.t("VERBOSE"), self.t("SYMBOLIC"), self.t("INDEXED")])
         self.rule_style_dropdown.currentIndexChanged.connect(self._update_rule_style)
 
         self.add_rule_button = QtWidgets.QPushButton(parent=self.rule_editor)
@@ -199,29 +198,27 @@ class CentralTabWidget(BaseTabView):
         self.system_name_label.setText(display_text)
         self.system_label_2.setText(display_text)
 
-    # Placeholder bo nie mam danych z back endu jak to generować
     def generateRules(self):
         """Generate all possible rules based on inputs and outputs."""
-        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        fuzzy_service = self.view_model.fuzzy_service
         if not fuzzy_service:
-            self.status_bar.showMessage("Error: Fuzzy service not available.")
+            self.status_bar.showMessage(self.t("ERROR_FUZZY_SERVICE_NOT_AVAILABLE"))
             return
 
         success = fuzzy_service.add_all_possible_rules()
         if success:
             self.fillTable()
-            self.status_bar.showMessage("Last action: added all possible rule combinations.")
-            if hasattr(self.view_model, "notify_data_changed"):
-                self.view_model.notify_data_changed.emit()
+            self.status_bar.showMessage(self.t("LAST_ACTION_ADDED_ALL_RULES"))
+            self.view_model.notify_data_changed.emit()
         else:
-            self.status_bar.showMessage("Error: Failed to generate rules.")
+            self.status_bar.showMessage(self.t("ERROR_FAILED_TO_GENERATE_RULES"))
 
     def fillTable(self):
         """Fill the rules table with rules.
 
         Displays as many rows as there are rules in the program.
         """
-        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        fuzzy_service = self.view_model.fuzzy_service
         if not fuzzy_service:
             self.table_widget.setRowCount(0)
             return
@@ -234,12 +231,12 @@ class CentralTabWidget(BaseTabView):
             rule_text = fuzzy_service.get_rule_text(i)
 
             if not rule_text:
-                rule_text = f"Rule {i+1} (no text available)"
+                rule_text = f"{self.t('RULE')} {i+1} ({self.t('NO_TEXT_AVAILABLE')})"
 
             rules_data = fuzzy_service.get_rules()
             if i < len(rules_data):
                 rule_data = rules_data[i]
-                name_str = rule_data.get("name", f"Rule{i+1}")
+                name_str = rule_data.get("name", f"{self.t('RULE')}{i+1}")
                 weight_str = str(rule_data.get("weight", 1.0))
                 self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(name_str))
                 self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(weight_str))
@@ -247,14 +244,14 @@ class CentralTabWidget(BaseTabView):
                 self.table_widget.setItem(i, 0, QtWidgets.QTableWidgetItem(""))
                 self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(""))
 
-            if display_type == "Symbolic":
+            if display_type == self.t("SYMBOLIC"):
                 pattern = r"\b({})\b".format("|".join(sorted(re.escape(k) for k in self._symbols)))
                 symbolic_rule = re.sub(pattern, lambda m: self._symbols.get(m.group(0)), rule_text)
                 symbolic_rule = re.sub(r"(=>)(.*)", _regex_func, symbolic_rule)
                 if not symbolic_rule or symbolic_rule == rule_text:
                     symbolic_rule = rule_text
                 self.table_widget.setItem(i, 2, QtWidgets.QTableWidgetItem(symbolic_rule))
-            elif display_type == "Indexed":
+            elif display_type == self.t("INDEXED"):
                 rules_data = fuzzy_service.get_rules()
                 if i < len(rules_data):
                     rule_data = rules_data[i]
@@ -274,36 +271,35 @@ class CentralTabWidget(BaseTabView):
 
         Sets one empty row as default for aesthetic purposes.
         """
-        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        fuzzy_service = self.view_model.fuzzy_service
         if fuzzy_service:
             fuzzy_service.clear_all_rules()
-            if hasattr(self.view_model, "notify_data_changed"):
-                self.view_model.notify_data_changed.emit()
+            self.view_model.notify_data_changed.emit()
 
         self.table_widget.clear()
-        self.table_widget.setHorizontalHeaderLabels(["Name", "Weight", "Rule"])
+        self.table_widget.setHorizontalHeaderLabels([self.t("NAME"), self.t("WEIGHT"), self.t("RULE")])
         self.table_widget.setRowCount(1)
         self.table_widget.setColumnCount(3)
-        self.status_bar.showMessage("Last action: cleared all rules.")
+        self.status_bar.showMessage(self.t("LAST_ACTION_CLEARED_ALL_RULES"))
 
     def add_rule(self):
         """Adds a new rule to the table and data of the application."""
-        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        fuzzy_service = self.view_model.fuzzy_service
         if not fuzzy_service:
-            self.status_bar.showMessage("Error: Fuzzy service not available.")
+            self.status_bar.showMessage(self.t("ERROR_FUZZY_SERVICE_NOT_AVAILABLE"))
             return
 
         input_vars = fuzzy_service.get_input_variables()
         output_vars = fuzzy_service.get_output_variables()
 
         if not input_vars or not output_vars:
-            self.status_bar.showMessage("Error: Need at least one input and one output to add a rule.")
+            self.status_bar.showMessage(self.t("ERROR_NEED_INPUT_OUTPUT_FOR_RULE"))
             return
 
         antecedent = [1] * len(input_vars)
         consequent = [1] * len(output_vars)
         rule_count = fuzzy_service.get_rule_count()
-        rule_name = f"Rule{rule_count + 1}"
+        rule_name = f"{self.t('RULE')}{rule_count + 1}"
 
         success = fuzzy_service.add_rule(
             rule_name=rule_name,
@@ -315,49 +311,45 @@ class CentralTabWidget(BaseTabView):
 
         if success:
             self.fillTable()
-            self.status_bar.showMessage("Last action: added new rule.")
-            if hasattr(self.view_model, "notify_data_changed"):
-                self.view_model.notify_data_changed.emit()
+            self.status_bar.showMessage(self.t("LAST_ACTION_ADDED_NEW_RULE"))
+            self.view_model.notify_data_changed.emit()
             self.addRuleClicked.emit()
         else:
-            self.status_bar.showMessage("Error: Failed to add rule.")
+            self.status_bar.showMessage(self.t("ERROR_FAILED_TO_ADD_RULE"))
 
     def remove_rule(self):
         """Removes selected rule from the table and data of the application."""
-        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        fuzzy_service = self.view_model.fuzzy_service
         if not fuzzy_service:
-            self.status_bar.showMessage("Error: Fuzzy service not available.")
+            self.status_bar.showMessage(self.t("ERROR_FUZZY_SERVICE_NOT_AVAILABLE"))
             return
 
         row = self.table_widget.currentRow()
         rule_count = fuzzy_service.get_rule_count()
 
         if row < 0 or row >= rule_count:
-            self.status_bar.showMessage("No rule selected to remove.")
+            self.status_bar.showMessage(self.t("NO_RULE_SELECTED_TO_REMOVE"))
             return
 
         success = fuzzy_service.delete_rule(row)
         if success:
             self.fillTable()
-            self.status_bar.showMessage("Last action: removed a rule.")
-            if hasattr(self.view_model, "notify_data_changed"):
-                self.view_model.notify_data_changed.emit()
+            self.status_bar.showMessage(self.t("LAST_ACTION_REMOVED_RULE"))
+            self.view_model.notify_data_changed.emit()
             self.deleteRuleClicked.emit()
         else:
-            self.status_bar.showMessage("Error: Failed to remove rule.")
+            self.status_bar.showMessage(self.t("ERROR_FAILED_TO_REMOVE_RULE"))
 
     def _update_rule_style(self):
         self.table_widget.clear()
-        self.table_widget.setHorizontalHeaderLabels(["Name", "Weight", "Rule"])
+        self.table_widget.setHorizontalHeaderLabels([self.t("NAME"), self.t("WEIGHT"), self.t("RULE")])
         self.table_widget.setColumnCount(3)
         self.fillTable()
 
     def _connect_view_model_signals(self):
         """Connect view model signals to widget slots."""
-        if hasattr(self.view_model, "data_changed"):
-            self.view_model.data_changed.connect(self._on_data_changed)
+        self.view_model.data_changed.connect(self._on_data_changed)
 
-        # Initial load of MF plots
         self._load_mf_plots()
 
     def _on_data_changed(self):
@@ -370,11 +362,10 @@ class CentralTabWidget(BaseTabView):
         """Load and display membership function plots for the selected input or output variable."""
         self._clear_mf_plots()
 
-        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        fuzzy_service = self.view_model.fuzzy_service
         if not fuzzy_service:
             return
 
-        # Check for selected input or output
         selected_input_name = fuzzy_service.get_selected_input_name()
         selected_output_name = fuzzy_service.get_selected_output_name()
 
@@ -383,17 +374,14 @@ class CentralTabWidget(BaseTabView):
         variable_data = None
 
         if selected_input_name:
-            # Input is selected
             variable_name = selected_input_name
             variable_type = "input"
             variable_data = fuzzy_service.get_selected_input_data()
         elif selected_output_name:
-            # Output is selected
             variable_name = selected_output_name
             variable_type = "output"
             variable_data = fuzzy_service.get_selected_output_data()
         else:
-            # No selection - don't force a selection, just return
             return
 
         if not variable_data:
@@ -403,11 +391,11 @@ class CentralTabWidget(BaseTabView):
         var_range = variable_data.get("range", [0, 100])
 
         self.mf_plot_graph.setXRange(var_range[0], var_range[1])
+        self.mf_plot_graph.setYRange(0, 1)
 
-        var_type_label = "Input" if variable_type == "input" else "Output"
-        self.mf_plot_graph.setLabel("bottom", f"{var_type_label} variable: {variable_name}", color="black")
+        var_type_label = self.t("INPUT") if variable_type == "input" else self.t("OUTPUT")
+        self.mf_plot_graph.setLabel("bottom", f"{var_type_label} {self.t('VARIABLE')}: {variable_name}", color="black")
 
-        # Define colors for different MFs
         colors = [
             "b",
             "r",
@@ -421,6 +409,15 @@ class CentralTabWidget(BaseTabView):
 
         for i, mf in enumerate(mfs):
             mf_type = mf.get("type", "trimf")
+            type_mapping = {
+                "trojkatna": "trimf",
+                "trapezoidalna": "trapmf",
+                "gaussowska": "gaussmf",
+                "dzwonowa": "gbellmf",
+                "stala": "constant",
+                "liniowa": "linear",
+            }
+            mf_type = type_mapping.get(mf_type, mf_type)
             mf_name = mf.get("name", f"MF{i}")
             mf_params = mf.get("parameters", [])
             color = colors[i % len(colors)]
@@ -454,7 +451,6 @@ class CentralTabWidget(BaseTabView):
         """
         try:
             if mf_type == "trimf" and len(mf_params) >= 3:
-                # Triangle MF: [a, b, c]
                 a, b, c = mf_params[0], mf_params[1], mf_params[2]
                 x_data = [var_range[0], a, b, c, var_range[1]]
                 y_data = [0.0, 0, 1, 0, 0]
@@ -471,7 +467,6 @@ class CentralTabWidget(BaseTabView):
                 return plot
 
             elif mf_type == "trapmf" and len(mf_params) >= 4:
-                # Trapezoid MF: [a, b, c, d]
                 a, b, c, d = mf_params[0], mf_params[1], mf_params[2], mf_params[3]
                 x_data = [var_range[0], a, b, c, d, var_range[1]]
                 y_data = [0.0, 0, 1, 1, 0, 0]
@@ -488,9 +483,8 @@ class CentralTabWidget(BaseTabView):
                 return plot
 
             elif mf_type == "gaussmf" and len(mf_params) >= 2:
-                # Gaussian MF: [sigma, mu]
                 sigma, mu = mf_params[0], mf_params[1]
-                fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+                fuzzy_service = self.view_model.fuzzy_service
                 interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
                 x_data = np.linspace(var_range[0], var_range[1], interpolation_points)
                 y_data = np.exp(-(1 / 2) * ((x_data - mu) / sigma) ** 2)
@@ -507,9 +501,8 @@ class CentralTabWidget(BaseTabView):
                 return plot
 
             elif mf_type == "gbellmf" and len(mf_params) >= 3:
-                # Bell MF: [a, b, c]
                 a, b, c = mf_params[0], mf_params[1], mf_params[2]
-                fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+                fuzzy_service = self.view_model.fuzzy_service
                 interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
                 x_data = np.linspace(var_range[0], var_range[1], interpolation_points)
                 y_data = 1 / (1 + np.abs((x_data - c) / a) ** (2 * b))
@@ -524,6 +517,56 @@ class CentralTabWidget(BaseTabView):
                     color=color,
                 )
                 self._connect_plot_to_fuzzy_service(plot, mf_index, "gbellmf")
+                return plot
+
+            elif mf_type == "constant":
+                fuzzy_service = self.view_model.fuzzy_service
+                interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
+                x_data = np.linspace(var_range[0], var_range[1], interpolation_points)
+
+                if isinstance(mf_params, (int, float)):
+                    constant_value = float(mf_params)
+                elif isinstance(mf_params, (list, tuple)) and len(mf_params) > 0:
+                    constant_value = float(mf_params[0])
+                else:
+                    constant_value = 0.5
+
+                constant_value = np.clip(constant_value, 0.0, 1.0)
+                y_data = np.full_like(x_data, constant_value)
+
+                plot = ConstantPlot(
+                    plot_widget=self.mf_plot_graph,
+                    x_data=x_data,
+                    y_data=y_data,
+                    constant_value=constant_value,
+                    color=color,
+                )
+                self._connect_plot_to_fuzzy_service(plot, mf_index, "constant")
+                return plot
+
+            elif mf_type == "linear":
+                fuzzy_service = self.view_model.fuzzy_service
+                interpolation_points = fuzzy_service.get_interpolation_points() if fuzzy_service else 100
+                x_data = np.linspace(var_range[0], var_range[1], interpolation_points)
+
+                if isinstance(mf_params, (list, tuple)) and len(mf_params) > 0:
+                    parameters = [float(p) for p in mf_params]
+                    constant_term = parameters[-1] if len(parameters) > 0 else 0.5
+                else:
+                    parameters = [0.5]
+                    constant_term = 0.5
+
+                constant_term = np.clip(constant_term, 0.0, 1.0)
+                y_data = np.full_like(x_data, constant_term)
+
+                plot = LinearPlot(
+                    plot_widget=self.mf_plot_graph,
+                    x_data=x_data,
+                    y_data=y_data,
+                    parameters=parameters,
+                    color=color,
+                )
+                self._connect_plot_to_fuzzy_service(plot, mf_index, "linear")
                 return plot
 
         except Exception as e:
@@ -541,81 +584,60 @@ class CentralTabWidget(BaseTabView):
             mf_type: Type of the MF
         """
         if mf_type == "trimf":
-            if hasattr(plot, "triangle_left_anchor"):
-                plot.triangle_left_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_triangle_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "triangle_central_anchor"):
-                plot.triangle_central_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_triangle_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "triangle_right_anchor"):
-                plot.triangle_right_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_triangle_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "position_anchor"):
-                plot.position_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_triangle_anchor_changed(plot, mf_index)
-                )
+            plot.triangle_left_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_triangle_anchor_changed(plot, mf_index)
+            )
+            plot.triangle_central_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_triangle_anchor_changed(plot, mf_index)
+            )
+            plot.triangle_right_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_triangle_anchor_changed(plot, mf_index)
+            )
+            plot.position_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_triangle_anchor_changed(plot, mf_index)
+            )
         elif mf_type == "trapmf":
-            if hasattr(plot, "trapezoid_left_down_anchor"):
-                plot.trapezoid_left_down_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "trapezoid_left_up_anchor"):
-                plot.trapezoid_left_up_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "trapezoid_right_up_anchor"):
-                plot.trapezoid_right_up_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "trapezoid_right_down_anchor"):
-                plot.trapezoid_right_down_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "position_anchor"):
-                plot.position_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
-                )
+            plot.trapezoid_left_down_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+            )
+            plot.trapezoid_left_up_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+            )
+            plot.trapezoid_right_up_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+            )
+            plot.trapezoid_right_down_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+            )
+            plot.position_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_trapezoid_anchor_changed(plot, mf_index)
+            )
         elif mf_type == "gaussmf":
-            if hasattr(plot, "gauss_left_anchor"):
-                plot.gauss_left_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_gauss_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "gauss_right_anchor"):
-                plot.gauss_right_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_gauss_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "position_anchor"):
-                plot.position_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_gauss_anchor_changed(plot, mf_index)
-                )
+            plot.gauss_left_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_gauss_anchor_changed(plot, mf_index)
+            )
+            plot.gauss_right_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_gauss_anchor_changed(plot, mf_index)
+            )
+            plot.position_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_gauss_anchor_changed(plot, mf_index)
+            )
         elif mf_type == "gbellmf":
-            if hasattr(plot, "left_a_anchor"):
-                plot.left_a_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_bell_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "right_a_anchor"):
-                plot.right_a_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_bell_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "left_b_anchor"):
-                plot.left_b_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_bell_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "right_b_anchor"):
-                plot.right_b_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_bell_anchor_changed(plot, mf_index)
-                )
-            if hasattr(plot, "position_anchor"):
-                plot.position_anchor.sigPositionChangeFinished.connect(
-                    lambda: self._on_bell_anchor_changed(plot, mf_index)
-                )
+            plot.left_a_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
+            plot.right_a_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
+            plot.left_b_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
+            plot.right_b_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
+            plot.position_anchor.sigPositionChangeFinished.connect(lambda: self._on_bell_anchor_changed(plot, mf_index))
+        elif mf_type == "constant":
+            plot.value_anchor.sigPositionChangeFinished.connect(
+                lambda: self._on_constant_anchor_changed(plot, mf_index)
+            )
+        elif mf_type == "linear":
+            plot.value_anchor.sigPositionChangeFinished.connect(lambda: self._on_linear_anchor_changed(plot, mf_index))
 
     def _on_triangle_anchor_changed(self, plot, mf_index):
         """Handle triangle anchor position changes and update fuzzy service."""
-        if hasattr(plot, "tri_x") and len(plot.tri_x) >= 5:
+        if len(plot.tri_x) >= 5:
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
@@ -632,7 +654,7 @@ class CentralTabWidget(BaseTabView):
 
     def _on_trapezoid_anchor_changed(self, plot, mf_index):
         """Handle trapezoid anchor position changes and update fuzzy service."""
-        if hasattr(plot, "trap_x") and len(plot.trap_x) >= 6:
+        if len(plot.trap_x) >= 6:
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
@@ -652,7 +674,7 @@ class CentralTabWidget(BaseTabView):
 
     def _on_gauss_anchor_changed(self, plot, mf_index):
         """Handle Gaussian anchor position changes and update fuzzy service."""
-        if hasattr(plot, "sigma") and hasattr(plot, "mu"):
+        if plot.sigma and plot.mu:
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
@@ -665,7 +687,7 @@ class CentralTabWidget(BaseTabView):
 
     def _on_bell_anchor_changed(self, plot, mf_index):
         """Handle Bell anchor position changes and update fuzzy service."""
-        if hasattr(plot, "a") and hasattr(plot, "b") and hasattr(plot, "c"):
+        if plot.a and plot.b and plot.c:
             var_range = self._get_variable_range_for_mf(mf_index)
             if not var_range:
                 return
@@ -675,6 +697,25 @@ class CentralTabWidget(BaseTabView):
             c = max(var_range[0], min(var_range[1], round(float(plot.c), 2)))
 
             new_params = [a, b, c]
+            self._update_mf_parameters(mf_index, new_params)
+
+    def _on_constant_anchor_changed(self, plot, mf_index):
+        """Handle constant anchor position changes and update fuzzy service."""
+        if plot.constant_value:
+            constant_value = max(0.0, min(1.0, round(float(plot.constant_value), 2)))
+            new_params = [constant_value]
+            self._update_mf_parameters(mf_index, new_params)
+
+    def _on_linear_anchor_changed(self, plot, mf_index):
+        """Handle linear anchor position changes and update fuzzy service."""
+        if len(plot.parameters) > 0:
+            var_range = self._get_variable_range_for_mf(mf_index)
+            if not var_range:
+                return
+
+            constant_term = max(0.0, min(1.0, round(float(plot.parameters[-1]), 2)))
+            new_params = plot.parameters.copy()
+            new_params[-1] = constant_term
             self._update_mf_parameters(mf_index, new_params)
 
     def _get_variable_range_for_mf(self, mf_index):
@@ -698,11 +739,10 @@ class CentralTabWidget(BaseTabView):
             mf_index: Index of the MF to update
             new_params: New parameters for the MF
         """
-        fuzzy_service = self.view_model.fuzzy_service if hasattr(self.view_model, "fuzzy_service") else None
+        fuzzy_service = self.view_model.fuzzy_service
         if not fuzzy_service:
             return
 
-        # Determine which variable (input or output) is selected
         selected_input_name = fuzzy_service.get_selected_input_name()
         selected_output_name = fuzzy_service.get_selected_output_name()
 
@@ -723,37 +763,15 @@ class CentralTabWidget(BaseTabView):
         )
 
         if success:
-            # Optionally show status message
-            if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage(f"Updated MF parameters: {new_params}")
+            self.status_bar.showMessage(f"{self.t('UPDATED_MF_PARAMETERS')}: {new_params}")
 
-            if hasattr(self.view_model, "notify_data_changed"):
-                self.view_model.notify_data_changed.emit()
+            self.view_model.notify_data_changed.emit()
 
     def _clear_mf_plots(self):
         """Clear all existing MF plots from the graph."""
         for mf_plot_info in self.mf_plots:
             plot_obj = mf_plot_info.get("plot")
             if plot_obj:
-                if hasattr(plot_obj, "plot_widget"):
-                    plot_obj.plot_widget.clear()
+                plot_obj.plot_widget.clear()
 
         self.mf_plots = []
-
-    def _setup_sample_data(self):
-        """Set up sample data for the widget."""
-        # This method will be implemented when needed
-        # For now, it's a placeholder to prevent AttributeError
-        pass
-
-    def get_fuzzy_service(self):
-        """Get the fuzzy calculation service."""
-        # This method will be implemented when fuzzy service is connected
-        # For now, return None to prevent AttributeError
-        return None
-
-    def connect_mf_editor(self, mf_editor):
-        """Connect the MF editor to this widget."""
-        # This method will be implemented when MF editor integration is needed
-        # For now, it's a placeholder to prevent AttributeError
-        pass

@@ -14,21 +14,19 @@ class FISStateManager:
         Args:
             fis_type: Type of FIS to create ("mamdani" or "sugeno")
         """
-        self._fis_model = FISModel()
-        self._fis_type = fis_type
+        if fis_type.lower() == "sugeno":
+            self._fis_model = FISModel(fis_type="sugeno", fis_name="empty_sugeno")
+            self._fis_type = "sugeno"
+        else:
+            self._fis_model = FISModel(fis_type="mamdani", fis_name="empty_mamdani")
+            self._fis_type = "mamdani"
+
         self._last_inference_results = []
         self._last_inference_inputs = []
-        self._inference_state = "idle"  # idle, calculating, error
+        self._inference_state = "idle"
 
-        # Selection tracking
         self._selected_input_name: str = None
         self._selected_output_name: str = None
-
-        if fis_type.lower() == "sugeno":
-            self.create_sugeno_fis("default_sugeno_fis")
-        else:
-            # Default to Mamdani (already created by FISModel())
-            self._add_default_variables()
 
     @property
     def fis_model(self) -> FISModel:
@@ -102,7 +100,6 @@ class FISStateManager:
             else:
                 self._fis_type = "mamdani"
         except Exception:
-            # Fall back to existing type if inspection fails
             pass
 
     def get_selected_variable_info(self) -> Dict[str, Any]:
@@ -189,7 +186,6 @@ class FISStateManager:
         if not self.create_mamdani_fis():
             return False
 
-        # Note: In practice, you might want more sophisticated state preservation
         return True
 
     def switch_to_sugeno(self) -> bool:
@@ -204,7 +200,6 @@ class FISStateManager:
         if not self.create_sugeno_fis():
             return False
 
-        # Note: In practice, you might want more sophisticated state preservation
         return True
 
     def _is_system_ready_for_inference(self) -> bool:
@@ -247,7 +242,6 @@ class FISStateManager:
                 input_range = input_var.Range if input_var.Range else [0, 1]
                 range_min, range_max = input_range[0], input_range[1]
 
-                # Low: [0, 0, 0.5] for range [0, 1]
                 self._fis_model.add_mf(input_name, "input", "trojkatna")
                 if input_var.MembershipFunctions:
                     input_var.MembershipFunctions[0].Parameters = [
@@ -257,7 +251,6 @@ class FISStateManager:
                     ]
                     input_var.MembershipFunctions[0].Name = "low"
 
-                # Medium: [0, 0.5, 1] for range [0, 1]
                 self._fis_model.add_mf(input_name, "input", "trojkatna")
                 if input_var.MembershipFunctions and len(input_var.MembershipFunctions) > 1:
                     input_var.MembershipFunctions[1].Parameters = [
@@ -267,7 +260,6 @@ class FISStateManager:
                     ]
                     input_var.MembershipFunctions[1].Name = "medium"
 
-                # High: [0.5, 1, 1] for range [0, 1]
                 self._fis_model.add_mf(input_name, "input", "trojkatna")
                 if input_var.MembershipFunctions and len(input_var.MembershipFunctions) > 2:
                     input_var.MembershipFunctions[2].Parameters = [
@@ -285,7 +277,6 @@ class FISStateManager:
             output_range = self._fis_model._fis.Outputs[0].Range if self._fis_model._fis.Outputs else [0, 1]
             range_min, range_max = output_range[0], output_range[1]
 
-            # Low: [0, 0, 0.5] for range [0, 1]
             self._fis_model.add_mf("output1", "output", "trojkatna")
             if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:
                 self._fis_model._fis.Outputs[0].MembershipFunctions[0].Parameters = [
@@ -295,7 +286,6 @@ class FISStateManager:
                 ]
                 self._fis_model._fis.Outputs[0].MembershipFunctions[0].Name = "low"
 
-            # Medium: [0, 0.5, 1] for range [0, 1]
             self._fis_model.add_mf("output1", "output", "trojkatna")
             if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:
                 self._fis_model._fis.Outputs[0].MembershipFunctions[1].Parameters = [
@@ -305,7 +295,6 @@ class FISStateManager:
                 ]
                 self._fis_model._fis.Outputs[0].MembershipFunctions[1].Name = "medium"
 
-            # High: [0.5, 1, 1] for range [0, 1]
             self._fis_model.add_mf("output1", "output", "trojkatna")
             if self._fis_model._fis.Outputs and self._fis_model._fis.Outputs[0].MembershipFunctions:
                 self._fis_model._fis.Outputs[0].MembershipFunctions[2].Parameters = [

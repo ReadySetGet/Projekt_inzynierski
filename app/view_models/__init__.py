@@ -5,7 +5,6 @@ from .browser_frame_view_model import BrowserFrameViewModel
 from .central_tab_view_model import CentralTabViewModel
 from .editor_tab_view_model import EditorTabViewModel
 from .fis_properties_view_model import FisPropertiesViewModel
-from .mf_editor_view_model import MFEditorViewModel
 from .rules_editor_view_model import RulesEditorViewModel
 from .settings_view_model import SettingsViewModel
 from .top_menu_view_model import TopMenuViewModel
@@ -16,7 +15,6 @@ __all__ = [
     "CentralTabViewModel",
     "EditorTabViewModel",
     "FisPropertiesViewModel",
-    "MFEditorViewModel",
     "RulesEditorViewModel",
     "SettingsViewModel",
     "TopMenuViewModel",

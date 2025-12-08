@@ -8,24 +8,13 @@ from app.view_models.base_view_model import BaseViewModel
 class CentralTabViewModel(BaseViewModel):
     """View model for the central tab view."""
 
-    # Signals for tab changes
     current_tab_changed = pyqtSignal(int)
-
-    # Signals for FIS plot updates
     fis_plot_updated = pyqtSignal()
-
-    # Signals for MF plot updates
-    mf_plot_updated = pyqtSignal(str, int)  # variable_name, mf_index
-
-    # Signals for rule editor updates
+    mf_plot_updated = pyqtSignal(str, int)
     rules_updated = pyqtSignal(list)
     rule_selected = pyqtSignal(int)
     clear_rules_requested = pyqtSignal()
-
-    # Signals for system updates
     system_name_changed = pyqtSignal(str)
-
-    # Signals for MF Editor communication
     mf_editor_connected = pyqtSignal()
     selected_variable_changed = pyqtSignal(str, bool)
 
@@ -94,7 +83,6 @@ class CentralTabViewModel(BaseViewModel):
             self._rules = []
             return
 
-        # Use the service API to get rules
         rules_data = self.fuzzy_service.get_rules()
         self._rules = []
 
@@ -133,9 +121,8 @@ class CentralTabViewModel(BaseViewModel):
 
     def clear_rules(self) -> None:
         """Clear all rules."""
-        if self._model:
-            self._model.clear_all_rules()
-            self._update_rules()
+        self._model.clear_all_rules()
+        self._update_rules()
         self.clear_rules_requested.emit()
 
     def update_fis_plot(self) -> None:
@@ -155,7 +142,7 @@ class CentralTabViewModel(BaseViewModel):
 
         antecedent_parts = []
         for i, mf_idx in enumerate(rule["antecedent"]):
-            if mf_idx > 0:  # 0 means no condition
+            if mf_idx > 0:
                 if i < len(self._model._fis.Inputs):
                     input_name = self._model._fis.Inputs[i].Name
                     if mf_idx <= len(self._model._fis.Inputs[i].MembershipFunctions):
@@ -165,7 +152,7 @@ class CentralTabViewModel(BaseViewModel):
 
         consequent_parts = []
         for i, mf_idx in enumerate(rule["consequent"]):
-            if mf_idx > 0:  # 0 means no condition
+            if mf_idx > 0:
                 output_idx = i + len(rule["antecedent"])
                 if output_idx < len(self._model._fis.Outputs):
                     output_name = self._model._fis.Outputs[i].Name
@@ -183,8 +170,6 @@ class CentralTabViewModel(BaseViewModel):
     def refresh_data(self) -> None:
         """Refresh all data from the model - only updates logic, no signal emission."""
         self._update_data()
-        # Note: update_fis_plot() emits signals, so we don't call it here
-        # The view should handle plot updates through other mechanisms
 
     def set_fuzzy_service(self, fuzzy_service) -> None:
         """Set the fuzzy calculation service."""
@@ -202,7 +187,7 @@ class CentralTabViewModel(BaseViewModel):
         self._mf_editor = mf_editor
         self.mf_editor_connected.emit()
 
-        if hasattr(mf_editor, "view_model"):
+        if mf_editor.view_model:
             mf_editor.view_model.variable_selected.connect(self._on_mf_editor_variable_selected)
             mf_editor.view_model.mf_list_updated.connect(self._on_mf_list_updated)
             mf_editor.view_model.mf_added.connect(self._on_mf_added)
@@ -290,30 +275,57 @@ class CentralTabViewModel(BaseViewModel):
         colors = ["r", "g", "b", "m", "c", "y", "k"]
 
         for i, mf in enumerate(mfs):
-            if mf["type"] == "trimf":
+            mf_type = mf.get("type", "")
+            type_mapping = {
+                "trojkatna": "trimf",
+                "trapezoidalna": "trapmf",
+                "gaussowska": "gaussmf",
+                "dzwonowa": "gbellmf",
+                "stala": "constant",
+                "liniowa": "linear",
+            }
+            mf_type = type_mapping.get(mf_type, mf_type)
+
+            if mf_type == "trimf":
                 params = mf["parameters"]
                 if len(params) >= 3:
                     y = self._triangular_mf(x_data, params[0], params[1], params[2])
                 else:
                     y = np.zeros_like(x_data)
-            elif mf["type"] == "trapmf":
+            elif mf_type == "trapmf":
                 params = mf["parameters"]
                 if len(params) >= 4:
                     y = self._trapezoidal_mf(x_data, params[0], params[1], params[2], params[3])
                 else:
                     y = np.zeros_like(x_data)
-            elif mf["type"] == "gaussmf":
+            elif mf_type == "gaussmf":
                 params = mf["parameters"]
                 if len(params) >= 2:
                     y = self._gaussian_mf(x_data, params[0], params[1])
                 else:
                     y = np.zeros_like(x_data)
-            elif mf["type"] == "gbellmf":
+            elif mf_type == "gbellmf":
                 params = mf["parameters"]
                 if len(params) >= 3:
                     y = self._bell_mf(x_data, params[0], params[1], params[2])
                 else:
                     y = np.zeros_like(x_data)
+            elif mf_type == "constant":
+                params = mf["parameters"]
+                if isinstance(params, (int, float)):
+                    const_value = float(params)
+                elif isinstance(params, (list, tuple)) and len(params) > 0:
+                    const_value = float(params[0])
+                else:
+                    const_value = 0.5
+                y = np.full_like(x_data, np.clip(const_value, 0.0, 1.0))
+            elif mf_type == "linear":
+                params = mf["parameters"]
+                if isinstance(params, (list, tuple)) and len(params) > 0:
+                    constant_term = float(params[-1])
+                else:
+                    constant_term = 0.5
+                y = np.full_like(x_data, np.clip(constant_term, 0.0, 1.0))
             else:
                 y = np.zeros_like(x_data)
 

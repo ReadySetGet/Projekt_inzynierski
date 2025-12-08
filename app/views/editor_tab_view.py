@@ -8,11 +8,7 @@ from app.views.rules_editor_tab import RulesEditorTab
 
 
 class EditorTabWidget(BaseTabView):
-    """Class responsible for the editor tab on the right side of the main window.
-
-    The class allows selecting shape of mfs, their range, defuzzification method
-    as well as properties of rules.
-    """
+    """Editor tab widget for editing FIS properties, membership functions, and rules."""
 
     add_mf_clicked = QtCore.pyqtSignal()
     remove_mf_clicked = QtCore.pyqtSignal()
@@ -29,7 +25,7 @@ class EditorTabWidget(BaseTabView):
         super().__init__(parent=parent)
         self.setObjectName("editorTab")
         self.status_bar = status_bar
-        self._updating_mf = False  # Flag to prevent recursive updates
+        self._updating_mf = False
         self._setup_ui()
         self._retranslate_ui()
 
@@ -70,9 +66,7 @@ class EditorTabWidget(BaseTabView):
         self.mf_table = QtWidgets.QTableWidget(parent=self.editor_frame)
         self.mf_table.setGeometry(QtCore.QRect(10, 230, 281, 421))
         self.mf_table.setObjectName("mf_table")
-
-        """Table displaying all MFs"""
-        self.mf_table.setRowCount(0)  # Start with empty table
+        self.mf_table.setRowCount(0)
         self.mf_table.setColumnCount(3)
         self.mf_table.setColumnWidth(0, 80)
         self.mf_table.setColumnWidth(1, 80)
@@ -83,7 +77,7 @@ class EditorTabWidget(BaseTabView):
         )
         self.mf_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectItems)
 
-        self.mf_table.setHorizontalHeaderLabels(["Name", "Type", "Parameters"])
+        self.mf_table.setHorizontalHeaderLabels([self.t("NAME"), self.t("TYPE"), self.t("PARAMETERS")])
         self.mf_table.setRowCount(0)
         self.mf_name_edit.editingFinished.connect(self._on_variable_name_changed)
         self.mf_range_edit.editingFinished.connect(self._on_variable_range_changed)
@@ -131,7 +125,6 @@ class EditorTabWidget(BaseTabView):
         self.mf_range_label.setText(self.t("RANGE"))
         self.add_mf_button.setText(self.t("ADD_MF"))
         self.remove_mf_button.setText(self.t("REMOVE_MF"))
-        # Update number of MF label - preserve count if available
         self._update_number_of_mf_label()
         self.setTabText(
             self.indexOf(self.mf_properties_tab),
@@ -153,40 +146,34 @@ class EditorTabWidget(BaseTabView):
 
     def _update_number_of_mf_label(self):
         """Update the number of MF label, preserving the count if available."""
-        # Try to get current count from label text
         current_text = self.number_of_mf_label.text()
         count = 0
 
-        # Try to extract count from current text (format: "Number of MF: X" or "NUMBER_OF_MF X")
         if current_text:
-            # Look for a number at the end
             match = re.search(r"(\d+)$", current_text.strip())
             if match:
                 count = int(match.group(1))
             else:
-                # If no count found, try to get it from the table
                 count = self.mf_table.rowCount()
         else:
-            # If label is empty, get count from table
             count = self.mf_table.rowCount()
 
-        # Update with base text and count
         base_text = self.t("NUMBER_OF_MF")
         self.number_of_mf_label.setText(f"{base_text} {count}")
 
     def set_name_table_text(self):
         """Update the MF name in the table."""
         self.mf_table.item(self.row, 0).setText(self.mf_name_edit.text())
-        self.status_bar.showMessage("Last action: Edited MF name")
+        self.status_bar.showMessage(self.t("LAST_ACTION_EDITED_MF_NAME"))
 
     def set_range_table_text(self):
         """Update the MF range in the table."""
         self.mf_table.item(self.row, 2).setText(self.mf_range_edit.text())
-        self.status_bar.showMessage("Last action: Edited MF range")
+        self.status_bar.showMessage(self.t("LAST_ACTION_EDITED_MF_RANGE"))
 
     def update_property_editor(self):
         """Update the Property Editor based on the currently selected variable."""
-        if not hasattr(self, "view_model") or not self.view_model or self._updating_mf:
+        if not self.view_model or self._updating_mf:
             return
 
         selected_var_info = self.view_model.get_selected_variable_info()
@@ -220,13 +207,23 @@ class EditorTabWidget(BaseTabView):
         """Update the membership functions table with the selected variable's MFs."""
         self.mf_table.itemChanged.disconnect(self._on_mf_table_item_changed)
 
-        try:
-            var_data = var_info.get("data") or {}
-            mfs = var_data.get("membership_functions", [])
+        var_data = var_info.get("data") or {}
+        mfs = var_data.get("membership_functions", [])
+        var_type = var_info.get("type", "input")
 
-            base_text = self.t("NUMBER_OF_MF")
-            self.number_of_mf_label.setText(f"{base_text} {len(mfs)}")
-            self.mf_table.setRowCount(len(mfs))
+        base_text = self.t("NUMBER_OF_MF")
+        self.number_of_mf_label.setText(f"{base_text} {len(mfs)}")
+        self.mf_table.setRowCount(len(mfs))
+
+        fis_type = self.view_model.get_fis_type() if self.view_model else "mamdani"
+        is_sugeno_output = fis_type == "sugeno" and var_type == "output"
+
+        if is_sugeno_output:
+            type_mapping = {
+                "constant": "Constant",
+                "linear": "Linear",
+            }
+        else:
             type_mapping = {
                 "gaussmf": "Gauss",
                 "trapmf": "Trapezoid",
@@ -234,36 +231,46 @@ class EditorTabWidget(BaseTabView):
                 "gbellmf": "Bell",
             }
 
-            for i, mf in enumerate(mfs):
-                self.mf_table.setItem(i, 0, QtWidgets.QTableWidgetItem(mf.get("name", "")))
+        for i, mf in enumerate(mfs):
+            self.mf_table.setItem(i, 0, QtWidgets.QTableWidgetItem(mf.get("name", "")))
 
-                type_dropdown = QtWidgets.QComboBox()
-                type_dropdown.addItems(["Gauss", "Trapezoid", "Triangle", "Bell"])
+            type_dropdown = QtWidgets.QComboBox()
 
-                fuzzy_type = mf.get("type", "trimf")
+            if is_sugeno_output:
+                type_dropdown.addItems([self.t("LINEAR"), self.t("CONSTANT")])
+            else:
+                type_dropdown.addItems([self.t("GAUSS"), self.t("TRAPEZOID"), self.t("TRIANGLE"), self.t("BELL")])
+
+            fuzzy_type = mf.get("type", "trimf" if not is_sugeno_output else "constant")
+
+            if is_sugeno_output:
+                sugeno_type_mapping = {
+                    "constant": "Constant",
+                    "linear": "Linear",
+                }
+                english_type = sugeno_type_mapping.get(fuzzy_type.lower(), "Constant")
+            else:
                 english_type = type_mapping.get(fuzzy_type, "Triangle")
 
-                # Block signals while setting initial value
-                type_dropdown.blockSignals(True)
-                type_dropdown.setCurrentText(english_type)
-                type_dropdown.blockSignals(False)
+            type_dropdown.blockSignals(True)
+            type_dropdown.setCurrentText(english_type)
+            type_dropdown.blockSignals(False)
 
-                # Use currentIndexChanged and capture dropdown reference
-                type_dropdown.currentIndexChanged.connect(
-                    lambda index, idx=i, dropdown=type_dropdown: self._on_mf_type_changed(idx, dropdown.currentText())
-                )
+            type_dropdown.currentIndexChanged.connect(
+                lambda index, idx=i, dropdown=type_dropdown: self._on_mf_type_changed(idx, dropdown.currentText())
+            )
 
-                self.mf_table.setCellWidget(i, 1, type_dropdown)
+            self.mf_table.setCellWidget(i, 1, type_dropdown)
 
-                params = mf.get("parameters", [])
-                params_str = str(params).replace(" ", "")
-                self.mf_table.setItem(i, 2, QtWidgets.QTableWidgetItem(params_str))
-        finally:
-            self.mf_table.itemChanged.connect(self._on_mf_table_item_changed)
+            params = mf.get("parameters", [])
+            params_str = str(params).replace(" ", "")
+            self.mf_table.setItem(i, 2, QtWidgets.QTableWidgetItem(params_str))
+
+        self.mf_table.itemChanged.connect(self._on_mf_table_item_changed)
 
     def _on_variable_name_changed(self):
         """Handle variable name change."""
-        if not hasattr(self, "view_model") or not self.view_model:
+        if not self.view_model:
             return
 
         selected_var_info = self.view_model.get_selected_variable_info()
@@ -285,16 +292,14 @@ class EditorTabWidget(BaseTabView):
 
             if success:
                 self.view_model.notify_data_changed.emit()
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"Variable name changed to: {new_name}")
+                self.status_bar.showMessage(f"{self.t('VARIABLE_NAME_CHANGED_TO')} {new_name}")
             else:
                 self.mf_name_edit.setText(old_name)
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change variable name")
+                self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_VARIABLE_NAME"))
 
     def _on_variable_range_changed(self):
         """Handle variable range change."""
-        if not hasattr(self, "view_model") or not self.view_model:
+        if not self.view_model:
             return
 
         selected_var_info = self.view_model.get_selected_variable_info()
@@ -330,35 +335,32 @@ class EditorTabWidget(BaseTabView):
 
             if success:
                 self.view_model.notify_data_changed.emit()
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"Variable range changed to: {new_range}")
+                self.status_bar.showMessage(f"{self.t('VARIABLE_RANGE_CHANGED_TO')} {new_range}")
             else:
                 var_data = selected_var_info.get("data", {})
                 old_range = var_data.get("range", [0, 100])
                 range_str = f"[{old_range[0]} {old_range[1]}]"
                 self.mf_range_edit.setText(range_str)
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change variable range")
+                self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_VARIABLE_RANGE"))
 
         except (ValueError, IndexError) as e:
             var_data = selected_var_info.get("data", {})
             old_range = var_data.get("range", [0, 100])
             range_str = f"[{old_range[0]} {old_range[1]}]"
             self.mf_range_edit.setText(range_str)
-            if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage(f"Invalid range format: {e}")
+            self.status_bar.showMessage(f"{self.t('INVALID_RANGE_FORMAT')}: {e}")
 
     def _on_mf_table_item_changed(self, item):
         """Handle MF table item changes (name and parameters)."""
-        if not hasattr(self, "view_model") or not self.view_model:
+        if not self.view_model:
             return
 
         row = item.row()
         column = item.column()
 
-        if column == 0:  # Name column
+        if column == 0:
             self._on_mf_name_changed(row, item.text())
-        elif column == 2:  # Parameters column
+        elif column == 2:
             self._on_mf_parameters_changed(row, item.text())
 
     def _on_mf_name_changed(self, mf_index, new_name):
@@ -381,18 +383,15 @@ class EditorTabWidget(BaseTabView):
 
             if success:
                 self.update_property_editor()
-                # Also trigger a global refresh to update plots
                 self.view_model.notify_data_changed.emit()
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"MF name changed to: {new_name.strip()}")
+                self.status_bar.showMessage(f"{self.t('MF_NAME_CHANGED_TO')} {new_name.strip()}")
             else:
                 var_data = selected_var_info.get("data", {})
                 mfs = var_data.get("membership_functions", [])
                 if mf_index < len(mfs):
                     old_name = mfs[mf_index].get("name", "")
                     self.mf_table.setItem(mf_index, 0, QtWidgets.QTableWidgetItem(old_name))
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change MF name")
+                self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_MF_NAME"))
         finally:
             self._updating_mf = False
 
@@ -427,8 +426,7 @@ class EditorTabWidget(BaseTabView):
                         old_params = mfs[mf_index].get("parameters", [])
                         params_str = str(old_params).replace(" ", "")
                         self.mf_table.setItem(mf_index, 2, QtWidgets.QTableWidgetItem(params_str))
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"Invalid parameters format: {e}")
+                self.status_bar.showMessage(f"{self.t('INVALID_PARAMETERS_FORMAT')}: {e}")
                 return
 
             selected_var_info = self.view_model.get_selected_variable_info()
@@ -444,10 +442,8 @@ class EditorTabWidget(BaseTabView):
 
             if success:
                 self.update_property_editor()
-                # Also trigger a global refresh to update plots
                 self.view_model.notify_data_changed.emit()
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"MF parameters updated: {new_params}")
+                self.status_bar.showMessage(f"{self.t('MF_PARAMETERS_UPDATED')}: {new_params}")
             else:
                 var_data = selected_var_info.get("data", {})
                 mfs = var_data.get("membership_functions", [])
@@ -455,8 +451,7 @@ class EditorTabWidget(BaseTabView):
                     old_params = mfs[mf_index].get("parameters", [])
                     params_str = str(old_params).replace(" ", "")
                     self.mf_table.setItem(mf_index, 2, QtWidgets.QTableWidgetItem(params_str))
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change MF parameters")
+                self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_MF_PARAMETERS"))
         finally:
             self._updating_mf = False
 
@@ -466,14 +461,22 @@ class EditorTabWidget(BaseTabView):
             return
 
         self._updating_mf = True
-        try:
-            selected_var_info = self.view_model.get_selected_variable_info()
-            if not selected_var_info:
-                return
+        selected_var_info = self.view_model.get_selected_variable_info()
+        if not selected_var_info:
+            self._updating_mf = False
+            return
 
-            var_name = selected_var_info.get("name")
-            var_type = selected_var_info.get("type")
+        var_name = selected_var_info.get("name")
+        var_type = selected_var_info.get("type")
+        fis_type = self.view_model.get_fis_type() if self.view_model else "mamdani"
+        is_sugeno_output = fis_type == "sugeno" and var_type == "output"
 
+        if is_sugeno_output:
+            type_mapping = {
+                "Linear": "liniowa",
+                "Constant": "stala",
+            }
+        else:
             type_mapping = {
                 "Gauss": "gaussowska",
                 "Trapezoid": "trapezoidalna",
@@ -481,18 +484,62 @@ class EditorTabWidget(BaseTabView):
                 "Bell": "dzwonowa",
             }
 
-            fuzzy_type = type_mapping.get(new_type, "trojkatna")
+        fuzzy_type = type_mapping.get(new_type, "trojkatna" if not is_sugeno_output else "stala")
 
-            success = self.view_model.fuzzy_service.change_membership_function_type(
-                var_name, mf_index, fuzzy_type, var_type
-            )
+        success = self.view_model.fuzzy_service.change_membership_function_type(
+            var_name, mf_index, fuzzy_type, var_type
+        )
 
-            if success:
-                var_data = selected_var_info.get("data", {})
-                var_range = var_data.get("range", [0, 1])
-                range_min, range_max = var_range[0], var_range[1]
-                range_span = range_max - range_min
+        if success:
+            var_data = selected_var_info.get("data", {})
+            var_range = var_data.get("range", [0, 1])
+            range_min, range_max = var_range[0], var_range[1]
+            range_span = range_max - range_min
 
+            if is_sugeno_output:
+                mfs = var_data.get("membership_functions", [])
+                old_mf = mfs[mf_index] if mf_index < len(mfs) else None
+                old_type = old_mf.get("type", "constant") if old_mf else "constant"
+                old_params_raw = old_mf.get("parameters", [0.5]) if old_mf else [0.5]
+
+                if not isinstance(old_params_raw, list):
+                    old_params = [float(old_params_raw)]
+                elif len(old_params_raw) == 0:
+                    old_params = [0.5]
+                else:
+                    old_params = [float(p) for p in old_params_raw if isinstance(p, (int, float))]
+
+                if len(old_params) == 0:
+                    old_params = [0.5]
+
+                if new_type == "Constant":
+                    if old_type == "linear" and len(old_params) > 0:
+                        new_params = [old_params[-1]]
+                    elif old_type == "constant" and len(old_params) > 0:
+                        new_params = [old_params[0]]
+                    else:
+                        new_params = [0.5]
+                elif new_type == "Linear":
+                    if self.view_model.fuzzy_service:
+                        num_inputs = len(self.view_model.fuzzy_service.get_input_variables())
+                    else:
+                        num_inputs = 1
+                    if old_type == "constant" and len(old_params) > 0:
+                        constant_value = old_params[0]
+                        new_params = [0.0] * num_inputs + [constant_value]
+                    elif old_type == "linear":
+                        if len(old_params) == num_inputs + 1:
+                            new_params = old_params
+                        elif len(old_params) > 0:
+                            constant_value = old_params[-1]
+                            new_params = [0.0] * num_inputs + [constant_value]
+                        else:
+                            new_params = [0.0] * num_inputs + [0.5]
+                    else:
+                        new_params = [0.0] * num_inputs + [0.5]
+                else:
+                    new_params = [0.5]
+            else:
                 if new_type == "Triangle":
                     new_params = [range_min, range_min + 0.5 * range_span, range_max]
                 elif new_type == "Trapezoid":
@@ -506,55 +553,52 @@ class EditorTabWidget(BaseTabView):
                     new_params = [
                         0.2 * range_span,
                         range_min + 0.5 * range_span,
-                    ]  # [sigma, mu]
+                    ]
                 elif new_type == "Bell":
                     new_params = [
                         0.2 * range_span,
                         3,
                         range_min + 0.5 * range_span,
-                    ]  # [a, b, c]
+                    ]
                 else:
                     new_params = [range_min, range_min + 0.5 * range_span, range_max]
 
-                # Round to 2 decimal places
-                new_params = [round(p, 2) for p in new_params]
+            new_params = [round(p, 2) for p in new_params]
 
-                self.view_model.fuzzy_service.update_membership_function_parameters(
-                    var_name, mf_index, new_params, var_type
-                )
+            self.view_model.fuzzy_service.update_membership_function_parameters(
+                var_name, mf_index, new_params, var_type
+            )
 
-                self._updating_mf = False
+            self._updating_mf = False
 
-                self.update_property_editor()
+            self.update_property_editor()
 
-                self.view_model.notify_data_changed.emit()
+            self.view_model.notify_data_changed.emit()
 
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage(f"MF type changed to: {new_type}")
-
-                self._updating_mf = True
-            else:
-                var_data = selected_var_info.get("data", {})
-                mfs = var_data.get("membership_functions", [])
-                if mf_index < len(mfs):
-                    old_fuzzy_type = mfs[mf_index].get("type", "trimf")
+            self.status_bar.showMessage(f"{self.t('MF_TYPE_CHANGED_TO')} {new_type}")
+        else:
+            var_data = selected_var_info.get("data", {})
+            mfs = var_data.get("membership_functions", [])
+            if mf_index < len(mfs):
+                old_fuzzy_type = mfs[mf_index].get("type", "trimf" if not is_sugeno_output else "constant")
+                if is_sugeno_output:
+                    reverse_mapping = {"linear": "Linear", "constant": "Constant"}
+                    old_english_type = reverse_mapping.get(old_fuzzy_type.lower(), "Constant")
+                else:
                     reverse_mapping = {v: k for k, v in type_mapping.items()}
                     old_english_type = reverse_mapping.get(old_fuzzy_type, "Triangle")
-                    dropdown = self.mf_table.cellWidget(mf_index, 1)
-                    if dropdown:
-                        dropdown.setCurrentText(old_english_type)
-                if hasattr(self, "status_bar") and self.status_bar:
-                    self.status_bar.showMessage("Failed to change MF type")
-        finally:
-            self._updating_mf = False
+                dropdown = self.mf_table.cellWidget(mf_index, 1)
+                if dropdown:
+                    dropdown.setCurrentText(old_english_type)
+            self.status_bar.showMessage(self.t("FAILED_TO_CHANGE_MF_TYPE"))
+        self._updating_mf = False
 
     def _on_add_mf_clicked(self):
         """Handle add MF button click."""
         selected_var_info = self.view_model.get_selected_variable_info()
 
         if not selected_var_info:
-            if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("No variable selected")
+            self.status_bar.showMessage(self.t("NO_VARIABLE_SELECTED"))
             return
 
         var_name = selected_var_info.get("name")
@@ -567,7 +611,6 @@ class EditorTabWidget(BaseTabView):
         var_range = var_data.get("range", [0, 10])
         range_min, range_max = var_range[0], var_range[1]
 
-        # Default parameters for triangle (scaled to range)
         default_params = [range_min, (range_min + range_max) / 2, range_max]
 
         success = self.view_model.fuzzy_service.add_membership_function(
@@ -577,25 +620,21 @@ class EditorTabWidget(BaseTabView):
         if success:
             self.update_property_editor()
             self.view_model.notify_data_changed.emit()
-            if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage(f"Added MF: {new_mf_name}")
+            self.status_bar.showMessage(f"{self.t('ADDED_MF')}: {new_mf_name}")
         else:
-            if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("Failed to add MF")
+            self.status_bar.showMessage(self.t("FAILED_TO_ADD_MF"))
 
     def _on_remove_mf_clicked(self):
         """Handle remove MF button click."""
         selected_var_info = self.view_model.get_selected_variable_info()
 
         if not selected_var_info:
-            if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("No variable selected")
+            self.status_bar.showMessage(self.t("NO_VARIABLE_SELECTED"))
             return
 
         current_row = self.mf_table.currentRow()
         if current_row < 0:
-            if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("No MF selected")
+            self.status_bar.showMessage(self.t("NO_MF_SELECTED"))
             return
 
         var_name = selected_var_info.get("name")
@@ -605,14 +644,11 @@ class EditorTabWidget(BaseTabView):
         mfs = var_data.get("membership_functions", [])
         mf_name = mfs[current_row].get("name", f"MF{current_row}") if current_row < len(mfs) else "MF"
 
-        # Delete the MF using fuzzy service
         success = self.view_model.fuzzy_service.delete_membership_function(var_name, current_row, var_type)
 
         if success:
             self.update_property_editor()
             self.view_model.notify_data_changed.emit()
-            if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage(f"Deleted MF: {mf_name}")
+            self.status_bar.showMessage(f"{self.t('DELETED_MF')}: {mf_name}")
         else:
-            if hasattr(self, "status_bar") and self.status_bar:
-                self.status_bar.showMessage("Failed to delete MF")
+            self.status_bar.showMessage(self.t("FAILED_TO_DELETE_MF"))

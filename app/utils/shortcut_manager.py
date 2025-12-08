@@ -34,7 +34,7 @@ class ShortcutManager:
             bool: True if registered, False if conflict.
         """
         if key_sequence in self._shortcuts:
-            return False  # Conflict
+            return False
         shortcut = QShortcut(QKeySequence(key_sequence), self.parent)
         shortcut.setContext(QtCore.Qt.ShortcutContext.WindowShortcut)
         shortcut.activated.connect(action)

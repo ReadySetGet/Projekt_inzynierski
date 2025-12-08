@@ -5,7 +5,7 @@ from typing import Any, Optional
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWidgets import QApplication
 
-from app.utils.paths import THEMES_DIR
+from app.utils.paths import IMAGES_DIR, THEMES_DIR
 
 
 class ThemeManager(QObject):
@@ -73,6 +73,7 @@ class ThemeManager(QObject):
         Returns:
             list[str]: List of available theme names.
         """
+        self.palette_paths = self._discover_palettes()
         return list(self.palette_paths.keys())
 
     def set_theme(self, theme_name: str, app: Optional[QApplication] = None) -> bool:
@@ -130,4 +131,13 @@ class ThemeManager(QObject):
             flat_palette = self._flatten_dict(palette)
             for key, value in flat_palette.items():
                 qss = qss.replace(f"{{{key}}}", value)
+
+        arrow_down_path = str(IMAGES_DIR / "arrow-down.svg")
+        arrow_down_path = arrow_down_path.replace("\\", "/")
+        qss = qss.replace("{images.arrow-down}", arrow_down_path)
+
+        arrow_up_path = str(IMAGES_DIR / "arrow-up.svg")
+        arrow_up_path = arrow_up_path.replace("\\", "/")
+        qss = qss.replace("{images.arrow-up}", arrow_up_path)
+
         return qss

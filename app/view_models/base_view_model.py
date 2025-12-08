@@ -17,11 +17,10 @@ class BaseViewModel(QObject):
 
     _context_provider: Optional[Callable[[], AppContext]] = None
 
-    # Global update signals
     data_changed = pyqtSignal()
     notify_data_changed = pyqtSignal()
     theme_changed = pyqtSignal()
-    stylesheet_updated = pyqtSignal(str)  # Emits the stylesheet content
+    stylesheet_updated = pyqtSignal(str)
 
     @classmethod
     def set_context_provider(cls, provider: Callable[[], AppContext]) -> None:
@@ -41,7 +40,6 @@ class BaseViewModel(QObject):
         super().__init__(parent)
         self.data_changed.connect(self.refresh_data)
 
-        # Register with event bus for global updates
         provider = type(self)._context_provider
         if provider:
             context = provider()
@@ -83,23 +81,21 @@ class BaseViewModel(QObject):
 
     def t(self, key: str) -> str:
         """Get the translation for a key."""
-        return self.translate_manager.t(key)
+        result = self.translate_manager.t(key)
+        return str(result) if result is not None else key
 
     def load_stylesheet_with_theme(self, qss_path: str) -> str:
         """Load stylesheet with current theme applied."""
-        if self.theme_manager:
-            return self.theme_manager.load_stylesheet_with_theme(qss_path)
-        return ""
+        return self.theme_manager.load_stylesheet_with_theme(qss_path)
 
     def _on_theme_changed(self) -> None:
         """Handle theme change events."""
         self.theme_changed.emit()
 
     def refresh_data(self) -> None:
-        """Refresh all data.
+        """Refresh all data from the model.
 
-        Should only update logic, never emit notify_data_changed.
-        This method should be overridden by subclasses.
-        It should only update internal state/logic, not emit signals.
+        This method should be overridden by subclasses to update internal state/logic.
+        It should only update internal state, not emit signals.
         """
         pass

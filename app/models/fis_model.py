@@ -119,24 +119,6 @@ class FISModel:
     """A class containing a fuzzy inference system (fis) and means of its edition.
 
     It allows modifying the system's properties (variables, mfs, rules).
-
-    Attributes:
-        _fis (FuzzyInferenceSystem): the contained fis system.
-
-    Methods:
-        __init__(FuzzyInferenceSystem): Initialize a new class instance.
-        add_input() -> None: Add a new input variable to the system.
-        delete_input(int) -> int: Delete an input variable from the system.
-        add_output() -> None: Add an output variable to the system.
-        delete_output(int) -> int: Delete an output variable from the system.
-        add_mf(str, str) -> int: Add a membership function to a variable.
-        delete_mf(str, int) -> int: Delete a membership function from a variable.
-        change_mf_type(str, int, str) -> int: Change the type of the given
-            membership function.
-        add_rule(list[int], list[int]) -> None: Add a rule to the system.
-        delete_rule(int) -> int: Delete a rule from the system.
-        clear_all_rules() -> None: Delete all rules.
-        update_rule(int, list[int], list[int]) -> int: Update a given rule.
     """
 
     _fis: fl.mamfis | fl.sugfis
@@ -177,11 +159,35 @@ class FISModel:
             self._fis = fl.mamfis(fis_name)
         else:
             self._fis = fis
+            self._normalize_rule_names()
+
+    def _normalize_rule_names(self) -> None:
+        """Normalize rule names to ensure they are unique (rule1, rule2, etc.).
+
+        This is called when loading a FIS from file to fix cases where
+        multiple rules have the same name (e.g., all named "Rule").
+        """
+        if not hasattr(self._fis, "Rules") or not self._fis.Rules:
+            return
+
+        rule_names = [rule.Name if hasattr(rule, "Name") else "Rule" for rule in self._fis.Rules]
+        name_counts = {}
+        for name in rule_names:
+            name_counts[name] = name_counts.get(name, 0) + 1
+
+        has_duplicates = any(count > 1 for count in name_counts.values())
+        if has_duplicates:
+            for i, rule in enumerate(self._fis.Rules):
+                new_name = f"rule{i + 1}"
+                try:
+                    rule.Name = new_name
+                except Exception:
+                    setattr(rule, "Name", new_name)
 
     def add_input(self) -> None:
         """Add a new input variable to the system."""
         next_input_number = self._find_available_element_number("input")
-        input_name = "input" + str(next_input_number)  # values like "input0", "input1"
+        input_name = "input" + str(next_input_number)
         self._fis.addInput(DEFAULT_IO_RANGE, Name=input_name)
 
         for rule in self._fis.Rules:
@@ -374,18 +380,14 @@ class FISModel:
 
         old_mf = io_variable.MembershipFunctions[mf_idx]
 
-        # Try to modify the existing MF in place instead of creating a new one
         try:
-            # Try to change the type and parameters of the existing MF
             old_mf.Type = mf_changing_validity_check[1]
-            # Use default parameters for the new type
             old_mf.Parameters = mf_changing_validity_check[2]
         except Exception:
-            # Fallback to the old method
             old_mf = io_variable.MembershipFunctions.pop(mf_idx)
             new_mf = fl.fismf(
                 mf_changing_validity_check[1],
-                mf_changing_validity_check[2],  # Use default parameters for new type
+                mf_changing_validity_check[2],
             )
             try:
                 new_mf.Name = old_mf.Name
@@ -479,7 +481,7 @@ class FISModel:
         return 1
 
     def clear_all_rules(self) -> None:
-        """Delete all rules."""
+        """Delete all rules from the system."""
         self._fis.Rules.clear()
 
     def update_rule(self, rule_idx: int, new_rule_is_mf: list[int], new_rule_data: list[int]) -> int:
@@ -783,17 +785,15 @@ class FISModel:
             new_fis_model._fis.DefuzzificationMethod = "centroid"
             return new_fis_model
 
-    def generate_all_rules(self):
+    def generate_all_rules(self) -> int:
         """Generate all possible rules, based on current input/output/mf configuration.
 
         If some rules are already present, generate only the missing ones.
 
-        To stay compatible with Matlab, this function does not generate rules
-        with input mfs being null. Also, it does not override such rules if
-        they were added manually, instead appending a new, full rule.
-
-        Output variations, like in Matlab, are not considered, for time
-        complexity's sake.
+        To stay compatible with Fuzzy Logic Designer, this function does not
+        generate rules with input mfs being null. Also, it does not override
+        such rules if they were added manually, instead appending a new, full
+        rule.
 
         Returns:
             int: 1 if rules added successfully, -1 if there are no outputs and/or inputs,
@@ -823,6 +823,65 @@ class FISModel:
                 self.add_rule(None, potential_rule_ext)
 
         return 1
+
+    def return_all_rules(self) -> list[FisRuleEx]:
+        """Return a list if all available rules."""
+        return self._fis.Rules
+
+    def clear_all_io_variables(self) -> None:
+        """Delete all input/output variables from the system."""
+        self._fis.Inputs.clear()
+        self._fis.Outputs.clear()
+        self.clear_all_rules()
+
+    def return_all_input_variables(self) -> list[fl.fisvar]:
+        """Get all input variables of the system.
+
+        Returns:
+            A list (potentially empty) of all input variables of the system.
+        """
+        return self._fis.Inputs
+
+    def return_all_output_variables(self) -> list[fl.fisvar]:
+        """Get all output variables of the system.
+
+        Returns:
+            A list (potentially empty) of all output variables of the system.
+        """
+        return self._fis.Outputs
+
+    def return_all_mfs_of_io_variable(self, io_variable_name: str, io_variable_type: str) -> list[fl.fismf] | None:
+        """Get all membership functions of an input/output variable.
+
+        Args:
+            io_variable_name (str): name of the input/output variable whose mfs
+                are to be returned
+            io_variable_type (str): whether it is an input or output variable.
+                Accepted values: input, output
+
+        Returns:
+            None, if a variable of the given type with the given name does not
+                exist. A list (potentially empty) of all its membership
+                functions otherwise.
+        """
+        if io_variable_type == "input":
+            for input_variable in self._fis.Inputs:
+                if input_variable.Name == io_variable_name:
+                    return input_variable.MembershipFunctions
+        if io_variable_type == "output":
+            for output_variable in self._fis.Outputs:
+                if output_variable.Name == io_variable_name:
+                    return output_variable.MembershipFunctions
+
+        return None
+
+    def return_system_name(self) -> str:
+        """Return the name of the Fuzzy Inference System used.
+
+        Returns:
+            The name (str) of the system.
+        """
+        return self._fis.Name
 
     def _find_variable(self, io_variable_name: str, input_or_output: str) -> [fl.fisvar, int]:
         io_variable = None

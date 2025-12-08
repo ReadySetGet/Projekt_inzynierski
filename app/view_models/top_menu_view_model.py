@@ -1,5 +1,3 @@
-# No imports needed
-
 from PyQt6.QtCore import pyqtSignal
 
 from app.view_models.base_view_model import BaseViewModel
@@ -8,10 +6,7 @@ from app.view_models.base_view_model import BaseViewModel
 class TopMenuViewModel(BaseViewModel):
     """View model for the top menu view."""
 
-    # Signals for tab changes
     current_tab_changed = pyqtSignal(int)
-
-    # Signals for input/output management
     add_input_clicked = pyqtSignal()
     delete_input_clicked = pyqtSignal()
     add_output_clicked = pyqtSignal()
@@ -49,7 +44,6 @@ class TopMenuViewModel(BaseViewModel):
         """Handle delete input button click."""
         input_count = self.fuzzy_service.get_input_count()
         if input_count > 0:
-            # Delete the last input variable
             success = self.fuzzy_service.delete_input_variable(input_count - 1)
             if success:
                 self.notify_data_changed.emit()
@@ -65,7 +59,6 @@ class TopMenuViewModel(BaseViewModel):
         """Handle delete output button click."""
         output_count = self.fuzzy_service.get_output_count()
         if output_count > 0:
-            # Delete the last output variable
             success = self.fuzzy_service.delete_output_variable(output_count - 1)
             if success:
                 self.notify_data_changed.emit()
@@ -100,7 +93,6 @@ class TopMenuViewModel(BaseViewModel):
 
     def refresh_data(self) -> None:
         """Refresh all data from the model - only updates logic, no signal emission."""
-        # TopMenuViewModel doesn't need to refresh data as it's mostly action-based
         pass
 
     def convert_inference_system(self) -> bool:

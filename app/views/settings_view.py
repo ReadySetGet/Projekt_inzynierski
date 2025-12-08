@@ -5,10 +5,7 @@ from app.views.base_widget_view import BaseWidgetView
 
 
 class SettingsView(BaseWidgetView):
-    """Class used to display settings window widget.
-
-    It does not have a Parent attribute as to be displayed in a separate window.
-    """
+    """Settings window widget for theme and language configuration."""
 
     styles = ["Light", "Dark", "Blue", "Red", "Green"]
 
@@ -28,7 +25,7 @@ class SettingsView(BaseWidgetView):
 
     def _setup_ui(self):
         self.resize(400, 150)
-        self.setWindowTitle("Settings")
+        self.setWindowTitle(self.t("SETTINGS"))
 
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
@@ -62,10 +59,7 @@ class SettingsView(BaseWidgetView):
 
     def _setup_connections(self):
         """Setup connections between view and view model."""
-        # Connect dropdown changes to handlers
         self.apply_button.clicked.connect(self._on_apply_settings)
-
-        # Connect view model signals to update UI
         self.view_model.theme_list_changed.connect(self._update_theme_list)
         self.view_model.language_list_changed.connect(self._update_language_list)
         self.view_model.current_theme_changed.connect(self._on_current_theme_changed)
@@ -73,14 +67,12 @@ class SettingsView(BaseWidgetView):
 
     def _load_initial_data(self):
         """Load initial data from view model."""
-        # Load available themes and languages
         themes = self.view_model.get_available_themes()
         languages = self.view_model.get_available_languages()
 
         self._update_theme_list(themes)
         self._update_language_list(languages)
 
-        # Set current selections
         current_theme = self.view_model.get_current_theme()
         current_language = self.view_model.get_current_language()
 
@@ -104,7 +96,6 @@ class SettingsView(BaseWidgetView):
         self.theme_dropdown.clear()
         self.theme_dropdown.addItems(themes)
 
-        # Restore selection if possible
         if current_text:
             index = self.theme_dropdown.findText(current_text)
             if index >= 0:
@@ -120,7 +111,6 @@ class SettingsView(BaseWidgetView):
         self.language_dropdown.clear()
         self.language_dropdown.addItems(languages)
 
-        # Restore selection if possible
         if current_text:
             index = self.language_dropdown.findText(current_text)
             if index >= 0:
@@ -136,7 +126,6 @@ class SettingsView(BaseWidgetView):
 
         if selected_language:
             self.view_model.set_language(selected_language)
-            # Update all UI text after language change
             self._retranslate_ui()
 
     def _on_current_theme_changed(self, theme_name: str):
@@ -158,5 +147,4 @@ class SettingsView(BaseWidgetView):
         index = self.language_dropdown.findText(language_code)
         if index >= 0:
             self.language_dropdown.setCurrentIndex(index)
-        # Update all UI text after language change
         self._retranslate_ui()

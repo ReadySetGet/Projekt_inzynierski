@@ -12,22 +12,17 @@ class SettingsViewModel(BaseViewModel):
     between the settings UI and the underlying services.
     """
 
-    # Signals
-    theme_list_changed = pyqtSignal(list)  # Emits list of available themes
-    language_list_changed = pyqtSignal(list)  # Emits list of available languages
-    current_theme_changed = pyqtSignal(str)  # Emits current theme name
-    current_language_changed = pyqtSignal(str)  # Emits current language code
+    theme_list_changed = pyqtSignal(list)
+    language_list_changed = pyqtSignal(list)
+    current_theme_changed = pyqtSignal(str)
+    current_language_changed = pyqtSignal(str)
 
     def __init__(self) -> None:
         """Initialize the SettingsViewModel."""
         super().__init__()
 
-        # Connect to service signals
-        if self.theme_manager:
-            self.theme_manager.theme_changed.connect(self._on_theme_changed_internal)
-
-        if self.translate_manager:
-            self.translate_manager.language_changed.connect(self._on_language_changed_internal)
+        self.theme_manager.theme_changed.connect(self._on_theme_changed_internal)
+        self.translate_manager.language_changed.connect(self._on_language_changed_internal)
 
     def get_available_themes(self) -> list[str]:
         """Get list of available themes.
@@ -35,9 +30,7 @@ class SettingsViewModel(BaseViewModel):
         Returns:
             list[str]: List of theme names.
         """
-        if self.theme_manager:
-            return self.theme_manager.available_themes()
-        return []
+        return self.theme_manager.available_themes()
 
     def get_available_languages(self) -> list[str]:
         """Get list of available languages.
@@ -45,9 +38,7 @@ class SettingsViewModel(BaseViewModel):
         Returns:
             list[str]: List of language codes.
         """
-        if self.translate_manager:
-            return self.translate_manager.available_languages()
-        return []
+        return self.translate_manager.available_languages()
 
     def get_current_theme(self) -> str:
         """Get the current theme name.
@@ -55,10 +46,8 @@ class SettingsViewModel(BaseViewModel):
         Returns:
             str: Current theme name or empty string if not set.
         """
-        if self.theme_manager:
-            current = self.theme_manager.get_current_theme()
-            return current if current else ""
-        return ""
+        current = self.theme_manager.get_current_theme()
+        return current if current else ""
 
     def get_current_language(self) -> str:
         """Get the current language code.
@@ -66,9 +55,7 @@ class SettingsViewModel(BaseViewModel):
         Returns:
             str: Current language code.
         """
-        if self.translate_manager:
-            return self.translate_manager.current_language
-        return "en"
+        return self.translate_manager.current_language
 
     def set_theme(self, theme_name: str) -> bool:
         """Set the application theme.
@@ -79,14 +66,11 @@ class SettingsViewModel(BaseViewModel):
         Returns:
             bool: True if successful, False otherwise.
         """
-        if self.theme_manager:
-            success = self.theme_manager.set_theme(theme_name)
-            if success:
-                # Save to config if available
-                if hasattr(self.context, "config") and self.context.config:
-                    self.context.config.set_value("theme", "current", theme_name)
-            return success
-        return False
+        success = self.theme_manager.set_theme(theme_name)
+        if success:
+            if self.context.config:
+                self.context.config.set_value("theme", "current", theme_name)
+        return success
 
     def set_language(self, language_code: str) -> bool:
         """Set the application language.
@@ -97,22 +81,17 @@ class SettingsViewModel(BaseViewModel):
         Returns:
             bool: True if successful, False otherwise.
         """
-        if self.translate_manager:
-            success = self.translate_manager.set_language(language_code)
-            if success:
-                # Save to config if available
-                if hasattr(self.context, "config") and self.context.config:
-                    self.context.config.set_value("language", "current", language_code)
-                # Emit signal to notify all views to update their translations
-                self.notify_data_changed.emit()
-            return success
-        return False
+        success = self.translate_manager.set_language(language_code)
+        if success:
+            if self.context.config:
+                self.context.config.set_value("language", "current", language_code)
+            self.notify_data_changed.emit()
+        return success
 
     def _on_theme_changed_internal(self) -> None:
         """Handle theme change from theme manager."""
         current_theme = self.get_current_theme()
         self.current_theme_changed.emit(current_theme)
-        # Propagate to base class handler
         self._on_theme_changed()
 
     def _on_language_changed_internal(self) -> None:
@@ -122,7 +101,6 @@ class SettingsViewModel(BaseViewModel):
 
     def refresh_data(self) -> None:
         """Refresh settings data - updates internal state from services."""
-        # Emit current states to update UI
         themes = self.get_available_themes()
         languages = self.get_available_languages()
 

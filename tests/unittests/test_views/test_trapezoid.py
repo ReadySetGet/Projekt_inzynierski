@@ -22,8 +22,9 @@ def plot_instance(main_window_with_plot):
     x_data = [0, 10, 20, 30, 40, 50]
     y_data = [0, 0, 1, 1, 0, 0]
     color = "#ff0000"
+    central_x = 25
 
-    return TrapezoidPlot(plot_widget, x_data, y_data, color)
+    return TrapezoidPlot(plot_widget, x_data, y_data, color, central_x)
 
 
 def test_initialization(plot_instance):

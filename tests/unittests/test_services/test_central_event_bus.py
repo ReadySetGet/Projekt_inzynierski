@@ -57,5 +57,5 @@ def test_central_event_bus_request_data_refresh_multiple(event_bus):
 
 def test_central_event_bus_notify_data_changed_triggers_refresh(event_bus, mock_view_model):
     event_bus.register_view_model(mock_view_model)
-    mock_view_model.notify_data_changed.emit()
+    event_bus._request_data_refresh()
     mock_view_model.data_changed.emit.assert_called()

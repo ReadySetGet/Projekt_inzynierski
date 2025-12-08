@@ -40,17 +40,14 @@ class FisPropertiesTabView(BaseWidgetView):
 
     def _setup_ui(self):
         """Set up all the GUI sub elements."""
-        # Main layout
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
 
-        # Title label
         self.title_label = QtWidgets.QLabel()
         self.title_label.setObjectName("title_label")
         main_layout.addWidget(self.title_label)
 
-        # System name section
         name_layout = QtWidgets.QHBoxLayout()
         self.system_name_label = QtWidgets.QLabel()
         self.system_name_label.setObjectName("system_name_label")
@@ -62,20 +59,17 @@ class FisPropertiesTabView(BaseWidgetView):
         name_layout.addWidget(self.system_name_edit)
         main_layout.addLayout(name_layout)
 
-        # System type section
         type_layout = QtWidgets.QHBoxLayout()
         self.system_type_label = QtWidgets.QLabel()
         self.system_type_label.setObjectName("system_type_label")
         type_layout.addWidget(self.system_type_label)
 
-        self.system_type_combo = QtWidgets.QComboBox()
-        self.system_type_combo.setObjectName("system_type_combo")
-        # Items will be set in _retranslate_ui with translations
-        self.system_type_combo.currentTextChanged.connect(self._on_system_type_changed)
-        type_layout.addWidget(self.system_type_combo)
+        self.system_type_display_label = QtWidgets.QLabel()
+        self.system_type_display_label.setObjectName("system_type_display_label")
+        type_layout.addWidget(self.system_type_display_label)
+        type_layout.addStretch()
         main_layout.addLayout(type_layout)
 
-        # Defuzzification section
         defuzz_layout = QtWidgets.QHBoxLayout()
         self.defuzzification_label = QtWidgets.QLabel()
         self.defuzzification_label.setObjectName("defuzzification_label")
@@ -87,7 +81,6 @@ class FisPropertiesTabView(BaseWidgetView):
         defuzz_layout.addWidget(self.defuzzification_combo)
         main_layout.addLayout(defuzz_layout)
 
-        # Input variables section
         inputs_group = QtWidgets.QGroupBox()
         inputs_group.setObjectName("inputs_group")
         inputs_layout = QtWidgets.QVBoxLayout(inputs_group)
@@ -114,7 +107,6 @@ class FisPropertiesTabView(BaseWidgetView):
         inputs_layout.addWidget(self.inputs_list)
         main_layout.addWidget(inputs_group)
 
-        # Output variables section
         outputs_group = QtWidgets.QGroupBox()
         outputs_group.setObjectName("outputs_group")
         outputs_layout = QtWidgets.QVBoxLayout(outputs_group)
@@ -141,7 +133,6 @@ class FisPropertiesTabView(BaseWidgetView):
         outputs_layout.addWidget(self.outputs_list)
         main_layout.addWidget(outputs_group)
 
-        # Variable info section
         info_group = QtWidgets.QGroupBox()
         info_group.setObjectName("info_group")
         info_layout = QtWidgets.QVBoxLayout(info_group)
@@ -157,7 +148,6 @@ class FisPropertiesTabView(BaseWidgetView):
         info_layout.addWidget(self.variable_info_text)
         main_layout.addWidget(info_group)
 
-        # Add stretch to push everything to top
         main_layout.addStretch()
 
         self.inputs_list.itemSelectionChanged.connect(self._on_input_selected)
@@ -179,22 +169,14 @@ class FisPropertiesTabView(BaseWidgetView):
         self.delete_output_button.setText(self.t("DELETE_OUTPUT"))
         self.variable_info_label.setText(self.t("VARIABLE_INFO"))
 
-        # Update system type combo with translated items
-        current_selection = self.system_type_combo.currentText()
-        self.system_type_combo.clear()
-        self.system_type_combo.addItems([self.t("MAMDANI"), self.t("SUGENO")])
-
-        # Restore selection if possible
-        if current_selection:
-            # Map old values to new translated values
-            if current_selection == "mamfis" or current_selection == self.t("MAMDANI"):
-                self.system_type_combo.setCurrentText(self.t("MAMDANI"))
-            elif current_selection == "sugfis" or current_selection == self.t("SUGENO"):
-                self.system_type_combo.setCurrentText(self.t("SUGENO"))
-        else:
-            # Set based on current system type
+        if self.view_model and self.view_model.fuzzy_service:
             display_type = self.view_model.get_fis_type_display()
-            self.system_type_combo.setCurrentText(self.t(display_type.upper()))
+            translated_type = self.t(display_type.upper())
+            if translated_type == display_type.upper():
+                translated_type = display_type
+            self.system_type_display_label.setText(translated_type)
+        else:
+            self.system_type_display_label.setText("")
 
     def _on_system_updated(self):
         """Handle system update from view model."""
@@ -211,23 +193,6 @@ class FisPropertiesTabView(BaseWidgetView):
     def _on_variable_selected(self, variable_name, variable_type):
         """Handle variable selection."""
         self._update_variable_info(variable_name, variable_type)
-
-    def _on_system_type_changed(self, system_type):
-        """Handle system type change - convert the system if needed."""
-        # Get current system type
-        current_type = self.view_model.get_fis_type_display()
-        current_type_translated = self.t(current_type.upper())
-
-        # Only convert if the type actually changed
-        if system_type != current_type_translated:
-            # Convert the system
-            success = self.view_model.convert_inference_system()
-            if success:
-                # Update UI after conversion
-                self._update_ui_from_model()
-            else:
-                # Revert combo box selection if conversion failed
-                self.system_type_combo.setCurrentText(current_type_translated)
 
     def _on_defuzzification_changed(self, method_text):
         """Handle defuzzification method change."""
@@ -264,11 +229,9 @@ class FisPropertiesTabView(BaseWidgetView):
         """Delete the selected input variable."""
         current_item = self.inputs_list.currentItem()
         if current_item:
-            # Extract input name from item text
             item_text = current_item.text()
-            input_name = item_text.split(" (")[0]  # Get name before " (Range:..."
+            input_name = item_text.split(" (")[0]
 
-            # Find the input index
             inputs = self.view_model.inputs
             for idx, inp in enumerate(inputs):
                 if inp["name"] == input_name:
@@ -280,11 +243,9 @@ class FisPropertiesTabView(BaseWidgetView):
         """Delete the selected output variable."""
         current_item = self.outputs_list.currentItem()
         if current_item:
-            # Extract output name from item text
             item_text = current_item.text()
-            output_name = item_text.split(" (")[0]  # Get name before " (Range:..."
+            output_name = item_text.split(" (")[0]
 
-            # Find the output index
             outputs = self.view_model.outputs
             for idx, out in enumerate(outputs):
                 if out["name"] == output_name:
@@ -310,13 +271,15 @@ class FisPropertiesTabView(BaseWidgetView):
         """Update UI elements from the model."""
         self.system_name_edit.setText(self.view_model.system_name)
 
-        # Update system type combo with translated value
-        display_type = self.view_model.get_fis_type_display()
-        self.system_type_combo.blockSignals(True)
-        self.system_type_combo.setCurrentText(self.t(display_type.upper()))
-        self.system_type_combo.blockSignals(False)
+        if self.view_model and self.view_model.fuzzy_service:
+            display_type = self.view_model.get_fis_type_display()
+            translated_type = self.t(display_type.upper())
+            if translated_type == display_type.upper():
+                translated_type = display_type
+            self.system_type_display_label.setText(translated_type)
+        else:
+            self.system_type_display_label.setText("")
 
-        # Update defuzzification combo
         available_methods = self.view_model.get_available_defuzzification_methods()
         current_method = self.view_model.get_defuzzification_method()
         self.defuzzification_combo.blockSignals(True)
@@ -334,30 +297,36 @@ class FisPropertiesTabView(BaseWidgetView):
         """Update the inputs list."""
         self.inputs_list.clear()
         for input_var in self.view_model.inputs:
-            item_text = f"{input_var['name']} (Range: {input_var['range']}, MFs: {input_var['mf_count']})"
+            item_text = (
+                f"{input_var['name']} ({self.t('RANGE')}: {input_var['range']}, {self.t('MFS')}: "
+                f"{input_var['mf_count']})"
+            )
             self.inputs_list.addItem(item_text)
 
     def _update_outputs_list(self):
         """Update the outputs list."""
         self.outputs_list.clear()
         for output_var in self.view_model.outputs:
-            item_text = f"{output_var['name']} (Range: {output_var['range']}, MFs: {output_var['mf_count']})"
+            item_text = (
+                f"{output_var['name']} ({self.t('RANGE')}: {output_var['range']}, {self.t('MFS')}: "
+                f"{output_var['mf_count']})"
+            )
             self.outputs_list.addItem(item_text)
 
     def _update_variable_info(self, variable_name, variable_type):
         """Update the variable info text."""
         info = self.view_model.get_variable_info(variable_name, variable_type)
         if info:
-            info_text = f"Name: {info['name']}\n"
-            info_text += f"Type: {variable_type}\n"
-            info_text += f"Range: {info['range']}\n"
-            info_text += f"Membership Functions: {info['mf_count']}\n\n"
+            info_text = f"{self.t('NAME')}: {info['name']}\n"
+            info_text += f"{self.t('TYPE')}: {variable_type}\n"
+            info_text += f"{self.t('RANGE')}: {info['range']}\n"
+            info_text += f"{self.t('MEMBERSHIP_FUNCTIONS')}: {info['mf_count']}\n\n"
 
             if info["membership_functions"]:
-                info_text += "Membership Functions:\n"
+                info_text += f"{self.t('MEMBERSHIP_FUNCTIONS')}: \n"
                 for mf in info["membership_functions"]:
                     info_text += f" - {mf['name']} ({mf['type']}): {mf['parameters']}\n"
 
             self.variable_info_text.setText(info_text)
         else:
-            self.variable_info_text.setText("No variable selected")
+            self.variable_info_text.setText(self.t("NO_VARIABLE_SELECTED"))

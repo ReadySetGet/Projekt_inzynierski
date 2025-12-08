@@ -38,16 +38,13 @@ class BaseFrameView(QFrame):
             view_model: The view model instance.
         """
         self.view_model = view_model
-        if self.view_model:
-            self.view_model.theme_changed.connect(self.reload_stylesheet)
-            self.view_model.translate_manager.language_changed.connect(self._on_language_changed)
-            # Initial stylesheet load
-            self.reload_stylesheet()
+        self.view_model.theme_changed.connect(self.reload_stylesheet)
+        self.view_model.translate_manager.language_changed.connect(self._on_language_changed)
+        self.reload_stylesheet()
 
     def reload_stylesheet(self) -> None:
         """Reload and apply the local stylesheet if qss_filename is set and exists."""
         if self.qss_filename and self.view_model:
-            # Use absolute path if provided, otherwise resolve relative to this file
             if os.path.isabs(self.qss_filename) and os.path.exists(self.qss_filename):
                 qss_path = self.qss_filename
             else:
@@ -76,5 +73,4 @@ class BaseFrameView(QFrame):
 
     def _on_language_changed(self) -> None:
         """Handle language change event."""
-        if hasattr(self, "_retranslate_ui"):
-            self._retranslate_ui()
+        self._retranslate_ui()
