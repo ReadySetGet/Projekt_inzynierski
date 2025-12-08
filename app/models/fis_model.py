@@ -119,24 +119,6 @@ class FISModel:
     """A class containing a fuzzy inference system (fis) and means of its edition.
 
     It allows modifying the system's properties (variables, mfs, rules).
-
-    Attributes:
-        _fis (FuzzyInferenceSystem): the contained fis system.
-
-    Methods:
-        __init__(FuzzyInferenceSystem): Initialize a new class instance.
-        add_input() -> None: Add a new input variable to the system.
-        delete_input(int) -> int: Delete an input variable from the system.
-        add_output() -> None: Add an output variable to the system.
-        delete_output(int) -> int: Delete an output variable from the system.
-        add_mf(str, str) -> int: Add a membership function to a variable.
-        delete_mf(str, int) -> int: Delete a membership function from a variable.
-        change_mf_type(str, int, str) -> int: Change the type of the given
-            membership function.
-        add_rule(list[int], list[int]) -> None: Add a rule to the system.
-        delete_rule(int) -> int: Delete a rule from the system.
-        clear_all_rules() -> None: Delete all rules.
-        update_rule(int, list[int], list[int]) -> int: Update a given rule.
     """
 
     _fis: fl.mamfis | fl.sugfis
